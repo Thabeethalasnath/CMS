@@ -22,9 +22,11 @@ Thumbs.db
 .project
 .settings/
 
-# Agent tool artifacts
+# Agent tool artifacts & skills
+.agents/
 .claude/
 agent/
+skills-lock.json
 
 # ==========================================
 # Environment Variables & Secrets
