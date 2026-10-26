@@ -1,0 +1,121 @@
+:root {
+  /* 01 Core Color Tokens (Figma Design System Foundation) */
+  --color-primary-brand: #0D172E;        /* Midnight Navy: Sidebar & brand identity */
+  --color-primary-brand-navy: #172554;
+  --color-secondary-brand: #4F46E5;      /* Indigo: Primary actions and active states */
+  --color-accent: #0D9488;               /* Teal: Highlights and secondary actions */
+  --color-app-bg: #F8FAFC;               /* Cool Gray: Main workspace */
+  --color-card-bg: #FFFFFF;              /* White: Cards, tables and forms */
+  --color-primary-text: #0F172A;         /* Slate 900: Headings and important content */
+  --color-secondary-text: #64748B;       /* Slate 500: Supporting text and labels */
+  --color-borders: #E2E8F0;              /* Slate 200: Dividers and component boundaries */
+  --color-success: #16A34A;              /* Green: Completed and successful states */
+  --color-warning: #D97706;              /* Amber: Pending actions and warnings */
+  --color-error: #DC2626;                /* Red: Failed actions and critical issues */
+  --color-info: #2563EB;                 /* Blue: Informational notifications */
+  --color-chart-violet: #7C3AED;         /* Violet: Chart extension */
+
+  /* Semantic Badges */
+  --badge-completed-bg: #F0FDF4;
+  --badge-completed-text: #166534;
+  --badge-pending-bg: #FFFBEB;
+  --badge-pending-text: #92400E;
+  --badge-failed-bg: #FEF2F2;
+  --badge-failed-text: #991B1B;
+  --badge-in-progress-bg: #EFF6FF;
+  --badge-in-progress-text: #1E40AF;
+
+  /* 02 Typography: Inter only (400, 500, 600, 700) */
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  /* Typography Scale */
+  --font-dashboard-title-size: 28px;
+  --font-dashboard-title-line: 40px;
+  --font-dashboard-title-weight: 700;
+
+  --font-module-title-size: 24px;
+  --font-module-title-line: 32px;
+  --font-module-title-weight: 600;
+
+  --font-section-heading-size: 18px;
+  --font-section-heading-line: 28px;
+  --font-section-heading-weight: 600;
+
+  --font-card-heading-size: 16px;
+  --font-card-heading-line: 24px;
+  --font-card-heading-weight: 600;
+
+  --font-body-size: 14px;
+  --font-body-line: 22px;
+  --font-body-weight: 400;
+
+  --font-table-size: 14px;
+  --font-table-line: 20px;
+  --font-table-weight: 400;
+
+  --font-field-labels-size: 13px;
+  --font-field-labels-line: 20px;
+  --font-field-labels-weight: 500;
+
+  --font-buttons-size: 14px;
+  --font-buttons-line: 20px;
+  --font-buttons-weight: 500;
+
+  --font-supporting-size: 12px;
+  --font-supporting-line: 18px;
+  --font-supporting-weight: 400;
+
+  /* Sidebar Tokens */
+  --sidebar-width: 260px;
+  --sidebar-menu-width: 235px;
+  --sidebar-bg: #0D172E;
+  --sidebar-border-right: #152347;
+  --sidebar-header-border: #142144;
+  --sidebar-active-accent: #4F46E5;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  width: 100%;
+  font-family: var(--font-family);
+  background-color: var(--color-app-bg);
+  color: var(--color-primary-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow: hidden;
+}
+
+#root {
+  height: 100%;
+  width: 100%;
+  display: flex;
+}
+
+/* Custom Scrollbar for Sidebar */
+.sidebar-scrollable::-webkit-scrollbar {
+  width: 5px;
+}
+
+.sidebar-scrollable::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-scrollable::-webkit-scrollbar-thumb {
+  background: #152347;
+  border-radius: 4px;
+}
+
+.sidebar-scrollable::-webkit-scrollbar-thumb:hover {
+  background: #1E3A8A;
+}
+
+.sidebar-scrollable {
+  scrollbar-width: thin;
+  scrollbar-color: #152347 transparent;
+}
