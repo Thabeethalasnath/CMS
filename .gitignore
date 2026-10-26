@@ -1,0 +1,45 @@
+# GEMINI Rule: Must stay local
+GEMINI.md
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+hs_err_pid*
+
+# Node / Frontend Build
+node_modules
+dist
+dist-ssr
+coverage
+*.local
+
+# Environment files (keep .env.example tracked)
+.env
+.env.*.local
+
+# Java & Maven Build Outputs
+target/
+*.class
+*.jar
+*.war
+*.ear
+
+# IDE & Editor Files
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.iml
+.project
+.classpath
+.settings/
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
