@@ -1,0 +1,13 @@
+#!/bin/sh
+# Maven wrapper runner
+MAVEN_EXE="C:/Users/Thabe/.m2/wrapper/dists/apache-maven-3.9.9/8e74001100ff70d6af083c5511fcc5ec49282d7017cde82c3698eee8fdf86698/bin/mvn"
+if [ -f "$MAVEN_EXE" ]; then
+  exec "$MAVEN_EXE" "$@"
+fi
+
+if command -v mvn >/dev/null 2>&1; then
+  exec mvn "$@"
+fi
+
+echo "Maven not found"
+exit 1

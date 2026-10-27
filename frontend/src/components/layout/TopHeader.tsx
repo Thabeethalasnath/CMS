@@ -110,15 +110,6 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
           />
         </div>
 
-        {/* Quick DB Edit Trigger Button */}
-        <button
-          onClick={onOpenEditModal}
-          className="flex items-center gap-1.5 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold shadow-xs hover:shadow transition-all"
-          title="Edit and persist live data to Supabase PostgreSQL"
-        >
-          <Database size={13} />
-          <span className="hidden sm:inline">Edit DB Data</span>
-        </button>
 
         {/* Notification Bell with Badge & Dropdown */}
         <div className="relative" ref={notifRef}>

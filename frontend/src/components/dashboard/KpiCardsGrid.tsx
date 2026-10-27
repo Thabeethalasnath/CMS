@@ -67,22 +67,26 @@ export const KpiCardsGrid: React.FC<KpiCardsGridProps> = ({
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5 w-full">
-      {cards.map((card) => {
-        const isPositive = card.change_percentage >= 0;
-        const isDanger = card.change_type === 'negative';
+      {(cards || []).map((card: any) => {
+        const changePercent = card.change_percentage ?? card.changePercentage ?? 0;
+        const isPositive = changePercent >= 0;
+        const isDanger = (card.change_type ?? card.changeType) === 'negative';
 
         // Pills: green for positive business metric, red for negative
         const pillBg = isDanger ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600';
+        const cardKey = card.card_key ?? card.cardKey ?? `kpi_${card.id}`;
+        const formattedVal = card.formatted_value ?? card.formattedValue ?? '0';
+        const compText = card.comparison_text ?? card.comparisonText ?? 'vs last month';
 
         return (
           <div
-            key={card.card_key}
+            key={cardKey}
             onClick={() => onCardClick(card)}
             className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col justify-between shadow-soft hover:shadow-soft-hover hover:-translate-y-0.5 hover:border-slate-300 transition-all duration-200 cursor-pointer group"
           >
             <div>
               {/* Colored Icon Tile */}
-              {renderIcon(card.icon_type, card.color_theme)}
+              {renderIcon(card.icon_type ?? card.iconType, card.color_theme ?? card.colorTheme)}
 
               {/* Metric Label */}
               <h4 className="text-[11.5px] font-medium text-slate-500 leading-tight min-h-[26px] flex items-center">
@@ -92,7 +96,7 @@ export const KpiCardsGrid: React.FC<KpiCardsGridProps> = ({
               {/* Big Metric Value */}
               <div className="mt-1.5 mb-2.5">
                 <span className="text-[19px] font-extrabold text-slate-900 tracking-tight leading-none group-hover:text-blue-600 transition-colors">
-                  {card.formatted_value}
+                  {formattedVal}
                 </span>
               </div>
             </div>
@@ -101,10 +105,10 @@ export const KpiCardsGrid: React.FC<KpiCardsGridProps> = ({
             <div className="flex items-center gap-1.5 pt-1">
               <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold ${pillBg}`}>
                 {isPositive ? <ArrowUpRight size={11} /> : <ArrowDownRight size={11} />}
-                {card.change_percentage > 0 ? `+${card.change_percentage}%` : `${card.change_percentage}%`}
+                {changePercent > 0 ? `+${changePercent}%` : `${changePercent}%`}
               </span>
               <span className="text-[10px] text-slate-400 font-medium">
-                {card.comparison_text}
+                {compText}
               </span>
             </div>
           </div>

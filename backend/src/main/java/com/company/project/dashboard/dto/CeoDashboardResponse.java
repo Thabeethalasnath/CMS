@@ -1,6 +1,8 @@
 package com.company.project.dashboard.dto;
 
 import com.company.project.dashboard.entity.*;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,6 +13,7 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class CeoDashboardResponse {
     private DashboardSettings settings;
     private List<DashboardKpiCard> kpis;

@@ -3,7 +3,7 @@ package com.company.project.dashboard.service;
 import com.company.project.dashboard.dto.CeoDashboardResponse;
 import com.company.project.dashboard.entity.*;
 import com.company.project.dashboard.repository.DashboardKpiCardRepository;
-import com.company.project.dashboard.repository.Repositories.*;
+import com.company.project.dashboard.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

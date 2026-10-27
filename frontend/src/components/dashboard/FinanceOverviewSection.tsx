@@ -21,23 +21,26 @@ export const FinanceOverviewSection: React.FC<FinanceOverviewSectionProps> = ({
     return `₹ ${(val / 100000).toFixed(1)}L`;
   };
 
-  const invoiceVsCollectionsData = monthlyData.map((d) => ({
-    label: d.month_name,
-    invoice: d.invoice_value,
-    collected: d.collected_payments
+  const safeMonthlyData = monthlyData || [];
+  const safeExpenseBreakdown = expenseBreakdown || [];
+
+  const invoiceVsCollectionsData = safeMonthlyData.map((d: any) => ({
+    label: d.month_name || d.monthName || '',
+    invoice: d.invoice_value ?? d.invoiceValue ?? 0,
+    collected: d.collected_payments ?? d.collectedPayments ?? 0
   }));
 
-  const expensesData = monthlyData.map((d) => ({
-    label: d.month_name,
-    expense: d.expenses
+  const expensesData = safeMonthlyData.map((d: any) => ({
+    label: d.month_name || d.monthName || '',
+    expense: d.expenses ?? 0
   }));
 
-  const receivablesData = monthlyData.map((d) => ({
-    label: d.month_name,
-    receivables: d.outstanding_receivables
+  const receivablesData = safeMonthlyData.map((d: any) => ({
+    label: d.month_name || d.monthName || '',
+    receivables: d.outstanding_receivables ?? d.outstandingReceivables ?? 0
   }));
 
-  const totalExpenseVal = expenseBreakdown.reduce((sum, item) => sum + item.amount, 0);
+  const totalExpenseVal = safeExpenseBreakdown.reduce((sum, item: any) => sum + (item.amount || 0), 0);
   const totalExpenseFormatted = `₹ ${(totalExpenseVal / 100000).toFixed(1)}L`;
 
   return (
@@ -148,11 +151,11 @@ export const FinanceOverviewSection: React.FC<FinanceOverviewSectionProps> = ({
             Expense Breakdown
           </h3>
           <UniversalDonutChart
-            data={expenseBreakdown.map((item) => ({
-              label: item.category_name,
-              value: item.amount,
-              percentage: item.percentage,
-              color: item.color_hex
+            data={safeExpenseBreakdown.map((item: any) => ({
+              label: item.category_name || item.categoryName || '',
+              value: item.amount || 0,
+              percentage: item.percentage || 0,
+              color: item.color_hex || item.colorHex || '#64748B'
             }))}
             centerPrimaryText={totalExpenseFormatted}
             centerSecondaryText="Total Expenses"

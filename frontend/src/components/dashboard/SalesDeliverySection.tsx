@@ -16,7 +16,10 @@ export const SalesDeliverySection: React.FC<SalesDeliverySectionProps> = ({
   const [period, setPeriod] = useState('Last 6 Months');
   const [showPeriodDropdown, setShowPeriodDropdown] = useState(false);
 
-  const totalProjects = projectStatuses.reduce((acc, curr) => acc + curr.project_count, 0);
+  const safePipelineStages = pipelineStages || [];
+  const safeProjectStatuses = projectStatuses || [];
+
+  const totalProjects = safeProjectStatuses.reduce((acc, curr: any) => acc + (curr.project_count ?? curr.projectCount ?? 0), 0);
 
   return (
     <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-soft flex flex-col gap-4">
@@ -71,7 +74,7 @@ export const SalesDeliverySection: React.FC<SalesDeliverySectionProps> = ({
           <h3 className="text-xs font-bold text-slate-800 mb-3">
             Sales Pipeline by Stage
           </h3>
-          <UniversalFunnelChart data={pipelineStages} height={145} />
+          <UniversalFunnelChart data={safePipelineStages} height={145} />
         </div>
 
         {/* Column 2: Active Projects by Status */}
@@ -80,12 +83,12 @@ export const SalesDeliverySection: React.FC<SalesDeliverySectionProps> = ({
             Active Projects by Status
           </h3>
           <UniversalDonutChart
-            data={projectStatuses.map((item) => ({
-              label: item.status_name,
-              value: item.project_count,
-              percentage: item.percentage,
-              color: item.color_hex,
-              secondaryInfo: `${item.project_count}`
+            data={safeProjectStatuses.map((item: any) => ({
+              label: item.status_name ?? item.statusName ?? '',
+              value: item.project_count ?? item.projectCount ?? 0,
+              percentage: item.percentage ?? 0,
+              color: item.color_hex ?? item.colorHex ?? '#10B981',
+              secondaryInfo: `${item.project_count ?? item.projectCount ?? 0}`
             }))}
             centerPrimaryText={`${totalProjects}`}
             centerSecondaryText="Active Projects"

@@ -5,6 +5,7 @@ import { ModulePlaceholder } from '../components/common/ModulePlaceholder';
 import { navigationSections, footerNavigationItems } from '../config/navigation';
 import { CeoDashboardPage } from '../features/dashboard/pages/CeoDashboardPage';
 import { ApprovalInboxPage } from '../features/dashboard/pages/ApprovalInboxPage';
+import { LeadsPage } from '../features/sales/pages/LeadsPage';
 
 const CeoDashboardRoute: React.FC = () => {
   const context = useOutletContext<AppLayoutContextType>();
@@ -27,6 +28,7 @@ export const AppRouter: React.FC = () => {
         {/* Dedicated Full Pages */}
         <Route path="/management/ceo-dashboard" element={<CeoDashboardRoute />} />
         <Route path="/management/approval-inbox" element={<ApprovalInboxPage />} />
+        <Route path="/sales/leads" element={<LeadsPage />} />
 
         {/* Generate placeholder routes dynamically for all other navigation items */}
         {navigationSections.map((section) =>
@@ -34,7 +36,8 @@ export const AppRouter: React.FC = () => {
             .filter(
               (item) =>
                 item.path !== '/management/ceo-dashboard' &&
-                item.path !== '/management/approval-inbox'
+                item.path !== '/management/approval-inbox' &&
+                item.path !== '/sales/leads'
             )
             .map((item) => (
               <Route

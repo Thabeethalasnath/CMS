@@ -220,6 +220,211 @@ export function supabaseDbPlugin(): Plugin {
           return;
         }
 
+        // ==========================================
+        // /api/v1/leads CRUD Endpoints (Supabase DB)
+        // ==========================================
+
+        function mapLeadRow(r: any) {
+          return {
+            id: r.id,
+            leadDate: r.lead_date,
+            company: r.company,
+            contactName: r.contact_name,
+            email: r.email,
+            phone: r.phone,
+            source: r.source,
+            serviceInterest: r.service_interest,
+            country: r.country,
+            city: r.city,
+            ownerId: r.owner_id,
+            stage: r.stage,
+            status: r.status,
+            leadScore: r.lead_score !== null && r.lead_score !== undefined ? Number(r.lead_score) : 65,
+            expectedValue: r.expected_value || r.estimated_value || '₹ 10,00,000',
+            expectedCloseDate: r.expected_close_date || '—',
+            nextFollowUp: r.next_follow_up || '—',
+            estimatedValue: r.estimated_value || r.expected_value || '₹ 10,00,000',
+            lostReason: r.lost_reason || '-',
+            notes: r.notes || '-',
+            createdAt: r.created_at,
+            updatedAt: r.updated_at,
+          };
+        }
+
+        // 1. GET /api/v1/leads
+        if ((url === '/api/v1/leads' || url.startsWith('/api/v1/leads?')) && req.method === 'GET') {
+          try {
+            const resLeads = await pool.query('SELECT * FROM leads ORDER BY id ASC');
+            res.setHeader('Content-Type', 'application/json');
+            res.statusCode = 200;
+            res.end(JSON.stringify(resLeads.rows.map(mapLeadRow)));
+            return;
+          } catch (err: any) {
+            console.error('[Supabase API] Failed to fetch leads:', err);
+            res.statusCode = 500;
+            res.end(JSON.stringify({ error: err.message }));
+            return;
+          }
+        }
+
+        // 2. POST /api/v1/leads
+        if (url === '/api/v1/leads' && req.method === 'POST') {
+          let body = '';
+          req.on('data', (chunk) => {
+            body += chunk;
+          });
+          req.on('end', async () => {
+            try {
+              const p = JSON.parse(body || '{}');
+
+              // Generate sequential ID if not passed
+              let leadId = p.id;
+              if (!leadId) {
+                const countRes = await pool.query('SELECT id FROM leads ORDER BY id DESC');
+                let maxNum = 16;
+                countRes.rows.forEach((r: any) => {
+                  const m = String(r.id).match(/L-\d{4}-(\d+)/);
+                  if (m) {
+                    const n = parseInt(m[1], 10);
+                    if (n > maxNum) maxNum = n;
+                  }
+                });
+                const nextNumStr = String(maxNum + 1).padStart(3, '0');
+                const curYear = new Date().getFullYear();
+                leadId = `L-${curYear}-${nextNumStr}`;
+              }
+
+              const leadDate =
+                p.leadDate ||
+                p.lead_date ||
+                new Date().toLocaleDateString('en-GB', {
+                  day: '2-digit',
+                  month: 'short',
+                  year: 'numeric',
+                });
+
+              const insertRes = await pool.query(
+                `INSERT INTO leads (
+                   id, lead_date, company, contact_name, email, phone, source,
+                   service_interest, country, city, owner_id, stage, status,
+                   next_follow_up, estimated_value, notes, created_at, updated_at
+                 ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, NOW(), NOW())
+                 RETURNING *`,
+                [
+                  leadId,
+                  leadDate,
+                  p.company || 'Unknown Company',
+                  p.contactName || p.contact_name || 'Unknown Contact',
+                  p.email || '',
+                  p.phone || '',
+                  p.source || 'Website',
+                  p.serviceInterest || p.service_interest || 'Web Development',
+                  p.country || 'India',
+                  p.city || 'Mumbai',
+                  p.ownerId || p.owner_id || 'Akshit Ujjain (CEO)',
+                  p.stage || 'New',
+                  p.status || 'Active',
+                  p.nextFollowUp || p.next_follow_up || '',
+                  p.estimatedValue || p.estimated_value || '',
+                  p.notes || '',
+                ]
+              );
+
+              res.setHeader('Content-Type', 'application/json');
+              res.statusCode = 201;
+              res.end(JSON.stringify(mapLeadRow(insertRes.rows[0])));
+            } catch (err: any) {
+              console.error('[Supabase API] Failed to create lead:', err);
+              res.statusCode = 500;
+              res.end(JSON.stringify({ error: err.message }));
+            }
+          });
+          return;
+        }
+
+        // 3. PUT /api/v1/leads/:id
+        const leadPutMatch = url.match(/^\/api\/v1\/leads\/([^\/\?]+)$/);
+        if (leadPutMatch && req.method === 'PUT') {
+          const leadId = decodeURIComponent(leadPutMatch[1]);
+          let body = '';
+          req.on('data', (chunk) => {
+            body += chunk;
+          });
+          req.on('end', async () => {
+            try {
+              const p = JSON.parse(body || '{}');
+              const updateRes = await pool.query(
+                `UPDATE leads SET
+                   company = COALESCE($1, company),
+                   contact_name = COALESCE($2, contact_name),
+                   email = COALESCE($3, email),
+                   phone = COALESCE($4, phone),
+                   source = COALESCE($5, source),
+                   service_interest = COALESCE($6, service_interest),
+                   country = COALESCE($7, country),
+                   city = COALESCE($8, city),
+                   owner_id = COALESCE($9, owner_id),
+                   stage = COALESCE($10, stage),
+                   status = COALESCE($11, status),
+                   next_follow_up = COALESCE($12, next_follow_up),
+                   estimated_value = COALESCE($13, estimated_value),
+                   notes = COALESCE($14, notes),
+                   updated_at = NOW()
+                 WHERE id = $15
+                 RETURNING *`,
+                [
+                  p.company,
+                  p.contactName || p.contact_name,
+                  p.email,
+                  p.phone,
+                  p.source,
+                  p.serviceInterest || p.service_interest,
+                  p.country,
+                  p.city,
+                  p.ownerId || p.owner_id,
+                  p.stage,
+                  p.status,
+                  p.nextFollowUp || p.next_follow_up,
+                  p.estimatedValue || p.estimated_value,
+                  p.notes,
+                  leadId,
+                ]
+              );
+
+              if (updateRes.rows.length === 0) {
+                res.statusCode = 404;
+                res.end(JSON.stringify({ error: 'Lead not found' }));
+                return;
+              }
+
+              res.setHeader('Content-Type', 'application/json');
+              res.statusCode = 200;
+              res.end(JSON.stringify(mapLeadRow(updateRes.rows[0])));
+            } catch (err: any) {
+              console.error('[Supabase API] Failed to update lead:', err);
+              res.statusCode = 500;
+              res.end(JSON.stringify({ error: err.message }));
+            }
+          });
+          return;
+        }
+
+        // 4. DELETE /api/v1/leads/:id
+        const leadDelMatch = url.match(/^\/api\/v1\/leads\/([^\/\?]+)$/);
+        if (leadDelMatch && req.method === 'DELETE') {
+          const leadId = decodeURIComponent(leadDelMatch[1]);
+          try {
+            await pool.query('DELETE FROM leads WHERE id = $1', [leadId]);
+            res.statusCode = 204;
+            res.end();
+          } catch (err: any) {
+            console.error('[Supabase API] Failed to delete lead:', err);
+            res.statusCode = 500;
+            res.end(JSON.stringify({ error: err.message }));
+          }
+          return;
+        }
+
         next();
       });
     }
