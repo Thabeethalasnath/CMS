@@ -1,10 +1,10 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
+import { supabaseDbPlugin } from './src/server/supabaseDbPlugin';
 
-// https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), supabaseDbPlugin()],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
