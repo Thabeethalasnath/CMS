@@ -2,6 +2,8 @@ import React from 'react';
 import { Routes, Route, Navigate, useOutletContext } from 'react-router-dom';
 import { AppLayout, AppLayoutContextType } from '../components/layout/AppLayout';
 import { ModulePlaceholder } from '../components/common/ModulePlaceholder';
+import { CollectionsPage } from '../features/collections/pages/CollectionsPage';
+import { ProposalsPage } from '../features/proposals/pages/ProposalsPage';
 import { navigationSections, footerNavigationItems } from '../config/navigation';
 import { CeoDashboardPage } from '../features/dashboard/pages/CeoDashboardPage';
 import { ApprovalInboxPage } from '../features/dashboard/pages/ApprovalInboxPage';
@@ -24,9 +26,11 @@ export const AppRouter: React.FC = () => {
         {/* Default redirect to CEO Dashboard */}
         <Route index element={<Navigate to="/management/ceo-dashboard" replace />} />
 
-        {/* Dedicated Full Pages */}
+        {/* Dedicated Full Feature Pages */}
         <Route path="/management/ceo-dashboard" element={<CeoDashboardRoute />} />
         <Route path="/management/approval-inbox" element={<ApprovalInboxPage />} />
+        <Route path="/management/collections" element={<CollectionsPage />} />
+        <Route path="/sales/proposals" element={<ProposalsPage />} />
 
         {/* Generate placeholder routes dynamically for all other navigation items */}
         {navigationSections.map((section) =>
@@ -34,7 +38,9 @@ export const AppRouter: React.FC = () => {
             .filter(
               (item) =>
                 item.path !== '/management/ceo-dashboard' &&
-                item.path !== '/management/approval-inbox'
+                item.path !== '/management/approval-inbox' &&
+                item.path !== '/management/collections' &&
+                item.path !== '/sales/proposals'
             )
             .map((item) => (
               <Route

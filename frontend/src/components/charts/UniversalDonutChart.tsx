@@ -78,12 +78,12 @@ export const UniversalDonutChart: React.FC<UniversalDonutChartProps> = ({
         </ResponsiveContainer>
 
         {/* Permanent, Crisp Center Text matching SVG */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none px-1">
-          <span className="text-[14px] font-extrabold text-slate-900 tracking-tight leading-none">
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none px-1" style={{ fontFamily: "'Inter', sans-serif" }}>
+          <span className="text-[18px] font-semibold text-slate-900 tracking-tight leading-[24px]">
             {centerPrimaryText}
           </span>
           {centerSecondaryText && (
-            <span className="text-[9px] text-slate-500 font-medium leading-tight mt-1 truncate max-w-[68px]">
+            <span className="text-[11px] text-slate-500 font-normal leading-[14px] mt-0.5 truncate max-w-[72px]">
               {centerSecondaryText}
             </span>
           )}
@@ -92,7 +92,7 @@ export const UniversalDonutChart: React.FC<UniversalDonutChartProps> = ({
 
       {/* Legend Column with Interactive Hover Sync */}
       {showLegend && (
-        <div className="flex flex-col gap-1 flex-1 min-w-0">
+        <div className="flex flex-col gap-1 flex-1 min-w-0" style={{ fontFamily: "'Inter', sans-serif" }}>
           {data.map((item, idx) => {
             const isHovered = hoveredIndex === idx;
             const pct = item.percentage !== undefined ? item.percentage : Math.round((item.value / total) * 100);
@@ -102,8 +102,8 @@ export const UniversalDonutChart: React.FC<UniversalDonutChartProps> = ({
                 key={idx}
                 onMouseEnter={() => setHoveredIndex(idx)}
                 onMouseLeave={() => setHoveredIndex(null)}
-                className={`flex items-center justify-between text-xs px-2 py-1 rounded-md cursor-pointer transition-all ${
-                  isHovered ? 'bg-slate-100/90 shadow-2xs font-semibold' : 'hover:bg-slate-50'
+                className={`flex items-center justify-between text-[12px] leading-[18px] px-2 py-1 rounded-md cursor-pointer transition-all ${
+                  isHovered ? 'bg-slate-100/90 shadow-2xs font-medium' : 'hover:bg-slate-50'
                 }`}
               >
                 <div className="flex items-center gap-2 min-w-0">
@@ -111,15 +111,15 @@ export const UniversalDonutChart: React.FC<UniversalDonutChartProps> = ({
                     className={`w-2 h-2 rounded-full shrink-0 transition-transform ${isHovered ? 'scale-125' : ''}`}
                     style={{ backgroundColor: item.color }}
                   />
-                  <span className={`truncate text-[11px] ${isHovered ? 'text-slate-950 font-bold' : 'text-slate-600'}`}>
+                  <span className={`truncate text-[12px] leading-[18px] ${isHovered ? 'text-slate-950 font-semibold' : 'text-slate-600 font-normal'}`}>
                     {item.label}
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0 ml-1">
                   {item.secondaryInfo && (
-                    <span className="text-[11px] font-bold text-slate-900">{item.secondaryInfo}</span>
+                    <span className="text-[12px] leading-[18px] font-semibold text-slate-900">{item.secondaryInfo}</span>
                   )}
-                  <span className={`text-[10.5px] ${isHovered ? 'text-slate-900 font-bold' : 'text-slate-400 font-medium'}`}>
+                  <span className={`text-[12px] leading-[18px] ${isHovered ? 'text-slate-900 font-semibold' : 'text-slate-500 font-normal'}`}>
                     {pct}%
                   </span>
                 </div>
