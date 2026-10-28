@@ -12,7 +12,7 @@ import { ToastNotification, ToastItem } from '../../../components/ui/ToastNotifi
 import { ApprovalStatus } from '../../../types/approvals';
 
 export const ApprovalInboxPage: React.FC = () => {
-  const [data, setData] = useState<AllApprovalsData>(approvalsService.getApprovalsData());
+  const [data, setData] = useState<AllApprovalsData>(() => approvalsService.getApprovalsData());
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastRefreshed, setLastRefreshed] = useState('15 Mar 2025, 10:30 AM');
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<string | null>(null);
@@ -53,51 +53,54 @@ export const ApprovalInboxPage: React.FC = () => {
   const [isAddClientOpen, setIsAddClientOpen] = useState(false);
 
   useEffect(() => {
-    // Initial load
-    const fresh = approvalsService.getApprovalsData();
-    setData(fresh);
+    loadLiveApprovals();
   }, []);
 
-  const handleManualRefresh = () => {
+  const loadLiveApprovals = async () => {
+    const fresh = await approvalsService.fetchApprovalsData();
+    setData(fresh);
+  };
+
+  const handleManualRefresh = async () => {
     setIsRefreshing(true);
-    setTimeout(() => {
+    try {
+      const fresh = await approvalsService.fetchApprovalsData();
       const now = new Date();
       const timeStr =
         now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) +
         ', ' +
         now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
       setLastRefreshed(timeStr);
-      setData(approvalsService.getApprovalsData());
+      setData(fresh);
+      addToast('info', 'Data Refreshed', 'Approval records are up-to-date from database.');
+    } catch {
+      addToast('error', 'Refresh Failed', 'Could not refresh approvals data.');
+    } finally {
       setIsRefreshing(false);
-      addToast('info', 'Data Refreshed', 'Approval records are up-to-date.');
-    }, 450);
+    }
   };
 
-  const handleUpdateStatus = (
+  const handleUpdateStatus = async (
     type: 'employee' | 'client' | 'ticketAsset',
     id: number,
     status: ApprovalStatus
   ) => {
     let nameOrCode = '';
-    let prevStatus = 'Pending';
 
     if (type === 'employee') {
       const item = data.employees.find((e) => e.id === id);
-      prevStatus = item?.status || 'Pending';
       nameOrCode = item ? `${item.employee_name} (${item.employee_code})` : 'Employee request';
-      const updated = approvalsService.updateEmployeeStatus(id, status);
+      const updated = await approvalsService.updateEmployeeStatus(id, status);
       setData(updated);
     } else if (type === 'client') {
       const item = data.clients.find((c) => c.id === id);
-      prevStatus = item?.status || 'Pending';
       nameOrCode = item ? `${item.client_name} (${item.approval_id})` : 'Client request';
-      const updated = approvalsService.updateClientStatus(id, status);
+      const updated = await approvalsService.updateClientStatus(id, status);
       setData(updated);
     } else if (type === 'ticketAsset') {
       const item = data.ticketsAssets.find((t) => t.id === id);
-      prevStatus = item?.status || 'Pending';
       nameOrCode = item ? `${item.title} (${item.approval_id})` : 'Ticket / Asset request';
-      const updated = approvalsService.updateTicketAssetStatus(id, status);
+      const updated = await approvalsService.updateTicketAssetStatus(id, status);
       setData(updated);
     }
 
@@ -112,18 +115,18 @@ export const ApprovalInboxPage: React.FC = () => {
     );
   };
 
-  const handleAddEmployeeRequest = (
+  const handleAddEmployeeRequest = async (
     req: Parameters<typeof approvalsService.addEmployeeRequest>[0]
   ) => {
-    const updated = approvalsService.addEmployeeRequest(req);
+    const updated = await approvalsService.addEmployeeRequest(req);
     setData(updated);
     addToast('success', 'Leave Request Created', `${req.employee_name} request submitted as Pending.`);
   };
 
-  const handleAddClientRequest = (
+  const handleAddClientRequest = async (
     req: Parameters<typeof approvalsService.addClientRequest>[0]
   ) => {
-    const updated = approvalsService.addClientRequest(req);
+    const updated = await approvalsService.addClientRequest(req);
     setData(updated);
     addToast('success', 'Client Approval Created', `${req.client_name} request submitted as Pending.`);
   };

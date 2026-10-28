@@ -6,13 +6,13 @@ import { UniversalAreaLineChart } from '../charts/UniversalAreaLineChart';
 import { UniversalDonutChart } from '../charts/UniversalDonutChart';
 
 interface FinanceOverviewSectionProps {
-  monthlyData: FinanceMonthlyRecord[];
-  expenseBreakdown: ExpenseBreakdownItem[];
+  monthlyData?: FinanceMonthlyRecord[];
+  expenseBreakdown?: ExpenseBreakdownItem[];
 }
 
 export const FinanceOverviewSection: React.FC<FinanceOverviewSectionProps> = ({
-  monthlyData,
-  expenseBreakdown
+  monthlyData = [],
+  expenseBreakdown = []
 }) => {
   const [period, setPeriod] = useState('Last 6 Months');
   const [showPeriodDropdown, setShowPeriodDropdown] = useState(false);
@@ -21,23 +21,26 @@ export const FinanceOverviewSection: React.FC<FinanceOverviewSectionProps> = ({
     return `₹ ${(val / 100000).toFixed(1)}L`;
   };
 
-  const invoiceVsCollectionsData = monthlyData.map((d) => ({
+  const safeMonthly = monthlyData || [];
+  const safeExpense = expenseBreakdown || [];
+
+  const invoiceVsCollectionsData = safeMonthly.map((d) => ({
     label: d.month_name,
     invoice: d.invoice_value,
     collected: d.collected_payments
   }));
 
-  const expensesData = monthlyData.map((d) => ({
+  const expensesData = safeMonthly.map((d) => ({
     label: d.month_name,
     expense: d.expenses
   }));
 
-  const receivablesData = monthlyData.map((d) => ({
+  const receivablesData = safeMonthly.map((d) => ({
     label: d.month_name,
     receivables: d.outstanding_receivables
   }));
 
-  const totalExpenseVal = expenseBreakdown.reduce((sum, item) => sum + item.amount, 0);
+  const totalExpenseVal = safeExpense.reduce((sum, item) => sum + (item.amount || 0), 0);
   const totalExpenseFormatted = `₹ ${(totalExpenseVal / 100000).toFixed(1)}L`;
 
   return (
@@ -148,7 +151,7 @@ export const FinanceOverviewSection: React.FC<FinanceOverviewSectionProps> = ({
             Expense Breakdown
           </h3>
           <UniversalDonutChart
-            data={expenseBreakdown.map((item) => ({
+            data={safeExpense.map((item) => ({
               label: item.category_name,
               value: item.amount,
               percentage: item.percentage,

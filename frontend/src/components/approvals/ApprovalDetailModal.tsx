@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { X, CheckCircle, XCircle, Clock, Building, User, Tag, Calendar, FileText, AlertCircle } from 'lucide-react';
 import { ApprovalStatus } from '../../types/approvals';
 
@@ -56,6 +56,18 @@ export const ApprovalDetailModal: React.FC<ApprovalDetailModalProps> = ({
   onClose,
   onUpdateStatus
 }) => {
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    if (isOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen || !item) return null;
 
   const handleAction = (status: ApprovalStatus) => {
@@ -283,15 +295,7 @@ export const ApprovalDetailModal: React.FC<ApprovalDetailModalProps> = ({
         </div>
 
         {/* Footer Actions */}
-        <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-3">
-          <button
-            onClick={() => handleAction('Pending')}
-            disabled={item.status === 'Pending'}
-            className="px-3.5 py-2 rounded-lg text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 hover:bg-amber-100 disabled:opacity-50 transition-colors"
-          >
-            Mark Pending
-          </button>
-
+        <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-2">
           <div className="flex items-center gap-2">
             <button
               onClick={() => handleAction('Rejected')}

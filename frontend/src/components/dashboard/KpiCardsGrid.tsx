@@ -21,7 +21,7 @@ interface KpiCardsGridProps {
 
 export const KpiCardsGrid: React.FC<KpiCardsGridProps> = ({
   cards,
-  onCardClick = () => {}
+  onCardClick
 }) => {
   // Pastel icon tiles styling
   const getThemeStyles = (theme: string) => {
@@ -67,7 +67,7 @@ export const KpiCardsGrid: React.FC<KpiCardsGridProps> = ({
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5 w-full">
-      {cards.map((card) => {
+      {(cards || []).map((card, idx) => {
         const isPositive = card.change_percentage >= 0;
         const isDanger = card.change_type === 'negative';
 
@@ -76,9 +76,11 @@ export const KpiCardsGrid: React.FC<KpiCardsGridProps> = ({
 
         return (
           <div
-            key={card.card_key}
-            onClick={() => onCardClick(card)}
-            className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col justify-between shadow-soft hover:shadow-soft-hover hover:-translate-y-0.5 hover:border-slate-300 transition-all duration-200 cursor-pointer group"
+            key={card.card_key || (card as any).cardKey || `kpi-${card.id || idx}`}
+            onClick={onCardClick ? () => onCardClick(card) : undefined}
+            className={`bg-white border border-slate-200 rounded-2xl p-4 flex flex-col justify-between shadow-soft hover:shadow-soft-hover hover:-translate-y-0.5 hover:border-slate-300 transition-all duration-200 group ${
+              onCardClick ? 'cursor-pointer' : 'cursor-default'
+            }`}
           >
             <div>
               {/* Colored Icon Tile */}

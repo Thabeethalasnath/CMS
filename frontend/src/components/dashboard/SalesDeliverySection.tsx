@@ -5,18 +5,21 @@ import { UniversalFunnelChart } from '../charts/UniversalFunnelChart';
 import { UniversalDonutChart } from '../charts/UniversalDonutChart';
 
 interface SalesDeliverySectionProps {
-  pipelineStages: SalesPipelineStage[];
-  projectStatuses: ProjectStatusItem[];
+  pipelineStages?: SalesPipelineStage[];
+  projectStatuses?: ProjectStatusItem[];
 }
 
 export const SalesDeliverySection: React.FC<SalesDeliverySectionProps> = ({
-  pipelineStages,
-  projectStatuses
+  pipelineStages = [],
+  projectStatuses = []
 }) => {
   const [period, setPeriod] = useState('Last 6 Months');
   const [showPeriodDropdown, setShowPeriodDropdown] = useState(false);
 
-  const totalProjects = projectStatuses.reduce((acc, curr) => acc + curr.project_count, 0);
+  const safeStages = pipelineStages || [];
+  const safeStatuses = projectStatuses || [];
+
+  const totalProjects = safeStatuses.reduce((acc, curr) => acc + (curr.project_count || 0), 0);
 
   return (
     <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-soft flex flex-col gap-4">
@@ -71,7 +74,7 @@ export const SalesDeliverySection: React.FC<SalesDeliverySectionProps> = ({
           <h3 className="text-xs font-bold text-slate-800 mb-3">
             Sales Pipeline by Stage
           </h3>
-          <UniversalFunnelChart data={pipelineStages} height={145} />
+          <UniversalFunnelChart data={safeStages} height={145} />
         </div>
 
         {/* Column 2: Active Projects by Status */}
@@ -80,7 +83,7 @@ export const SalesDeliverySection: React.FC<SalesDeliverySectionProps> = ({
             Active Projects by Status
           </h3>
           <UniversalDonutChart
-            data={projectStatuses.map((item) => ({
+            data={safeStatuses.map((item) => ({
               label: item.status_name,
               value: item.project_count,
               percentage: item.percentage,

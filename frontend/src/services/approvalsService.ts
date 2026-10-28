@@ -10,6 +10,7 @@ import {
   initialClientApprovals,
   initialTicketAssetApprovals
 } from '../constants/initialApprovalsData';
+import { apiClient } from './api/apiClient';
 
 const EMP_KEY = 'kalpanaaa_cms_employee_approvals';
 const CLIENT_KEY = 'kalpanaaa_cms_client_approvals';
@@ -23,7 +24,37 @@ export interface AllApprovalsData {
 }
 
 export const approvalsService = {
-  // Load all approvals
+  // Load all approvals from backend API, with fallback to cache/local
+  async fetchApprovalsData(): Promise<AllApprovalsData> {
+    try {
+      const response = await apiClient.get<any>('/approvals');
+      const data = response.data || response;
+      if (data && (data.employees || data.clients || data.ticketsAssets)) {
+        // Cache in localStorage for offline resiliency
+        try {
+          if (data.employees) localStorage.setItem(EMP_KEY, JSON.stringify(data.employees));
+          if (data.clients) localStorage.setItem(CLIENT_KEY, JSON.stringify(data.clients));
+          if (data.ticketsAssets) localStorage.setItem(TICKET_KEY, JSON.stringify(data.ticketsAssets));
+        } catch {}
+        return {
+          employees: data.employees || [],
+          clients: data.clients || [],
+          ticketsAssets: data.ticketsAssets || [],
+          summary: data.summary || {
+            total: (data.employees?.length || 0) + (data.clients?.length || 0) + (data.ticketsAssets?.length || 0),
+            pending: 0,
+            approved: 0,
+            rejected: 0
+          }
+        };
+      }
+    } catch {
+      // Fallback cleanly to local cache
+    }
+    return this.getApprovalsData();
+  },
+
+  // Synchronous fallback loader
   getApprovalsData(): AllApprovalsData {
     let employees = initialEmployeeApprovals;
     let clients = initialClientApprovals;
@@ -42,8 +73,6 @@ export const approvalsService = {
       console.warn('Failed to parse cached approvals:', e);
     }
 
-    // Dynamic metrics calculation with base totals (matching screenshot defaults 78, 28, 36, 14)
-    // Calculate difference from initial pending/approved/rejected:
     let pendingCount = 0;
     let approvedCount = 0;
     let rejectedCount = 0;
@@ -54,31 +83,7 @@ export const approvalsService = {
       else if (item.status === 'Rejected') rejectedCount++;
     });
 
-    // Provide baseline offsets matching exact screenshot figures: 78 total, 28 pending, 36 approved, 14 rejected
-    const baselinePending = 28;
-    const baselineApproved = 36;
-    const baselineRejected = 14;
-
-    // Relative delta from defaults:
-    const initialPendingCount =
-      initialEmployeeApprovals.filter(e => e.status === 'Pending').length +
-      initialClientApprovals.filter(c => c.status === 'Pending').length +
-      initialTicketAssetApprovals.filter(t => t.status === 'Pending').length;
-
-    const initialApprovedCount =
-      initialEmployeeApprovals.filter(e => e.status === 'Approved').length +
-      initialClientApprovals.filter(c => c.status === 'Approved').length +
-      initialTicketAssetApprovals.filter(t => t.status === 'Approved').length;
-
-    const initialRejectedCount =
-      initialEmployeeApprovals.filter(e => e.status === 'Rejected').length +
-      initialClientApprovals.filter(c => c.status === 'Rejected').length +
-      initialTicketAssetApprovals.filter(t => t.status === 'Rejected').length;
-
-    const finalPending = Math.max(0, baselinePending + (pendingCount - initialPendingCount));
-    const finalApproved = Math.max(0, baselineApproved + (approvedCount - initialApprovedCount));
-    const finalRejected = Math.max(0, baselineRejected + (rejectedCount - initialRejectedCount));
-    const finalTotal = finalPending + finalApproved + finalRejected;
+    const finalTotal = employees.length + clients.length + ticketsAssets.length;
 
     return {
       employees,
@@ -86,75 +91,135 @@ export const approvalsService = {
       ticketsAssets,
       summary: {
         total: finalTotal,
-        pending: finalPending,
-        approved: finalApproved,
-        rejected: finalRejected
+        pending: pendingCount,
+        approved: approvedCount,
+        rejected: rejectedCount
       }
     };
   },
 
-  updateEmployeeStatus(id: number, status: ApprovalStatus): AllApprovalsData {
-    const current = this.getApprovalsData();
-    const updated = current.employees.map((e) => (e.id === id ? { ...e, status } : e));
-    localStorage.setItem(EMP_KEY, JSON.stringify(updated));
-    return this.getApprovalsData();
+  async updateEmployeeStatus(id: number, status: ApprovalStatus): Promise<AllApprovalsData> {
+    try {
+      await apiClient.put(`/approvals/employee/${id}/status`, { status });
+      return await this.fetchApprovalsData();
+    } catch {
+      const current = this.getApprovalsData();
+      const updated = current.employees.map((e) => (e.id === id ? { ...e, status } : e));
+      localStorage.setItem(EMP_KEY, JSON.stringify(updated));
+      return this.getApprovalsData();
+    }
   },
 
-  updateClientStatus(id: number, status: ApprovalStatus): AllApprovalsData {
-    const current = this.getApprovalsData();
-    const updated = current.clients.map((c) => (c.id === id ? { ...c, status } : c));
-    localStorage.setItem(CLIENT_KEY, JSON.stringify(updated));
-    return this.getApprovalsData();
+  async updateClientStatus(id: number, status: ApprovalStatus): Promise<AllApprovalsData> {
+    try {
+      await apiClient.put(`/approvals/client/${id}/status`, { status });
+      return await this.fetchApprovalsData();
+    } catch {
+      const current = this.getApprovalsData();
+      const updated = current.clients.map((c) => (c.id === id ? { ...c, status } : c));
+      localStorage.setItem(CLIENT_KEY, JSON.stringify(updated));
+      return this.getApprovalsData();
+    }
   },
 
-  updateTicketAssetStatus(id: number, status: ApprovalStatus): AllApprovalsData {
-    const current = this.getApprovalsData();
-    const updated = current.ticketsAssets.map((t) => (t.id === id ? { ...t, status } : t));
-    localStorage.setItem(TICKET_KEY, JSON.stringify(updated));
-    return this.getApprovalsData();
+  async updateTicketAssetStatus(id: number, status: ApprovalStatus): Promise<AllApprovalsData> {
+    try {
+      await apiClient.put(`/approvals/ticket-asset/${id}/status`, { status });
+      return await this.fetchApprovalsData();
+    } catch {
+      const current = this.getApprovalsData();
+      const updated = current.ticketsAssets.map((t) => (t.id === id ? { ...t, status } : t));
+      localStorage.setItem(TICKET_KEY, JSON.stringify(updated));
+      return this.getApprovalsData();
+    }
   },
 
-  addEmployeeRequest(
+  async addEmployeeRequest(
     data: Omit<EmployeeApproval, 'id' | 'applied_date' | 'status'>
-  ): AllApprovalsData {
-    const current = this.getApprovalsData();
-    const now = new Date();
-    const applied_date = now.toLocaleDateString('en-GB', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric'
-    });
-    const newRecord: EmployeeApproval = {
-      ...data,
-      id: Date.now(),
-      applied_date,
-      status: 'Pending'
-    };
-    const updated = [newRecord, ...current.employees];
-    localStorage.setItem(EMP_KEY, JSON.stringify(updated));
-    return this.getApprovalsData();
+  ): Promise<AllApprovalsData> {
+    try {
+      const now = new Date();
+      const applied_date = now.toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      });
+      await apiClient.post('/approvals/employee', {
+        ...data,
+        applied_date,
+        status: 'Pending'
+      });
+      return await this.fetchApprovalsData();
+    } catch {
+      const current = this.getApprovalsData();
+      const now = new Date();
+      const applied_date = now.toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      });
+      const newRecord: EmployeeApproval = {
+        ...data,
+        id: Date.now(),
+        applied_date,
+        status: 'Pending'
+      };
+      const updated = [newRecord, ...current.employees];
+      localStorage.setItem(EMP_KEY, JSON.stringify(updated));
+      return this.getApprovalsData();
+    }
   },
 
-  addClientRequest(
+  async addClientRequest(
     data: Omit<ClientApproval, 'id' | 'approval_id' | 'request_date' | 'status'>
-  ): AllApprovalsData {
-    const current = this.getApprovalsData();
-    const now = new Date();
-    const request_date = now.toLocaleDateString('en-GB', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric'
-    });
-    const nextNum = String(current.clients.length + 1).padStart(3, '0');
-    const newRecord: ClientApproval = {
-      ...data,
-      id: Date.now(),
-      approval_id: `APP-2025-${nextNum}`,
-      request_date,
-      status: 'Pending'
-    };
-    const updated = [newRecord, ...current.clients];
-    localStorage.setItem(CLIENT_KEY, JSON.stringify(updated));
-    return this.getApprovalsData();
+  ): Promise<AllApprovalsData> {
+    try {
+      const now = new Date();
+      const request_date = now.toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      });
+      await apiClient.post('/approvals/client', {
+        ...data,
+        request_date,
+        status: 'Pending'
+      });
+      return await this.fetchApprovalsData();
+    } catch {
+      const current = this.getApprovalsData();
+      const now = new Date();
+      const request_date = now.toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      });
+      const nextNum = String(current.clients.length + 1).padStart(3, '0');
+      const newRecord: ClientApproval = {
+        ...data,
+        id: Date.now(),
+        approval_id: `APP-2025-${nextNum}`,
+        request_date,
+        status: 'Pending'
+      };
+      const updated = [newRecord, ...current.clients];
+      localStorage.setItem(CLIENT_KEY, JSON.stringify(updated));
+      return this.getApprovalsData();
+    }
+  },
+
+  async resetData(): Promise<AllApprovalsData> {
+    try {
+      await apiClient.post('/approvals/reset');
+      localStorage.removeItem(EMP_KEY);
+      localStorage.removeItem(CLIENT_KEY);
+      localStorage.removeItem(TICKET_KEY);
+      return await this.fetchApprovalsData();
+    } catch {
+      localStorage.removeItem(EMP_KEY);
+      localStorage.removeItem(CLIENT_KEY);
+      localStorage.removeItem(TICKET_KEY);
+      return this.getApprovalsData();
+    }
   }
 };

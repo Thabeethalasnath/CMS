@@ -5,6 +5,8 @@ import { ModulePlaceholder } from '../components/common/ModulePlaceholder';
 import { navigationSections, footerNavigationItems } from '../config/navigation';
 import { CeoDashboardPage } from '../features/dashboard/pages/CeoDashboardPage';
 import { ApprovalInboxPage } from '../features/dashboard/pages/ApprovalInboxPage';
+import { FollowUpQueuePage } from '../features/dashboard/pages/FollowUpQueuePage';
+import { OpportunitiesPage } from '../features/sales/pages/OpportunitiesPage';
 
 const CeoDashboardRoute: React.FC = () => {
   const context = useOutletContext<AppLayoutContextType>();
@@ -21,12 +23,14 @@ export const AppRouter: React.FC = () => {
   return (
     <Routes>
       <Route element={<AppLayout />}>
-        {/* Default redirect to CEO Dashboard */}
-        <Route index element={<Navigate to="/management/ceo-dashboard" replace />} />
+        {/* Default redirect to Follow-Up Queue (as configured in local changes) */}
+        <Route index element={<Navigate to="/management/follow-up-queue" replace />} />
 
         {/* Dedicated Full Pages */}
+        <Route path="/management/follow-up-queue" element={<FollowUpQueuePage />} />
         <Route path="/management/ceo-dashboard" element={<CeoDashboardRoute />} />
         <Route path="/management/approval-inbox" element={<ApprovalInboxPage />} />
+        <Route path="/sales/opportunities" element={<OpportunitiesPage />} />
 
         {/* Generate placeholder routes dynamically for all other navigation items */}
         {navigationSections.map((section) =>
@@ -34,7 +38,9 @@ export const AppRouter: React.FC = () => {
             .filter(
               (item) =>
                 item.path !== '/management/ceo-dashboard' &&
-                item.path !== '/management/approval-inbox'
+                item.path !== '/management/approval-inbox' &&
+                item.path !== '/management/follow-up-queue' &&
+                item.path !== '/sales/opportunities'
             )
             .map((item) => (
               <Route
@@ -55,7 +61,7 @@ export const AppRouter: React.FC = () => {
         ))}
 
         {/* Catch-all route */}
-        <Route path="*" element={<Navigate to="/management/ceo-dashboard" replace />} />
+        <Route path="*" element={<Navigate to="/management/follow-up-queue" replace />} />
       </Route>
     </Routes>
   );
