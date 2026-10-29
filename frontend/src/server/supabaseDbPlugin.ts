@@ -639,6 +639,10 @@ export function supabaseDbPlugin(): Plugin {
             isLate: Boolean(r.is_late),
             hasOvertime: Boolean(r.has_overtime),
             notes: r.notes || '',
+            paidDayEquivalent: r.paid_day_equivalent || '1.0',
+            lateFlag: r.late_flag || (r.is_late ? 'Yes' : 'No'),
+            overtimeValue: r.overtime_value || '₹ 0',
+            remarks: r.remarks || r.notes || '-',
             createdAt: r.created_at,
             updatedAt: r.updated_at,
           };
@@ -736,8 +740,9 @@ export function supabaseDbPlugin(): Plugin {
                 `INSERT INTO attendance (
                   id, attendance_date, employee_id, employee_name, avatar_initials, avatar_color,
                   status, check_in, check_out, work_hours, overtime_hours,
-                  work_minutes, overtime_minutes, day_type, is_late, has_overtime, notes
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+                  work_minutes, overtime_minutes, day_type, is_late, has_overtime, notes,
+                  paid_day_equivalent, late_flag, overtime_value, remarks
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
                 RETURNING *`,
                 [
                   newId,
@@ -753,10 +758,14 @@ export function supabaseDbPlugin(): Plugin {
                   p.overtimeHours || p.overtime_hours || '0h 00m',
                   p.workMinutes !== undefined ? p.workMinutes : 480,
                   p.overtimeMinutes !== undefined ? p.overtimeMinutes : 0,
-                  p.dayType || p.day_type || 'Regular',
+                  p.dayType || p.day_type || 'Working Day',
                   Boolean(p.isLate ?? p.is_late),
                   Boolean(p.hasOvertime ?? p.has_overtime),
                   p.notes || '',
+                  p.paidDayEquivalent || p.paid_day_equivalent || '1.0',
+                  p.lateFlag || p.late_flag || (p.isLate ? 'Yes' : 'No'),
+                  p.overtimeValue || p.overtime_value || '₹ 0',
+                  p.remarks || p.notes || '-',
                 ]
               );
 
@@ -801,8 +810,12 @@ export function supabaseDbPlugin(): Plugin {
                    is_late = COALESCE($14, is_late),
                    has_overtime = COALESCE($15, has_overtime),
                    notes = COALESCE($16, notes),
+                   paid_day_equivalent = COALESCE($17, paid_day_equivalent),
+                   late_flag = COALESCE($18, late_flag),
+                   overtime_value = COALESCE($19, overtime_value),
+                   remarks = COALESCE($20, remarks),
                    updated_at = NOW()
-                 WHERE id = $17
+                 WHERE id = $21
                  RETURNING *`,
                 [
                   p.attendanceDate || p.attendance_date,
@@ -821,6 +834,10 @@ export function supabaseDbPlugin(): Plugin {
                   p.isLate !== undefined ? Boolean(p.isLate) : (p.is_late !== undefined ? Boolean(p.is_late) : null),
                   p.hasOvertime !== undefined ? Boolean(p.hasOvertime) : (p.has_overtime !== undefined ? Boolean(p.has_overtime) : null),
                   p.notes,
+                  p.paidDayEquivalent || p.paid_day_equivalent,
+                  p.lateFlag || p.late_flag,
+                  p.overtimeValue || p.overtime_value,
+                  p.remarks,
                   recordId,
                 ]
               );
