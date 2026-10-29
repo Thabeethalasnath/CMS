@@ -274,42 +274,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
         }}
         aria-label="Aside - Main Sidebar Navigation"
       >
-        {/* Half Circle Sidebar Rail Toggle Button (19. Half Circle) */}
-        <button
-          type="button"
-          onClick={handleToggleCollapse}
-          className={`sidebar-rail-half-circle-btn ${isCollapsed ? 'collapsed' : 'expanded'}`}
-          title={isCollapsed ? "Expand sidebar (Ctrl+B)" : "Collapse sidebar (Ctrl+B)"}
-          aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-        >
-          {isCollapsed ? (
-            <svg
-              width="7"
-              height="10"
-              viewBox="0 0 7 10"
-              fill="none"
-              stroke="#FFFFFF"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <polyline points="2 1.5 5.5 5 2 8.5" />
-            </svg>
-          ) : (
-            <svg
-              width="7"
-              height="10"
-              viewBox="0 0 7 10"
-              fill="none"
-              stroke="#FFFFFF"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <polyline points="5 1.5 1.5 5 5 8.5" />
-            </svg>
-          )}
-        </button>
 
         {/* Brand Header */}
         <div
