@@ -46,6 +46,12 @@ export const Sidebar: React.FC = () => {
     if (path === '/management/ceo-dashboard' && (location.pathname === '/' || location.pathname === '')) {
       return true;
     }
+    if (path === '/hr/attendance' && (location.pathname === '/attendance' || location.pathname === '/hr/attendance')) {
+      return true;
+    }
+    if (path === '/clients/list' && (location.pathname === '/clients' || location.pathname === '/clients/list')) {
+      return true;
+    }
     return location.pathname === path;
   };
 
@@ -53,7 +59,9 @@ export const Sidebar: React.FC = () => {
     return section.items.some(
       (item) =>
         item.path === location.pathname ||
-        (item.path === '/management/ceo-dashboard' && (location.pathname === '/' || location.pathname === ''))
+        (item.path === '/management/ceo-dashboard' && (location.pathname === '/' || location.pathname === '')) ||
+        (item.path === '/hr/attendance' && (location.pathname === '/attendance' || location.pathname.startsWith('/hr/attendance'))) ||
+        (item.path === '/clients/list' && (location.pathname === '/clients' || location.pathname.startsWith('/clients')))
     );
   };
 

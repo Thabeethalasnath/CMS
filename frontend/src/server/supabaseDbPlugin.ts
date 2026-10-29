@@ -616,6 +616,249 @@ export function supabaseDbPlugin(): Plugin {
           return;
         }
 
+        // ===============================================
+        // /api/v1/attendance CRUD Endpoints (Supabase DB)
+        // ===============================================
+
+        function mapAttendanceRow(r: any) {
+          return {
+            id: r.id,
+            attendanceDate: r.attendance_date,
+            employeeId: r.employee_id,
+            employeeName: r.employee_name,
+            avatarInitials: r.avatar_initials,
+            avatarColor: r.avatar_color,
+            status: r.status,
+            checkIn: r.check_in,
+            checkOut: r.check_out,
+            workHours: r.work_hours,
+            overtimeHours: r.overtime_hours,
+            workMinutes: r.work_minutes,
+            overtimeMinutes: r.overtime_minutes,
+            dayType: r.day_type,
+            isLate: Boolean(r.is_late),
+            hasOvertime: Boolean(r.has_overtime),
+            notes: r.notes || '',
+            createdAt: r.created_at,
+            updatedAt: r.updated_at,
+          };
+        }
+
+        // 1. GET /api/v1/attendance/metrics
+        if (url.startsWith('/api/v1/attendance/metrics') && req.method === 'GET') {
+          try {
+            const countRes = await pool.query('SELECT COUNT(*) as total FROM attendance');
+            const presentRes = await pool.query("SELECT COUNT(*) as count FROM attendance WHERE LOWER(status) = 'present'");
+            const lateRes = await pool.query('SELECT COUNT(*) as count FROM attendance WHERE is_late = true');
+            const otRes = await pool.query('SELECT COALESCE(SUM(overtime_minutes), 0) as ot_min FROM attendance');
+
+            const total = parseInt(countRes.rows[0].total, 10);
+            const present = parseInt(presentRes.rows[0].count, 10);
+            const late = parseInt(lateRes.rows[0].count, 10);
+            const otHours = (parseInt(otRes.rows[0].ot_min || 0, 10) / 60).toFixed(1);
+
+            res.setHeader('Content-Type', 'application/json');
+            res.statusCode = 200;
+            res.end(
+              JSON.stringify({
+                totalRecords: total,
+                totalRecordsTrend: '↑ 12% vs last month',
+                presentRecords: present,
+                presentRecordsTrend: '↑ 8% vs last month',
+                lateRecords: late,
+                lateRecordsTrend: '↓ 18% vs last month',
+                totalOvertimeHours: otHours,
+                totalOvertimeHoursTrend: '↑ 25% vs last month',
+              })
+            );
+          } catch (err: any) {
+            console.error('[Supabase API] Failed to get attendance metrics:', err);
+            res.statusCode = 500;
+            res.end(JSON.stringify({ error: err.message }));
+          }
+          return;
+        }
+
+        // 2. GET /api/v1/attendance (All records)
+        if ((url === '/api/v1/attendance' || url.startsWith('/api/v1/attendance?')) && req.method === 'GET') {
+          try {
+            const result = await pool.query('SELECT * FROM attendance ORDER BY id DESC');
+            res.setHeader('Content-Type', 'application/json');
+            res.statusCode = 200;
+            res.end(JSON.stringify(result.rows.map(mapAttendanceRow)));
+          } catch (err: any) {
+            console.error('[Supabase API] Failed to fetch attendance:', err);
+            res.statusCode = 500;
+            res.end(JSON.stringify({ error: err.message }));
+          }
+          return;
+        }
+
+        // 3. GET /api/v1/attendance/:id
+        const attGetMatch = url.match(/^\/api\/v1\/attendance\/([^\/\?]+)$/);
+        if (attGetMatch && req.method === 'GET') {
+          const recordId = decodeURIComponent(attGetMatch[1]);
+          try {
+            const result = await pool.query('SELECT * FROM attendance WHERE id = $1', [recordId]);
+            if (result.rows.length === 0) {
+              res.statusCode = 404;
+              res.end(JSON.stringify({ error: 'Attendance record not found' }));
+              return;
+            }
+            res.setHeader('Content-Type', 'application/json');
+            res.statusCode = 200;
+            res.end(JSON.stringify(mapAttendanceRow(result.rows[0])));
+          } catch (err: any) {
+            console.error('[Supabase API] Failed to get attendance record:', err);
+            res.statusCode = 500;
+            res.end(JSON.stringify({ error: err.message }));
+          }
+          return;
+        }
+
+        // 4. POST /api/v1/attendance
+        if (url === '/api/v1/attendance' && req.method === 'POST') {
+          let body = '';
+          req.on('data', (chunk) => {
+            body += chunk;
+          });
+          req.on('end', async () => {
+            try {
+              const p = JSON.parse(body || '{}');
+              let newId = p.id;
+              if (!newId) {
+                const countRes = await pool.query('SELECT COUNT(*) as cnt FROM attendance');
+                const nextNum = parseInt(countRes.rows[0].cnt, 10) + 1;
+                newId = `ATT-${String(nextNum).padStart(6, '0')}`;
+              }
+
+              const insertRes = await pool.query(
+                `INSERT INTO attendance (
+                  id, attendance_date, employee_id, employee_name, avatar_initials, avatar_color,
+                  status, check_in, check_out, work_hours, overtime_hours,
+                  work_minutes, overtime_minutes, day_type, is_late, has_overtime, notes
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+                RETURNING *`,
+                [
+                  newId,
+                  p.attendanceDate || p.attendance_date || '31 Oct 2026',
+                  p.employeeId || p.employee_id || 'EMP-001',
+                  p.employeeName || p.employee_name || 'Amit Sharma',
+                  p.avatarInitials || p.avatar_initials || 'AS',
+                  p.avatarColor || p.avatar_color || 'blue',
+                  p.status || 'Present',
+                  p.checkIn || p.check_in || '09:00 AM',
+                  p.checkOut || p.check_out || '06:00 PM',
+                  p.workHours || p.work_hours || '8h 00m',
+                  p.overtimeHours || p.overtime_hours || '0h 00m',
+                  p.workMinutes !== undefined ? p.workMinutes : 480,
+                  p.overtimeMinutes !== undefined ? p.overtimeMinutes : 0,
+                  p.dayType || p.day_type || 'Regular',
+                  Boolean(p.isLate ?? p.is_late),
+                  Boolean(p.hasOvertime ?? p.has_overtime),
+                  p.notes || '',
+                ]
+              );
+
+              res.setHeader('Content-Type', 'application/json');
+              res.statusCode = 201;
+              res.end(JSON.stringify(mapAttendanceRow(insertRes.rows[0])));
+            } catch (err: any) {
+              console.error('[Supabase API] Failed to create attendance:', err);
+              res.statusCode = 500;
+              res.end(JSON.stringify({ error: err.message }));
+            }
+          });
+          return;
+        }
+
+        // 5. PUT /api/v1/attendance/:id
+        const attPutMatch = url.match(/^\/api\/v1\/attendance\/([^\/\?]+)$/);
+        if (attPutMatch && req.method === 'PUT') {
+          const recordId = decodeURIComponent(attPutMatch[1]);
+          let body = '';
+          req.on('data', (chunk) => {
+            body += chunk;
+          });
+          req.on('end', async () => {
+            try {
+              const p = JSON.parse(body || '{}');
+              const updateRes = await pool.query(
+                `UPDATE attendance SET
+                   attendance_date = COALESCE($1, attendance_date),
+                   employee_id = COALESCE($2, employee_id),
+                   employee_name = COALESCE($3, employee_name),
+                   avatar_initials = COALESCE($4, avatar_initials),
+                   avatar_color = COALESCE($5, avatar_color),
+                   status = COALESCE($6, status),
+                   check_in = COALESCE($7, check_in),
+                   check_out = COALESCE($8, check_out),
+                   work_hours = COALESCE($9, work_hours),
+                   overtime_hours = COALESCE($10, overtime_hours),
+                   work_minutes = COALESCE($11, work_minutes),
+                   overtime_minutes = COALESCE($12, overtime_minutes),
+                   day_type = COALESCE($13, day_type),
+                   is_late = COALESCE($14, is_late),
+                   has_overtime = COALESCE($15, has_overtime),
+                   notes = COALESCE($16, notes),
+                   updated_at = NOW()
+                 WHERE id = $17
+                 RETURNING *`,
+                [
+                  p.attendanceDate || p.attendance_date,
+                  p.employeeId || p.employee_id,
+                  p.employeeName || p.employee_name,
+                  p.avatarInitials || p.avatar_initials,
+                  p.avatarColor || p.avatar_color,
+                  p.status,
+                  p.checkIn || p.check_in,
+                  p.checkOut || p.check_out,
+                  p.workHours || p.work_hours,
+                  p.overtimeHours || p.overtime_hours,
+                  p.workMinutes !== undefined ? p.workMinutes : null,
+                  p.overtimeMinutes !== undefined ? p.overtimeMinutes : null,
+                  p.dayType || p.day_type,
+                  p.isLate !== undefined ? Boolean(p.isLate) : (p.is_late !== undefined ? Boolean(p.is_late) : null),
+                  p.hasOvertime !== undefined ? Boolean(p.hasOvertime) : (p.has_overtime !== undefined ? Boolean(p.has_overtime) : null),
+                  p.notes,
+                  recordId,
+                ]
+              );
+
+              if (updateRes.rows.length === 0) {
+                res.statusCode = 404;
+                res.end(JSON.stringify({ error: 'Attendance record not found' }));
+                return;
+              }
+
+              res.setHeader('Content-Type', 'application/json');
+              res.statusCode = 200;
+              res.end(JSON.stringify(mapAttendanceRow(updateRes.rows[0])));
+            } catch (err: any) {
+              console.error('[Supabase API] Failed to update attendance:', err);
+              res.statusCode = 500;
+              res.end(JSON.stringify({ error: err.message }));
+            }
+          });
+          return;
+        }
+
+        // 6. DELETE /api/v1/attendance/:id
+        const attDelMatch = url.match(/^\/api\/v1\/attendance\/([^\/\?]+)$/);
+        if (attDelMatch && req.method === 'DELETE') {
+          const recordId = decodeURIComponent(attDelMatch[1]);
+          try {
+            await pool.query('DELETE FROM attendance WHERE id = $1', [recordId]);
+            res.statusCode = 204;
+            res.end();
+          } catch (err: any) {
+            console.error('[Supabase API] Failed to delete attendance record:', err);
+            res.statusCode = 500;
+            res.end(JSON.stringify({ error: err.message }));
+          }
+          return;
+        }
+
         next();
       });
     }
