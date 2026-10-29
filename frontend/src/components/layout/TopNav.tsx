@@ -85,47 +85,30 @@ export const TopNav: React.FC<TopNavProps> = ({
           minWidth: 0,
         }}
       >
-        {/* Button - Hamburger */}
+        {/* Button - Sidebar Collapse Toggle (matching Search Bar theme) */}
         <button
           type="button"
           onClick={onMenuClick}
           aria-label="Toggle sidebar"
           title={isSidebarCollapsed ? "Expand sidebar (Ctrl+B)" : "Collapse sidebar (Ctrl+B)"}
-          className="hover:bg-slate-100"
-          style={{
-            boxSizing: 'border-box',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '6px',
-            width: '32px',
-            height: '32px',
-            borderRadius: '6px',
-            flex: 'none',
-            order: 0,
-            flexGrow: 0,
-            flexShrink: 0,
-            border: 'none',
-            background: isSidebarCollapsed ? '#EEF2FF' : 'transparent',
-            cursor: 'pointer',
-            transform: isSidebarCollapsed ? 'rotate(90deg)' : 'rotate(0deg)',
-            transition: 'transform 0.28s cubic-bezier(0.2, 0, 0, 1), background-color 0.15s ease',
-          }}
+          className="sidebar-collapse-btn"
         >
-          {/* SVG 20x20 Vector border: 1.66667px solid */}
           <svg
-            style={{ width: '20px', height: '20px', transition: 'stroke 0.2s ease' }}
+            style={{
+              width: '16px',
+              height: '16px',
+              transition: 'transform 0.28s cubic-bezier(0.2, 0, 0, 1), stroke 0.2s ease',
+              transform: isSidebarCollapsed ? 'rotate(180deg)' : 'rotate(0deg)',
+              display: 'block',
+            }}
             viewBox="0 0 24 24"
             fill="none"
-            stroke={isSidebarCollapsed ? '#4F46E5' : '#64748B'}
-            strokeWidth="1.66667"
+            stroke="currentColor"
+            strokeWidth="2.2"
             strokeLinecap="round"
             strokeLinejoin="round"
           >
-            <line x1="4" y1="6" x2="20" y2="6" />
-            <line x1="4" y1="12" x2="20" y2="12" />
-            <line x1="4" y1="18" x2="20" y2="18" />
+            <polyline points="14.5 17 9.5 12 14.5 7" />
           </svg>
         </button>
 

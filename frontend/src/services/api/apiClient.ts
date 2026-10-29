@@ -10,13 +10,73 @@ export interface ApiResponse<T> {
 export class ApiError extends Error {
   status: number;
   data?: unknown;
+  fieldErrors?: Record<string, string>;
 
-  constructor(message: string, status: number, data?: unknown) {
+  constructor(message: string, status: number, data?: unknown, fieldErrors?: Record<string, string>) {
     super(message);
     this.name = 'ApiError';
     this.status = status;
     this.data = data;
+    this.fieldErrors = fieldErrors;
   }
+}
+
+export async function apiRequest<T>(
+  url: string,
+  options: RequestInit = {}
+): Promise<T> {
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
+    ...(options.headers || {}),
+  };
+
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      ...options,
+      headers,
+    });
+  } catch (networkErr: unknown) {
+    const rawMsg = networkErr instanceof Error ? networkErr.message : String(networkErr);
+    const isFetchError =
+      rawMsg.toLowerCase().includes('fetch') ||
+      rawMsg.toLowerCase().includes('network') ||
+      rawMsg.toLowerCase().includes('failed');
+
+    const message = isFetchError
+      ? `Cannot connect to backend server at ${url}. Please verify that Spring Boot is running on port 8080 and CORS is configured.`
+      : `Network request error: ${rawMsg}`;
+
+    throw new ApiError(message, 0);
+  }
+
+  if (!response.ok) {
+    let errorMessage = `Request failed with status ${response.status}`;
+    let fieldErrors: Record<string, string> | undefined;
+    let errorJson: any = null;
+
+    try {
+      errorJson = await response.json();
+      if (errorJson?.message) {
+        errorMessage = errorJson.message;
+      }
+      if (errorJson?.fieldErrors) {
+        fieldErrors = errorJson.fieldErrors;
+      }
+    } catch {
+      // Ignore non-JSON error bodies
+    }
+
+    throw new ApiError(errorMessage, response.status, errorJson, fieldErrors);
+  }
+
+  // Handle 204 No Content
+  if (response.status === 204) {
+    return {} as T;
+  }
+
+  return response.json();
 }
 
 async function request<T>(

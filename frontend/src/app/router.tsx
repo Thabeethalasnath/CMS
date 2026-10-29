@@ -7,6 +7,10 @@ import { CeoDashboardPage } from '../features/dashboard/pages/CeoDashboardPage';
 import { ApprovalInboxPage } from '../features/dashboard/pages/ApprovalInboxPage';
 import { FollowUpQueuePage } from '../features/dashboard/pages/FollowUpQueuePage';
 import { OpportunitiesPage } from '../features/sales/pages/OpportunitiesPage';
+import { ContractsPage } from '../features/sales/pages/ContractsPage';
+import { ProposalsPage } from '../features/proposals/pages/ProposalsPage';
+import { CollectionsPage } from '../features/collections/pages/CollectionsPage';
+import { EmployeeMasterPage } from '../features/hr/pages/EmployeeMasterPage';
 
 const CeoDashboardRoute: React.FC = () => {
   const context = useOutletContext<AppLayoutContextType>();
@@ -14,7 +18,7 @@ const CeoDashboardRoute: React.FC = () => {
     <CeoDashboardPage
       dateRange={context?.dateRange || 'Apr 2024 - Mar 2025'}
       isEditModalOpen={context?.isEditModalOpen || false}
-      onCloseEditModal={() => context?.setIsEditModalOpen(false)}
+      onCloseEditModal={() => context?.setIsEditModalOpen?.(false)}
     />
   );
 };
@@ -23,16 +27,20 @@ export const AppRouter: React.FC = () => {
   return (
     <Routes>
       <Route element={<AppLayout />}>
-        {/* Default redirect to Follow-Up Queue (as configured in local changes) */}
-        <Route index element={<Navigate to="/management/follow-up-queue" replace />} />
+        {/* Default redirect to CEO Dashboard */}
+        <Route index element={<Navigate to="/management/ceo-dashboard" replace />} />
 
         {/* Dedicated Full Pages */}
-        <Route path="/management/follow-up-queue" element={<FollowUpQueuePage />} />
         <Route path="/management/ceo-dashboard" element={<CeoDashboardRoute />} />
         <Route path="/management/approval-inbox" element={<ApprovalInboxPage />} />
+        <Route path="/management/follow-up-queue" element={<FollowUpQueuePage />} />
+        <Route path="/management/collections" element={<CollectionsPage />} />
         <Route path="/sales/opportunities" element={<OpportunitiesPage />} />
+        <Route path="/sales/proposals" element={<ProposalsPage />} />
+        <Route path="/sales/contracts" element={<ContractsPage />} />
+        <Route path="/hr/employee-master" element={<EmployeeMasterPage />} />
 
-        {/* Generate placeholder routes dynamically for all other navigation items */}
+        {/* Generate dynamic module engine routes for all other navigation items */}
         {navigationSections.map((section) =>
           section.items
             .filter(
@@ -40,28 +48,32 @@ export const AppRouter: React.FC = () => {
                 item.path !== '/management/ceo-dashboard' &&
                 item.path !== '/management/approval-inbox' &&
                 item.path !== '/management/follow-up-queue' &&
-                item.path !== '/sales/opportunities'
+                item.path !== '/management/collections' &&
+                item.path !== '/sales/opportunities' &&
+                item.path !== '/sales/proposals' &&
+                item.path !== '/sales/contracts' &&
+                item.path !== '/hr/employee-master'
             )
             .map((item) => (
               <Route
-                key={item.id}
+                key={item.path}
                 path={item.path}
                 element={<ModulePlaceholder title={item.label} category={section.title} />}
               />
             ))
         )}
 
-        {/* Footer Navigation items */}
+        {/* Footer navigation routes */}
         {footerNavigationItems.map((item) => (
           <Route
-            key={item.id}
+            key={item.path}
             path={item.path}
-            element={<ModulePlaceholder title={item.label} category="Support & Preferences" />}
+            element={<ModulePlaceholder title={item.label} category="General" />}
           />
         ))}
 
         {/* Catch-all route */}
-        <Route path="*" element={<Navigate to="/management/follow-up-queue" replace />} />
+        <Route path="*" element={<Navigate to="/management/ceo-dashboard" replace />} />
       </Route>
     </Routes>
   );

@@ -1,9 +1,11 @@
 package com.company.project.dashboard;
 
+import com.company.project.dashboard.repository.ContractRepository;
 import com.company.project.dashboard.repository.EmployeeApprovalRepository;
 import com.company.project.dashboard.repository.FollowUpItemRepository;
 import com.company.project.dashboard.repository.OpportunityRepository;
 import com.company.project.dashboard.service.ApprovalService;
+import com.company.project.dashboard.service.ContractService;
 import com.company.project.dashboard.service.FollowUpService;
 import com.company.project.dashboard.service.OpportunityService;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +24,8 @@ public class DataSeeder implements CommandLineRunner {
     private final OpportunityService opportunityService;
     private final EmployeeApprovalRepository employeeApprovalRepository;
     private final ApprovalService approvalService;
+    private final ContractRepository contractRepository;
+    private final ContractService contractService;
 
     @Override
     public void run(String... args) {
@@ -50,6 +54,15 @@ public class DataSeeder implements CommandLineRunner {
             log.info("Approvals seed data initialized with {} employee items.", employeeApprovalRepository.count());
         } else {
             log.info("Approvals already contains {} employee items. Skipping seeding.", approvalCount);
+        }
+
+        long contractCount = contractRepository.count();
+        if (contractCount == 0) {
+            log.info("Initializing Contracts seed data in database...");
+            contractService.resetSeedData();
+            log.info("Contracts seed data initialized with {} items.", contractRepository.count());
+        } else {
+            log.info("Contracts already contains {} items. Skipping seeding.", contractCount);
         }
     }
 }

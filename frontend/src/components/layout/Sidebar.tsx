@@ -26,6 +26,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const [menuSearch, setMenuSearch] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const expandedSearchInputRef = useRef<HTMLInputElement>(null);
 
   // Category flyout portal state for collapsed rail mode
   const [flyoutSection, setFlyoutSection] = useState<NavSection | null>(null);
@@ -56,7 +57,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     searchCloseTimerRef.current = setTimeout(() => {
       setIsSearchFlyoutOpen(false);
       setSearchAnchorRect(null);
-    }, 180);
+    }, 220);
   };
 
   const cancelCloseSearchFlyout = () => {
@@ -267,12 +268,49 @@ export const Sidebar: React.FC<SidebarProps> = ({
           userSelect: 'none',
           flexShrink: 0,
           position: 'relative',
-          overflow: 'hidden',
+          overflow: 'visible',
           fontFamily: "'Inter', sans-serif",
           zIndex: 30,
         }}
         aria-label="Aside - Main Sidebar Navigation"
       >
+        {/* Half Circle Sidebar Rail Toggle Button (19. Half Circle) */}
+        <button
+          type="button"
+          onClick={handleToggleCollapse}
+          className={`sidebar-rail-half-circle-btn ${isCollapsed ? 'collapsed' : 'expanded'}`}
+          title={isCollapsed ? "Expand sidebar (Ctrl+B)" : "Collapse sidebar (Ctrl+B)"}
+          aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          {isCollapsed ? (
+            <svg
+              width="7"
+              height="10"
+              viewBox="0 0 7 10"
+              fill="none"
+              stroke="#FFFFFF"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polyline points="2 1.5 5.5 5 2 8.5" />
+            </svg>
+          ) : (
+            <svg
+              width="7"
+              height="10"
+              viewBox="0 0 7 10"
+              fill="none"
+              stroke="#FFFFFF"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polyline points="5 1.5 1.5 5 5 8.5" />
+            </svg>
+          )}
+        </button>
+
         {/* Brand Header */}
         <div
           style={{
@@ -418,6 +456,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 style={{ flexShrink: 0, marginRight: '8px', transition: 'color 0.15s ease' }}
               />
               <input
+                ref={expandedSearchInputRef}
                 type="text"
                 value={menuSearch}
                 onChange={(e) => setMenuSearch(e.target.value)}
@@ -530,32 +569,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
           >
             <button
               type="button"
-              onClick={(e) => {
-                if (isSearchFlyoutOpen) {
-                  closeSearchFlyoutImmediate();
-                } else {
-                  openSearchFlyout(e);
+              onClick={() => {
+                closeSearchFlyoutImmediate();
+                if (isCollapsed) {
+                  handleToggleCollapse();
+                  setTimeout(() => {
+                    expandedSearchInputRef.current?.focus();
+                  }, 120);
                 }
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = isSearchFlyoutOpen
-                  ? '#152755'
-                  : 'rgba(255, 255, 255, 0.08)';
-                e.currentTarget.style.color = '#FFFFFF';
-                e.currentTarget.style.borderColor = isSearchFlyoutOpen
-                  ? '#3B82F6'
-                  : '#2A3B66';
+                openSearchFlyout(e);
               }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = isSearchFlyoutOpen
-                  ? '#152755'
-                  : '#101C38';
-                e.currentTarget.style.color = isSearchFlyoutOpen
-                  ? '#FFFFFF'
-                  : '#8A99B5';
-                e.currentTarget.style.borderColor = isSearchFlyoutOpen
-                  ? '#3B82F6'
-                  : '#1A294E';
+              onMouseLeave={() => {
+                scheduleCloseSearchFlyout();
               }}
               tabIndex={isCollapsed ? 0 : -1}
               aria-label="Search navigation"

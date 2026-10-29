@@ -211,12 +211,37 @@ button {
   animation: toastProgress 4.5s linear forwards;
 }
 
+/* Custom Accessible Table Scrollbar */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #CBD5E1 #F8FAFC;
+}
 
+.custom-scrollbar::-webkit-scrollbar {
+  height: 7px;
+  width: 7px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #F8FAFC;
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 4px;
+  border: 1px solid #F8FAFC;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
 
 /* Flyout custom scrollbar matching design reference */
 .search-flyout-scrollable {
   scrollbar-width: thin;
   scrollbar-color: #E2E8F0 transparent;
+  scrollbar-gutter: stable;
 }
 
 .search-flyout-scrollable::-webkit-scrollbar {
@@ -245,4 +270,30 @@ button {
     opacity: 1;
     transform: scale(1) translateX(0);
   }
+}
+
+/* Sidebar collapse button - styled to match TopNav Search Bar theme */
+.sidebar-collapse-btn {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.sidebar-collapse-btn:hover {
+  background: #F1F5F9;
+  border-color: #CBD5E1;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.sidebar-collapse-btn:active {
+  transform: scale(0.95);
+  background: #E2E8F0;
 }
