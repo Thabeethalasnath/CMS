@@ -6,6 +6,7 @@ import { navigationSections, footerNavigationItems } from '../config/navigation'
 import { CeoDashboardPage } from '../features/dashboard/pages/CeoDashboardPage';
 import { ApprovalInboxPage } from '../features/dashboard/pages/ApprovalInboxPage';
 import { LeadsPage } from '../features/sales/pages/LeadsPage';
+import { ClientsPage } from '../features/clients/pages/ClientsPage';
 
 const CeoDashboardRoute: React.FC = () => {
   const context = useOutletContext<AppLayoutContextType>();
@@ -29,6 +30,8 @@ export const AppRouter: React.FC = () => {
         <Route path="/management/ceo-dashboard" element={<CeoDashboardRoute />} />
         <Route path="/management/approval-inbox" element={<ApprovalInboxPage />} />
         <Route path="/sales/leads" element={<LeadsPage />} />
+        <Route path="/clients/list" element={<ClientsPage />} />
+        <Route path="/clients" element={<Navigate to="/clients/list" replace />} />
 
         {/* Generate placeholder routes dynamically for all other navigation items */}
         {navigationSections.map((section) =>
@@ -37,7 +40,9 @@ export const AppRouter: React.FC = () => {
               (item) =>
                 item.path !== '/management/ceo-dashboard' &&
                 item.path !== '/management/approval-inbox' &&
-                item.path !== '/sales/leads'
+                item.path !== '/sales/leads' &&
+                item.path !== '/clients/list' &&
+                item.path !== '/clients'
             )
             .map((item) => (
               <Route

@@ -425,6 +425,197 @@ export function supabaseDbPlugin(): Plugin {
           return;
         }
 
+        // ==========================================
+        // CLIENTS ENDPOINTS (/api/v1/clients)
+        // ==========================================
+        function mapClientRow(r: any) {
+          return {
+            id: r.id,
+            clientCode: r.client_code,
+            clientName: r.client_name,
+            companyName: r.company_name,
+            industry: r.industry,
+            contactPerson: r.contact_person,
+            email: r.email,
+            phone: r.phone,
+            country: r.country || 'India',
+            city: r.city,
+            clientType: r.client_type || 'Enterprise',
+            accountOwner: r.account_owner || 'EMP-001',
+            status: r.status || 'Active',
+            creditLimit: r.credit_limit || '₹ 10,00,000',
+            onboardingDate: r.onboarding_date || '15 Jan 2024',
+            notes: r.notes || '',
+            createdAt: r.created_at,
+            updatedAt: r.updated_at,
+          };
+        }
+
+        // 1. GET /api/v1/clients
+        if ((url === '/api/v1/clients' || url.startsWith('/api/v1/clients?')) && req.method === 'GET') {
+          try {
+            const resClients = await pool.query('SELECT * FROM clients ORDER BY id ASC');
+            res.setHeader('Content-Type', 'application/json');
+            res.statusCode = 200;
+            res.end(JSON.stringify(resClients.rows.map(mapClientRow)));
+            return;
+          } catch (err: any) {
+            console.error('[Supabase API] Failed to fetch clients:', err);
+            res.statusCode = 500;
+            res.end(JSON.stringify({ error: err.message }));
+            return;
+          }
+        }
+
+        // 2. POST /api/v1/clients
+        if (url === '/api/v1/clients' && req.method === 'POST') {
+          let body = '';
+          req.on('data', (chunk) => {
+            body += chunk;
+          });
+          req.on('end', async () => {
+            try {
+              const p = JSON.parse(body || '{}');
+              let clientId = p.id;
+              if (!clientId) {
+                const countRes = await pool.query('SELECT id FROM clients ORDER BY id DESC');
+                let maxNum = 16;
+                countRes.rows.forEach((r: any) => {
+                  const m = String(r.id).match(/C-(\d+)/);
+                  if (m) {
+                    const n = parseInt(m[1], 10);
+                    if (n > maxNum) maxNum = n;
+                  }
+                });
+                const nextNumStr = String(maxNum + 1).padStart(3, '0');
+                clientId = `C-${nextNumStr}`;
+              }
+
+              const clientCode = p.clientCode || p.client_code || `CL-${clientId.replace('C-', '')}`;
+              const insertRes = await pool.query(
+                `INSERT INTO clients (
+                   id, client_code, client_name, company_name, industry, contact_person,
+                   email, phone, country, city, client_type, account_owner,
+                   status, credit_limit, onboarding_date, notes, created_at, updated_at
+                 ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, NOW(), NOW())
+                 RETURNING *`,
+                [
+                  clientId,
+                  clientCode,
+                  p.clientName || p.client_name || 'New Client Corp',
+                  p.companyName || p.company_name || 'New Client Company Ltd',
+                  p.industry || 'IT Services',
+                  p.contactPerson || p.contact_person || 'Contact Person',
+                  p.email || '',
+                  p.phone || '',
+                  p.country || 'India',
+                  p.city || 'Bangalore',
+                  p.clientType || p.client_type || 'Enterprise',
+                  p.accountOwner || p.account_owner || 'EMP-001',
+                  p.status || 'Active',
+                  p.creditLimit || p.credit_limit || '₹ 10,00,000',
+                  p.onboardingDate || p.onboarding_date || '15 Mar 2025',
+                  p.notes || '',
+                ]
+              );
+
+              res.setHeader('Content-Type', 'application/json');
+              res.statusCode = 201;
+              res.end(JSON.stringify(mapClientRow(insertRes.rows[0])));
+            } catch (err: any) {
+              console.error('[Supabase API] Failed to create client:', err);
+              res.statusCode = 500;
+              res.end(JSON.stringify({ error: err.message }));
+            }
+          });
+          return;
+        }
+
+        // 3. PUT /api/v1/clients/:id
+        const clientPutMatch = url.match(/^\/api\/v1\/clients\/([^\/\?]+)$/);
+        if (clientPutMatch && req.method === 'PUT') {
+          const clientId = decodeURIComponent(clientPutMatch[1]);
+          let body = '';
+          req.on('data', (chunk) => {
+            body += chunk;
+          });
+          req.on('end', async () => {
+            try {
+              const p = JSON.parse(body || '{}');
+              const updateRes = await pool.query(
+                `UPDATE clients SET
+                   client_code = COALESCE($1, client_code),
+                   client_name = COALESCE($2, client_name),
+                   company_name = COALESCE($3, company_name),
+                   industry = COALESCE($4, industry),
+                   contact_person = COALESCE($5, contact_person),
+                   email = COALESCE($6, email),
+                   phone = COALESCE($7, phone),
+                   country = COALESCE($8, country),
+                   city = COALESCE($9, city),
+                   client_type = COALESCE($10, client_type),
+                   account_owner = COALESCE($11, account_owner),
+                   status = COALESCE($12, status),
+                   credit_limit = COALESCE($13, credit_limit),
+                   onboarding_date = COALESCE($14, onboarding_date),
+                   notes = COALESCE($15, notes),
+                   updated_at = NOW()
+                 WHERE id = $16
+                 RETURNING *`,
+                [
+                  p.clientCode || p.client_code,
+                  p.clientName || p.client_name,
+                  p.companyName || p.company_name,
+                  p.industry,
+                  p.contactPerson || p.contact_person,
+                  p.email,
+                  p.phone,
+                  p.country,
+                  p.city,
+                  p.clientType || p.client_type,
+                  p.accountOwner || p.account_owner,
+                  p.status,
+                  p.creditLimit || p.credit_limit,
+                  p.onboardingDate || p.onboarding_date,
+                  p.notes,
+                  clientId,
+                ]
+              );
+
+              if (updateRes.rows.length === 0) {
+                res.statusCode = 404;
+                res.end(JSON.stringify({ error: 'Client not found' }));
+                return;
+              }
+
+              res.setHeader('Content-Type', 'application/json');
+              res.statusCode = 200;
+              res.end(JSON.stringify(mapClientRow(updateRes.rows[0])));
+            } catch (err: any) {
+              console.error('[Supabase API] Failed to update client:', err);
+              res.statusCode = 500;
+              res.end(JSON.stringify({ error: err.message }));
+            }
+          });
+          return;
+        }
+
+        // 4. DELETE /api/v1/clients/:id
+        const clientDelMatch = url.match(/^\/api\/v1\/clients\/([^\/\?]+)$/);
+        if (clientDelMatch && req.method === 'DELETE') {
+          const clientId = decodeURIComponent(clientDelMatch[1]);
+          try {
+            await pool.query('DELETE FROM clients WHERE id = $1', [clientId]);
+            res.statusCode = 204;
+            res.end();
+          } catch (err: any) {
+            console.error('[Supabase API] Failed to delete client:', err);
+            res.statusCode = 500;
+            res.end(JSON.stringify({ error: err.message }));
+          }
+          return;
+        }
+
         next();
       });
     }

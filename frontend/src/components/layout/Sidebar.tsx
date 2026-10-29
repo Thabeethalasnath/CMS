@@ -149,7 +149,7 @@ export const Sidebar: React.FC = () => {
             >
               {/* Dynamic Section Header: Highlights in purple #4F46E5 whenever active */}
               {isActive ? (
-                // Active Category Banner (Solid Purple)
+                // Active Category Banner (Solid Purple #4F46E5)
                 <button
                   type="button"
                   onClick={() => toggleSection(section.id)}
@@ -158,35 +158,35 @@ export const Sidebar: React.FC = () => {
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     width: '100%',
-                    height: '40px',
-                    padding: '0 14px',
+                    height: '32px',
+                    padding: '6px 10px',
                     borderRadius: '8px',
-                    backgroundColor: colors.secondaryBrand,
+                    backgroundColor: '#4F46E5',
                     border: 'none',
                     color: '#FFFFFF',
                     cursor: 'pointer',
                     boxSizing: 'border-box',
                     transition: 'background-color 0.15s ease',
-                    marginBottom: isExpanded ? '6px' : '0px',
+                    marginBottom: isExpanded ? '4px' : '0px',
                     fontFamily: "'Inter', sans-serif",
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.backgroundColor = '#4338CA';
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = colors.secondaryBrand;
+                    e.currentTarget.style.backgroundColor = '#4F46E5';
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '11px' }}>
-                    <SectionIcon size={17} strokeWidth={2.2} color="#FFFFFF" />
-                    <span style={{ fontSize: '14px', fontWeight: 600, letterSpacing: '0.2px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <SectionIcon size={16} strokeWidth={2} color="#FFFFFF" />
+                    <span style={{ fontSize: '12px', fontWeight: 600, letterSpacing: '0.3px' }}>
                       {section.title}
                     </span>
                   </div>
                   {isExpanded ? (
-                    <ChevronUp size={16} strokeWidth={2.4} color="#FFFFFF" />
+                    <ChevronUp size={14} strokeWidth={2.2} color="#FFFFFF" />
                   ) : (
-                    <ChevronDown size={16} strokeWidth={2.4} color="#FFFFFF" />
+                    <ChevronDown size={14} strokeWidth={2.2} color="#FFFFFF" />
                   )}
                 </button>
               ) : (
@@ -199,12 +199,12 @@ export const Sidebar: React.FC = () => {
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     width: '100%',
-                    height: '38px',
-                    padding: '0 14px',
-                    borderRadius: '6px',
+                    height: '32px',
+                    padding: '6px 10px',
+                    borderRadius: '8px',
                     backgroundColor: 'transparent',
                     border: 'none',
-                    color: '#CAD5E8',
+                    color: '#E2E8F0',
                     cursor: 'pointer',
                     boxSizing: 'border-box',
                     transition: 'color 0.15s ease',
@@ -215,19 +215,19 @@ export const Sidebar: React.FC = () => {
                     e.currentTarget.style.color = '#FFFFFF';
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.color = '#CAD5E8';
+                    e.currentTarget.style.color = '#E2E8F0';
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '11px' }}>
-                    <SectionIcon size={16} strokeWidth={1.9} color="#8A99B5" />
-                    <span style={{ fontSize: '13.5px', fontWeight: 600, letterSpacing: '0.2px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <SectionIcon size={16} strokeWidth={1.8} color="#94A3B8" />
+                    <span style={{ fontSize: '12px', fontWeight: 600, letterSpacing: '0.3px' }}>
                       {section.title}
                     </span>
                   </div>
                   {isExpanded ? (
-                    <ChevronUp size={15} strokeWidth={2.2} style={{ color: '#8A99B5' }} />
+                    <ChevronUp size={13} strokeWidth={2} color="#94A3B8" />
                   ) : (
-                    <ChevronDown size={15} strokeWidth={2.2} style={{ color: '#8A99B5' }} />
+                    <ChevronDown size={13} strokeWidth={2} color="#94A3B8" />
                   )}
                 </button>
               )}
@@ -238,9 +238,10 @@ export const Sidebar: React.FC = () => {
                   style={{
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '3px',
+                    gap: '2px',
                     width: '100%',
                     boxSizing: 'border-box',
+                    padding: '2px 0 2px 0',
                   }}
                 >
                   {section.items.map((item: NavItem) => {
@@ -255,24 +256,23 @@ export const Sidebar: React.FC = () => {
                           display: 'flex',
                           alignItems: 'center',
                           gap: '12px',
-                          height: '40px',
+                          height: '30px',
                           width: '100%',
-                          padding: '0 14px',
+                          padding: '6px 12px',
                           borderRadius: '8px',
                           textDecoration: 'none',
-                          fontSize: '13.5px',
+                          fontSize: '12px',
                           fontFamily: "'Inter', sans-serif",
                           boxSizing: 'border-box',
                           transition: 'all 0.15s ease',
-                          backgroundColor: active ? colors.sidebarActivePill : 'transparent',
-                          backgroundImage: active
-                            ? 'linear-gradient(90deg, #182C62 0%, #122146 100%)'
-                            : 'none',
-                          border: 'none',
+                          backgroundColor: active ? '#112D65' : 'transparent',
+                          borderLeft: active ? '2px solid #4F46E5' : '2px solid transparent',
+                          borderTop: 'none',
+                          borderRight: 'none',
+                          borderBottom: 'none',
                           outline: 'none',
-                          boxShadow: active ? 'inset 3.5px 0 0 0 #5845E8' : 'none',
-                          color: active ? '#FFFFFF' : '#8A99B5',
-                          fontWeight: active ? 600 : 400,
+                          color: active ? '#FFFFFF' : '#CBD5E1',
+                          fontWeight: 500,
                         }}
                         onMouseEnter={(e) => {
                           if (!active) {
@@ -283,14 +283,14 @@ export const Sidebar: React.FC = () => {
                         onMouseLeave={(e) => {
                           if (!active) {
                             e.currentTarget.style.backgroundColor = 'transparent';
-                            e.currentTarget.style.color = '#8A99B5';
+                            e.currentTarget.style.color = '#CBD5E1';
                           }
                         }}
                       >
                         <ItemIcon
-                          size={17}
-                          strokeWidth={active ? 2.2 : 1.8}
-                          color={active ? '#60A5FA' : '#7E8DA6'}
+                          size={16}
+                          strokeWidth={active ? 2 : 1.7}
+                          color={active ? '#FFFFFF' : '#94A3B8'}
                         />
                         <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                           {item.label}
@@ -310,11 +310,11 @@ export const Sidebar: React.FC = () => {
         style={{
           width: '100%',
           borderTop: `1px solid ${colors.sidebarHeaderBorder}`,
-          padding: '14px 13px',
+          padding: '12px 14px',
           display: 'flex',
           flexDirection: 'column',
           gap: '4px',
-          backgroundColor: colors.sidebarBg,
+          backgroundColor: '#0D172E',
           flexShrink: 0,
           boxSizing: 'border-box',
           fontFamily: "'Inter', sans-serif",
@@ -332,17 +332,18 @@ export const Sidebar: React.FC = () => {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '12px',
-                height: '36px',
-                padding: '0 14px',
-                borderRadius: '6px',
+                height: '32px',
+                padding: '8px 12px',
+                borderRadius: '8px',
                 textDecoration: 'none',
-                fontSize: '13.5px',
+                fontSize: '12px',
                 fontFamily: "'Inter', sans-serif",
                 boxSizing: 'border-box',
                 transition: 'all 0.15s ease',
-                backgroundColor: active ? colors.sidebarActivePill : 'transparent',
-                color: active ? '#FFFFFF' : '#8A99B5',
-                fontWeight: active ? 600 : 400,
+                backgroundColor: active ? '#112D65' : 'transparent',
+                borderLeft: active ? '2px solid #4F46E5' : '2px solid transparent',
+                color: active ? '#FFFFFF' : '#CBD5E1',
+                fontWeight: 500,
               }}
               onMouseEnter={(e) => {
                 if (!active) {
@@ -353,14 +354,14 @@ export const Sidebar: React.FC = () => {
               onMouseLeave={(e) => {
                 if (!active) {
                   e.currentTarget.style.backgroundColor = 'transparent';
-                  e.currentTarget.style.color = '#8A99B5';
+                  e.currentTarget.style.color = '#CBD5E1';
                 }
               }}
             >
               <FooterIcon
                 size={16}
                 strokeWidth={1.8}
-                color={active ? '#60A5FA' : '#7E8DA6'}
+                color={active ? '#FFFFFF' : '#94A3B8'}
               />
               <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {item.label}
