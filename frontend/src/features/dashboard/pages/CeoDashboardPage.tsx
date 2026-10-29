@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Crown, RotateCw } from 'lucide-react';
-import { FullDashboardData, KpiCard } from '../../../types/dashboard';
+import { FullDashboardData } from '../../../types/dashboard';
 import { initialDashboardData } from '../../../constants/initialDashboardData';
 import { dashboardService } from '../../../services/dashboardService';
 import { KpiCardsGrid } from '../../../components/dashboard/KpiCardsGrid';
@@ -23,7 +23,6 @@ export const CeoDashboardPage: React.FC<CeoDashboardPageProps> = ({
   const [data, setData] = useState<FullDashboardData>(initialDashboardData);
   const [isLoading, setIsLoading] = useState(false);
   const [lastRefreshed, setLastRefreshed] = useState('15 Mar 2025, 10:30 AM');
-  const [selectedKpi, setSelectedKpi] = useState<string | null>(null);
 
   useEffect(() => {
     loadData();
@@ -67,10 +66,6 @@ export const CeoDashboardPage: React.FC<CeoDashboardPageProps> = ({
     setData(updated);
   };
 
-  const handleCardClick = (card: KpiCard) => {
-    setSelectedKpi(card.card_key);
-  };
-
   return (
     <div className="p-4 sm:p-6 lg:p-7 flex flex-col gap-5 max-w-[1400px] mx-auto w-full">
       {/* Page Title Row: Crown icon, "CEO Dashboard", subtitle, and "Last Updated" */}
@@ -106,7 +101,7 @@ export const CeoDashboardPage: React.FC<CeoDashboardPageProps> = ({
       </div>
 
       {/* A. KPI Cards (Two rows of 5 on desktop, responsive to 2 -> 1) */}
-      <KpiCardsGrid cards={data.kpis} onCardClick={handleCardClick} />
+      <KpiCardsGrid cards={data.kpis} />
 
       {/* B. Finance Overview Section (4 panels) */}
       <FinanceOverviewSection
@@ -134,14 +129,10 @@ export const CeoDashboardPage: React.FC<CeoDashboardPageProps> = ({
 
       {/* Interactive Edit Modal */}
       <EditDataModal
-        isOpen={isEditModalOpen || selectedKpi !== null}
-        onClose={() => {
-          onCloseEditModal();
-          setSelectedKpi(null);
-        }}
+        isOpen={isEditModalOpen}
+        onClose={onCloseEditModal}
         dashboardData={data}
         onSaveData={handleSaveData}
-        selectedKpiKey={selectedKpi}
       />
     </div>
   );

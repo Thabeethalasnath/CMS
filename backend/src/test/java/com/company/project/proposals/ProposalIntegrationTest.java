@@ -57,6 +57,9 @@ class ProposalIntegrationTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private com.company.project.proposals.repository.ProposalRepository proposalRepository;
+
     @Test
     @DisplayName("GET /api/v1/proposals should return paginated proposals")
     void testListProposalsPaginated() throws Exception {
@@ -136,6 +139,7 @@ class ProposalIntegrationTest {
     @DisplayName("POST /api/v1/proposals should create and persist new proposal")
     void testCreateProposalIntegration() throws Exception {
         String uniqueId = "P-2025-991";
+        proposalRepository.findById(uniqueId).ifPresent(proposalRepository::delete);
         Map<String, Object> payload = new HashMap<>();
         payload.put("proposalId", uniqueId);
         payload.put("opportunityId", "O-2025-001");

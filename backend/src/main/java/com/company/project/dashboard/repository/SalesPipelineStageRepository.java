@@ -10,3 +10,4 @@ import java.util.List;
 public interface SalesPipelineStageRepository extends JpaRepository<SalesPipelineStage, Long> {
     List<SalesPipelineStage> findAllByOrderBySortOrderAsc();
 }
+

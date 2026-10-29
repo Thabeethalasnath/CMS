@@ -1,5 +1,6 @@
 package com.company.project.dashboard.controller;
 
+import com.company.project.common.response.ApiResponse;
 import com.company.project.dashboard.dto.CeoDashboardResponse;
 import com.company.project.dashboard.entity.DashboardKpiCard;
 import com.company.project.dashboard.entity.ManagementAlert;
@@ -17,23 +18,23 @@ public class DashboardController {
     private final DashboardService dashboardService;
 
     @GetMapping("/ceo")
-    public ResponseEntity<CeoDashboardResponse> getCeoDashboard() {
-        return ResponseEntity.ok(dashboardService.getCeoDashboard());
+    public ResponseEntity<ApiResponse<CeoDashboardResponse>> getCeoDashboard() {
+        return ResponseEntity.ok(ApiResponse.success("CEO dashboard retrieved successfully", dashboardService.getCeoDashboard()));
     }
 
     @PutMapping("/ceo/kpis/{id}")
-    public ResponseEntity<DashboardKpiCard> updateKpi(
+    public ResponseEntity<ApiResponse<DashboardKpiCard>> updateKpi(
             @PathVariable Long id,
             @RequestBody DashboardKpiCard request
     ) {
-        return ResponseEntity.ok(dashboardService.updateKpi(id, request));
+        return ResponseEntity.ok(ApiResponse.success("KPI updated successfully", dashboardService.updateKpi(id, request)));
     }
 
     @PutMapping("/ceo/alerts/{id}")
-    public ResponseEntity<ManagementAlert> updateAlertCount(
+    public ResponseEntity<ApiResponse<ManagementAlert>> updateAlertCount(
             @PathVariable Long id,
             @RequestParam(defaultValue = "1") Integer delta
     ) {
-        return ResponseEntity.ok(dashboardService.updateAlert(id, delta));
+        return ResponseEntity.ok(ApiResponse.success("Alert updated successfully", dashboardService.updateAlert(id, delta)));
     }
 }

@@ -10,3 +10,4 @@ import java.util.List;
 public interface ManagementAlertRepository extends JpaRepository<ManagementAlert, Long> {
     List<ManagementAlert> findAllByOrderBySortOrderAsc();
 }
+

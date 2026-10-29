@@ -10,3 +10,4 @@ import java.util.List;
 public interface ProjectStatusDistributionRepository extends JpaRepository<ProjectStatusDistribution, Long> {
     List<ProjectStatusDistribution> findAllByOrderBySortOrderAsc();
 }
+

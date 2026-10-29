@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Plus, Calendar, User, Tag, FileText } from 'lucide-react';
 import { EmployeeApproval } from '../../types/approvals';
 
@@ -20,6 +20,18 @@ export const AddEmployeeApprovalModal: React.FC<AddEmployeeApprovalModalProps> =
   const [toDate, setToDate] = useState('');
   const [duration, setDuration] = useState('1 day');
   const [reason, setReason] = useState('');
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    if (isOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 

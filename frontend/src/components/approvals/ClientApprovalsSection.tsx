@@ -111,8 +111,8 @@ export const ClientApprovalsSection: React.FC<ClientApprovalsSectionProps> = ({
     });
   }, [approvals, searchQuery, selectedType, selectedStatus, selectedApprover, requestDateRange]);
 
-  const totalItems = 18; // Preserving baseline visual total from spec
-  const totalPages = Math.ceil(totalItems / pageSize);
+  const totalItems = filteredData.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
   const displayItems = filteredData.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   const handleClearFilters = () => {
