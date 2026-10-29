@@ -107,17 +107,12 @@ export const clientsService = {
         String(c.status).toLowerCase() === 'new'
     ).length;
 
-    // Total credit limit matching the Figma UI card
-    let totalCreditLimit = '₹ 4,8500';
-    if (totalClients !== 128) {
-      // If user modified records, dynamically calculate sum
-      let sum = 0;
-      clients.forEach((c) => {
-        const num = parseInt(String(c.creditLimit || '').replace(/[^\d]/g, ''), 10);
-        if (!isNaN(num)) sum += num;
-      });
-      totalCreditLimit = `₹ ${(sum).toLocaleString('en-IN')}`;
-    }
+    let sum = 0;
+    clients.forEach((c) => {
+      const num = parseInt(String(c.creditLimit || '').replace(/[^\d]/g, ''), 10);
+      if (!isNaN(num)) sum += num;
+    });
+    const totalCreditLimit = `₹ ${sum.toLocaleString('en-IN')}`;
 
     return {
       totalClients,

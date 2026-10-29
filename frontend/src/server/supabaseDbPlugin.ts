@@ -859,6 +859,222 @@ export function supabaseDbPlugin(): Plugin {
           return;
         }
 
+        // ==========================================
+        // APPROVALS ENDPOINTS (/api/v1/approvals)
+        // ==========================================
+        function mapEmpRow(r: any) {
+          return {
+            id: parseInt(r.id, 10),
+            employee_name: r.employee_name,
+            employee_code: r.employee_code,
+            request_type: r.request_type,
+            applied_date: r.applied_date,
+            from_date: r.from_date,
+            to_date: r.to_date,
+            duration: r.duration,
+            reason: r.reason,
+            status: r.status,
+            created_at: r.created_at,
+          };
+        }
+
+        function mapClientAppRow(r: any) {
+          return {
+            id: parseInt(r.id, 10),
+            approval_id: r.approval_id,
+            client_name: r.client_name,
+            request_type: r.request_type,
+            reference_id: r.reference_id,
+            requester: r.requester,
+            request_date: r.request_date,
+            due_date: r.due_date,
+            amount: r.amount || '-',
+            status: r.status,
+            created_at: r.created_at,
+          };
+        }
+
+        function mapTicketRow(r: any) {
+          return {
+            id: parseInt(r.id, 10),
+            approval_id: r.approval_id,
+            record_type: r.record_type,
+            record_code: r.record_code,
+            title: r.title,
+            client_requester: r.client_requester,
+            approval_type: r.approval_type,
+            priority: r.priority || '-',
+            request_date: r.request_date,
+            assigned_approver: r.assigned_approver,
+            status: r.status,
+            created_at: r.created_at,
+          };
+        }
+
+        // 1. GET /api/v1/approvals
+        if (url === '/api/v1/approvals' && req.method === 'GET') {
+          try {
+            const [empRes, clientRes, ticketRes] = await Promise.all([
+              pool.query('SELECT * FROM employee_approvals ORDER BY id ASC'),
+              pool.query('SELECT * FROM client_approvals ORDER BY id ASC'),
+              pool.query('SELECT * FROM ticket_asset_approvals ORDER BY id ASC'),
+            ]);
+
+            const employees = empRes.rows.map(mapEmpRow);
+            const clients = clientRes.rows.map(mapClientAppRow);
+            const ticketsAssets = ticketRes.rows.map(mapTicketRow);
+
+            let pending = 0;
+            let approved = 0;
+            let rejected = 0;
+            [...employees, ...clients, ...ticketsAssets].forEach((item) => {
+              if (item.status === 'Pending') pending++;
+              else if (item.status === 'Approved') approved++;
+              else if (item.status === 'Rejected') rejected++;
+            });
+
+            res.setHeader('Content-Type', 'application/json');
+            res.statusCode = 200;
+            res.end(
+              JSON.stringify({
+                employees,
+                clients,
+                ticketsAssets,
+                summary: {
+                  total: employees.length + clients.length + ticketsAssets.length,
+                  pending,
+                  approved,
+                  rejected,
+                },
+              })
+            );
+            return;
+          } catch (err: any) {
+            console.error('[Supabase API] Failed to fetch approvals:', err);
+            res.statusCode = 500;
+            res.end(JSON.stringify({ error: err.message }));
+            return;
+          }
+        }
+
+        // 2. PUT /api/v1/approvals/employee/:id
+        const empPutMatch = url.match(/^\/api\/v1\/approvals\/employee\/(\d+)$/);
+        if (empPutMatch && req.method === 'PUT') {
+          const empId = parseInt(empPutMatch[1], 10);
+          let body = '';
+          req.on('data', (c) => { body += c; });
+          req.on('end', async () => {
+            try {
+              const { status } = JSON.parse(body || '{}');
+              await pool.query('UPDATE employee_approvals SET status = $1, updated_at = NOW() WHERE id = $2', [status, empId]);
+              res.statusCode = 200;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ success: true, id: empId, status }));
+            } catch (err: any) {
+              res.statusCode = 500;
+              res.end(JSON.stringify({ error: err.message }));
+            }
+          });
+          return;
+        }
+
+        // 3. POST /api/v1/approvals/employee
+        if (url === '/api/v1/approvals/employee' && req.method === 'POST') {
+          let body = '';
+          req.on('data', (c) => { body += c; });
+          req.on('end', async () => {
+            try {
+              const p = JSON.parse(body || '{}');
+              const now = new Date();
+              const applied_date = p.applied_date || now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+              const insertRes = await pool.query(
+                `INSERT INTO employee_approvals (employee_name, employee_code, request_type, applied_date, from_date, to_date, duration, reason, status, created_at, updated_at)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'Pending', NOW(), NOW())
+                 RETURNING *`,
+                [p.employee_name, p.employee_code, p.request_type, applied_date, p.from_date, p.to_date, p.duration, p.reason]
+              );
+              res.setHeader('Content-Type', 'application/json');
+              res.statusCode = 201;
+              res.end(JSON.stringify(mapEmpRow(insertRes.rows[0])));
+            } catch (err: any) {
+              res.statusCode = 500;
+              res.end(JSON.stringify({ error: err.message }));
+            }
+          });
+          return;
+        }
+
+        // 4. PUT /api/v1/approvals/client/:id
+        const clientAppPutMatch = url.match(/^\/api\/v1\/approvals\/client\/(\d+)$/);
+        if (clientAppPutMatch && req.method === 'PUT') {
+          const clientId = parseInt(clientAppPutMatch[1], 10);
+          let body = '';
+          req.on('data', (c) => { body += c; });
+          req.on('end', async () => {
+            try {
+              const { status } = JSON.parse(body || '{}');
+              await pool.query('UPDATE client_approvals SET status = $1, updated_at = NOW() WHERE id = $2', [status, clientId]);
+              res.statusCode = 200;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ success: true, id: clientId, status }));
+            } catch (err: any) {
+              res.statusCode = 500;
+              res.end(JSON.stringify({ error: err.message }));
+            }
+          });
+          return;
+        }
+
+        // 5. POST /api/v1/approvals/client
+        if (url === '/api/v1/approvals/client' && req.method === 'POST') {
+          let body = '';
+          req.on('data', (c) => { body += c; });
+          req.on('end', async () => {
+            try {
+              const p = JSON.parse(body || '{}');
+              const now = new Date();
+              const request_date = p.request_date || now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+              const countRes = await pool.query('SELECT COUNT(*) as count FROM client_approvals');
+              const nextNum = String(parseInt(countRes.rows[0].count, 10) + 1).padStart(3, '0');
+              const approval_id = p.approval_id || `APP-2025-${nextNum}`;
+              const insertRes = await pool.query(
+                `INSERT INTO client_approvals (approval_id, client_name, request_type, reference_id, requester, request_date, due_date, amount, status, created_at, updated_at)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'Pending', NOW(), NOW())
+                 RETURNING *`,
+                [approval_id, p.client_name, p.request_type, p.reference_id, p.requester, request_date, p.due_date, p.amount || '-']
+              );
+              res.setHeader('Content-Type', 'application/json');
+              res.statusCode = 201;
+              res.end(JSON.stringify(mapClientAppRow(insertRes.rows[0])));
+            } catch (err: any) {
+              res.statusCode = 500;
+              res.end(JSON.stringify({ error: err.message }));
+            }
+          });
+          return;
+        }
+
+        // 6. PUT /api/v1/approvals/ticket-asset/:id
+        const ticketPutMatch = url.match(/^\/api\/v1\/approvals\/ticket-asset\/(\d+)$/);
+        if (ticketPutMatch && req.method === 'PUT') {
+          const ticketId = parseInt(ticketPutMatch[1], 10);
+          let body = '';
+          req.on('data', (c) => { body += c; });
+          req.on('end', async () => {
+            try {
+              const { status } = JSON.parse(body || '{}');
+              await pool.query('UPDATE ticket_asset_approvals SET status = $1, updated_at = NOW() WHERE id = $2', [status, ticketId]);
+              res.statusCode = 200;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ success: true, id: ticketId, status }));
+            } catch (err: any) {
+              res.statusCode = 500;
+              res.end(JSON.stringify({ error: err.message }));
+            }
+          });
+          return;
+        }
+
         next();
       });
     }

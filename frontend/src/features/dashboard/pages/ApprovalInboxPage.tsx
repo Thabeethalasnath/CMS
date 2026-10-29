@@ -11,8 +11,15 @@ import { AddClientApprovalModal } from '../../../components/approvals/AddClientA
 import { ToastNotification, ToastItem } from '../../../components/ui/ToastNotification';
 import { ApprovalStatus } from '../../../types/approvals';
 
+const initialApprovalsState: AllApprovalsData = {
+  employees: [],
+  clients: [],
+  ticketsAssets: [],
+  summary: { total: 0, pending: 0, approved: 0, rejected: 0 }
+};
+
 export const ApprovalInboxPage: React.FC = () => {
-  const [data, setData] = useState<AllApprovalsData>(approvalsService.getApprovalsData());
+  const [data, setData] = useState<AllApprovalsData>(initialApprovalsState);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastRefreshed, setLastRefreshed] = useState('15 Mar 2025, 10:30 AM');
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<string | null>(null);
@@ -52,80 +59,91 @@ export const ApprovalInboxPage: React.FC = () => {
   const [isAddEmployeeOpen, setIsAddEmployeeOpen] = useState(false);
   const [isAddClientOpen, setIsAddClientOpen] = useState(false);
 
+  const loadApprovals = async (isManual = false) => {
+    try {
+      const fresh = await approvalsService.getApprovalsData();
+      setData(fresh);
+      if (isManual) {
+        addToast('info', 'Data Refreshed', 'Approval records are up-to-date with database.');
+      }
+    } catch (err: any) {
+      console.error('Failed to load approvals:', err);
+      addToast('error', 'Database Error', 'Could not load approvals from database.');
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   useEffect(() => {
-    // Initial load
-    const fresh = approvalsService.getApprovalsData();
-    setData(fresh);
+    loadApprovals();
   }, []);
 
   const handleManualRefresh = () => {
     setIsRefreshing(true);
-    setTimeout(() => {
-      const now = new Date();
-      const timeStr =
-        now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) +
-        ', ' +
-        now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-      setLastRefreshed(timeStr);
-      setData(approvalsService.getApprovalsData());
-      setIsRefreshing(false);
-      addToast('info', 'Data Refreshed', 'Approval records are up-to-date.');
-    }, 450);
+    const now = new Date();
+    const timeStr =
+      now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) +
+      ', ' +
+      now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    setLastRefreshed(timeStr);
+    loadApprovals(true);
   };
 
-  const handleUpdateStatus = (
+  const handleUpdateStatus = async (
     type: 'employee' | 'client' | 'ticketAsset',
     id: number,
     status: ApprovalStatus
   ) => {
     let nameOrCode = '';
-    let prevStatus = 'Pending';
+    try {
+      if (type === 'employee') {
+        const item = data.employees.find((e) => e.id === id);
+        nameOrCode = item ? `${item.employee_name} (${item.employee_code})` : 'Employee request';
+        const updated = await approvalsService.updateEmployeeStatus(id, status);
+        setData(updated);
+      } else if (type === 'client') {
+        const item = data.clients.find((c) => c.id === id);
+        nameOrCode = item ? `${item.client_name} (${item.approval_id})` : 'Client request';
+        const updated = await approvalsService.updateClientStatus(id, status);
+        setData(updated);
+      } else if (type === 'ticketAsset') {
+        const item = data.ticketsAssets.find((t) => t.id === id);
+        nameOrCode = item ? `${item.title} (${item.approval_id})` : 'Ticket / Asset request';
+        const updated = await approvalsService.updateTicketAssetStatus(id, status);
+        setData(updated);
+      }
 
-    if (type === 'employee') {
-      const item = data.employees.find((e) => e.id === id);
-      prevStatus = item?.status || 'Pending';
-      nameOrCode = item ? `${item.employee_name} (${item.employee_code})` : 'Employee request';
-      const updated = approvalsService.updateEmployeeStatus(id, status);
-      setData(updated);
-    } else if (type === 'client') {
-      const item = data.clients.find((c) => c.id === id);
-      prevStatus = item?.status || 'Pending';
-      nameOrCode = item ? `${item.client_name} (${item.approval_id})` : 'Client request';
-      const updated = approvalsService.updateClientStatus(id, status);
-      setData(updated);
-    } else if (type === 'ticketAsset') {
-      const item = data.ticketsAssets.find((t) => t.id === id);
-      prevStatus = item?.status || 'Pending';
-      nameOrCode = item ? `${item.title} (${item.approval_id})` : 'Ticket / Asset request';
-      const updated = approvalsService.updateTicketAssetStatus(id, status);
-      setData(updated);
+      // Trigger refined Notification at top-right below navbar
+      const toastType = status === 'Approved' ? 'success' : status === 'Rejected' ? 'error' : 'warning';
+      const title = status === 'Approved' ? 'Request Approved' : status === 'Rejected' ? 'Request Rejected' : 'Marked as Pending';
+      addToast(toastType, title, nameOrCode, status);
+    } catch (err: any) {
+      addToast('error', 'Update Failed', err.message || 'Could not update approval status in database.');
     }
-
-    // Trigger refined Notification at top-right below navbar
-    const toastType = status === 'Approved' ? 'success' : status === 'Rejected' ? 'error' : 'warning';
-    const title = status === 'Approved' ? 'Request Approved' : status === 'Rejected' ? 'Request Rejected' : 'Marked as Pending';
-    addToast(
-      toastType,
-      title,
-      nameOrCode,
-      status
-    );
   };
 
-  const handleAddEmployeeRequest = (
+  const handleAddEmployeeRequest = async (
     req: Parameters<typeof approvalsService.addEmployeeRequest>[0]
   ) => {
-    const updated = approvalsService.addEmployeeRequest(req);
-    setData(updated);
-    addToast('success', 'Leave Request Created', `${req.employee_name} request submitted as Pending.`);
+    try {
+      const updated = await approvalsService.addEmployeeRequest(req);
+      setData(updated);
+      addToast('success', 'Leave Request Created', `${req.employee_name} request submitted to database as Pending.`);
+    } catch (err: any) {
+      addToast('error', 'Creation Failed', err.message || 'Could not save employee request to database.');
+    }
   };
 
-  const handleAddClientRequest = (
+  const handleAddClientRequest = async (
     req: Parameters<typeof approvalsService.addClientRequest>[0]
   ) => {
-    const updated = approvalsService.addClientRequest(req);
-    setData(updated);
-    addToast('success', 'Client Approval Created', `${req.client_name} request submitted as Pending.`);
+    try {
+      const updated = await approvalsService.addClientRequest(req);
+      setData(updated);
+      addToast('success', 'Client Approval Created', `${req.client_name} request submitted to database as Pending.`);
+    } catch (err: any) {
+      addToast('error', 'Creation Failed', err.message || 'Could not save client request to database.');
+    }
   };
 
   // Optional top-level filter by status (All, Pending, Approved, Rejected)

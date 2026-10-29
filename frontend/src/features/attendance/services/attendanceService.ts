@@ -124,7 +124,7 @@ export const attendanceService = {
       presentRecordsTrend: '↑ 8% vs last month',
       lateRecords,
       lateRecordsTrend: '↓ 18% vs last month',
-      totalOvertimeHours: totalRecords === 1248 ? '320.5' : totalOvertimeHours,
+      totalOvertimeHours,
       totalOvertimeHoursTrend: '↑ 25% vs last month',
     };
   },
