@@ -92,7 +92,8 @@ const PROPOSAL_STATUS_CONFIGS: StatusItemConfig[] = [
               <select
                 value={sortOption}
                 onChange={(e) => onSortChange(e.target.value as ProposalSortOption)}
-                className="bg-white border border-slate-200 hover:border-slate-300 rounded-lg px-3 py-1.5 text-xs leading-4 text-slate-700 font-medium appearance-none pr-8 cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-colors"
+                style={{ border: '1px solid #E2E8F0', borderRadius: '8px', backgroundColor: '#FFFFFF', boxSizing: 'border-box' }}
+                className="bg-white border border-[#E2E8F0] hover:border-slate-300 rounded-lg px-3 py-1.5 text-xs leading-4 text-slate-700 font-medium appearance-none pr-8 cursor-pointer focus:outline-none focus:ring-1 focus:ring-indigo-500/20 focus:border-[#CBD5E1] transition-colors"
               >
                 <option value="date-newest">Proposal date (newest)</option>
                 <option value="date-oldest">Proposal date (oldest)</option>
@@ -410,7 +411,8 @@ const PROPOSAL_STATUS_CONFIGS: StatusItemConfig[] = [
             <select
               value={pageSize}
               onChange={(e) => onPageSizeChange(Number(e.target.value))}
-              className="bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-medium leading-4 text-slate-700 appearance-none pr-7 cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+              style={{ border: '1px solid #E2E8F0', borderRadius: '8px', backgroundColor: '#FFFFFF', boxSizing: 'border-box' }}
+              className="bg-white border border-[#E2E8F0] rounded-lg px-2.5 py-1.5 text-xs font-medium leading-4 text-slate-700 appearance-none pr-7 cursor-pointer focus:outline-none focus:ring-1 focus:ring-indigo-500/20"
             >
               <option value={8}>8 per page</option>
               <option value={10}>10 per page</option>
