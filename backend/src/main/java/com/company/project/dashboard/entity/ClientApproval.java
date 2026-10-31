@@ -59,5 +59,11 @@ public class ClientApproval {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
-}
 
+    @Column(name = "approved_by", length = 100)
+    private String approvedBy;
+
+    @Column(name = "decided_at")
+    private LocalDateTime decidedAt;
+
+}

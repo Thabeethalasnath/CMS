@@ -8,11 +8,14 @@ import com.company.project.dashboard.entity.Opportunity;
 import com.company.project.dashboard.repository.OpportunityRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import com.company.project.notification.service.NotificationService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.text.NumberFormat;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -24,6 +27,9 @@ import java.util.stream.Collectors;
 public class OpportunityServiceImpl implements OpportunityService {
 
     private final OpportunityRepository repository;
+
+    @Autowired(required = false)
+    private NotificationService notificationService;
 
     @Override
     @Transactional(readOnly = true)
@@ -70,16 +76,34 @@ public class OpportunityServiceImpl implements OpportunityService {
 
         String formattedWeighted = formatIndianCurrency(weightedSum);
 
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime startOfThisMonth = now.withDayOfMonth(1).toLocalDate().atStartOfDay();
+
+        long totalBefore = all.stream().filter(o -> o.getCreatedAt() != null && o.getCreatedAt().isBefore(startOfThisMonth)).count();
+        long openBefore = all.stream().filter(o -> o.getCreatedAt() != null && o.getCreatedAt().isBefore(startOfThisMonth) &&
+                ("Open".equalsIgnoreCase(o.getStatus()) || "In Progress".equalsIgnoreCase(o.getStatus()))).count();
+        long wonBefore = all.stream().filter(o -> o.getCreatedAt() != null && o.getCreatedAt().isBefore(startOfThisMonth) &&
+                "Won".equalsIgnoreCase(o.getStage())).count();
+        BigDecimal weightedBefore = all.stream()
+                .filter(o -> o.getCreatedAt() != null && o.getCreatedAt().isBefore(startOfThisMonth))
+                .map(o -> o.getWeightedPipeline() != null ? o.getWeightedPipeline() : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        Double totalPct = com.company.project.common.util.TrendCalculationUtil.calculateMoMPercentage(total, totalBefore);
+        Double openPct = com.company.project.common.util.TrendCalculationUtil.calculateMoMPercentage(open, openBefore);
+        Double wonPct = com.company.project.common.util.TrendCalculationUtil.calculateMoMPercentage(won, wonBefore);
+        Double weightedPct = com.company.project.common.util.TrendCalculationUtil.calculateMoMPercentage(weightedSum, weightedBefore);
+
         return OpportunitySummaryDto.builder()
                 .totalOpportunities(total)
                 .openOpportunities(open)
                 .weightedPipeline(weightedSum)
                 .weightedPipelineFormatted(formattedWeighted)
                 .wonOpportunities(won)
-                .totalTrend("↑ 12%")
-                .openTrend("↑ 8%")
-                .weightedTrend("↑ 15%")
-                .wonTrend("↑ 20%")
+                .totalTrend(com.company.project.common.util.TrendCalculationUtil.formatTrendString(totalPct))
+                .openTrend(com.company.project.common.util.TrendCalculationUtil.formatTrendString(openPct))
+                .weightedTrend(com.company.project.common.util.TrendCalculationUtil.formatTrendString(weightedPct))
+                .wonTrend(com.company.project.common.util.TrendCalculationUtil.formatTrendString(wonPct))
                 .build();
     }
 
@@ -97,16 +121,18 @@ public class OpportunityServiceImpl implements OpportunityService {
         long nextNum = repository.count() + 1;
         String oppId = request.getOpportunityId();
         if (oppId == null || oppId.isBlank()) {
-            while (repository.findByOpportunityId(String.format("O-2025-%03d", nextNum)).isPresent()) {
+            int year = java.time.LocalDate.now().getYear();
+            String candidate = String.format("O-%04d-%03d", year, nextNum);
+            while (repository.findByOpportunityId(candidate).isPresent()) {
                 nextNum++;
+                candidate = String.format("O-%04d-%03d", year, nextNum);
             }
-            oppId = String.format("O-2025-%03d", nextNum);
+            oppId = candidate;
         }
 
-        String leadId = request.getLeadId();
-        if (leadId == null || leadId.isBlank()) {
-            leadId = String.format("L-2025-%03d", nextNum);
-        }
+        String leadId = (request.getLeadId() != null && !request.getLeadId().isBlank())
+                ? request.getLeadId()
+                : "-";
 
         BigDecimal weighted = request.getEstimatedValue()
                 .multiply(BigDecimal.valueOf(request.getProbability()))
@@ -132,6 +158,14 @@ public class OpportunityServiceImpl implements OpportunityService {
                 .build();
 
         Opportunity saved = repository.save(entity);
+        if (notificationService != null) {
+            notificationService.createNotification(
+                    "New Opportunity Created",
+                    saved.getOpportunityName() + " (" + saved.getOpportunityId() + ") was created.",
+                    "OPPORTUNITY",
+                    "/sales/opportunities"
+            );
+        }
         return toDto(saved);
     }
 
@@ -163,6 +197,14 @@ public class OpportunityServiceImpl implements OpportunityService {
         }
 
         Opportunity updated = repository.save(entity);
+        if (notificationService != null) {
+            notificationService.createNotification(
+                    "Opportunity Updated",
+                    updated.getOpportunityName() + " (" + updated.getOpportunityId() + ") was updated to " + updated.getStage() + ".",
+                    "OPPORTUNITY",
+                    "/sales/opportunities"
+            );
+        }
         return toDto(updated);
     }
 

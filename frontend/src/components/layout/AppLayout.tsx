@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { dashboardService } from '../../services/dashboardService';
 import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { TopNav } from './TopNav';
@@ -15,8 +16,21 @@ export interface AppLayoutContextType {
 
 export const AppLayout: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [dateRange, setDateRange] = useState('Apr 2024 - Mar 2025');
+  const [dateRange, setDateRange] = useState('—');
+  const [userName, setUserName] = useState('—');
+  const [userRole, setUserRole] = useState('—');
+
+  useEffect(() => {
+    dashboardService.getDashboardData()
+      .then((data) => {
+        if (data.settings?.active_date_range) setDateRange(data.settings.active_date_range);
+        if (data.settings?.user_name) setUserName(data.settings.user_name);
+        if (data.settings?.user_role) setUserRole(data.settings.user_role);
+      })
+      .catch(() => {});
+  }, []);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  // Side rail defaults to expanded; toggles and persists preference in localStorage
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
     return localStorage.getItem('cms_sidebar_collapsed') === 'true';
   });
@@ -60,12 +74,12 @@ export const AppLayout: React.FC = () => {
         }}
       >
         <TopNav
-          onMenuClick={toggleSidebar}
-          isSidebarCollapsed={isSidebarCollapsed}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
           selectedDateRange={dateRange}
           onDateRangeChange={setDateRange}
+          userName={userName}
+          userRole={userRole}
         />
         <main
           style={{

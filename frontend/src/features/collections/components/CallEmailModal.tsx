@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { X, Phone, CheckCircle2, Copy, Check } from 'lucide-react';
+import { X, Phone, CheckCircle2, Copy, Check, AlertCircle } from 'lucide-react';
+import { collectionsApiService } from '../services/collectionsApiService';
 import { Invoice } from '../types';
 import { formatRupee } from '../utils';
 
@@ -14,21 +15,29 @@ export const CallEmailModal: React.FC<CallEmailModalProps> = ({
   invoice,
   onClose,
 }) => {
-  if (!isOpen || !invoice) return null;
-
   const [copiedPhone, setCopiedPhone] = useState(false);
   const [copiedEmail, setCopiedEmail] = useState(false);
-  const [emailSubject, setEmailSubject] = useState(
-    `Payment Follow-Up: Invoice ${invoice.id} — KALPANAAA Software Solutions`
-  );
-  const [emailBody, setEmailBody] = useState(
-    `Dear ${invoice.client} Team,\n\nWe would like to follow up regarding the outstanding balance of ${formatRupee(
-      invoice.outstanding
-    )} for invoice ${invoice.id}, which was due on ${
-      invoice.dueDate
-    }.\n\nPlease arrange for the payment or let us know if you need any clarification.\n\nWarm regards,\nFinance & Accounts Team\nKALPANAAA Software Solutions`
-  );
+  const [emailSubject, setEmailSubject] = useState('');
+  const [emailBody, setEmailBody] = useState('');
   const [sentSuccess, setSentSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (invoice) {
+      setEmailSubject(`Payment Follow-Up: Invoice ${invoice.id} — KALPANAAA Software Solutions`);
+      setEmailBody(
+        `Dear ${invoice.client} Team,\n\nWe would like to follow up regarding the outstanding balance of ${formatRupee(
+          invoice.outstanding
+        )} for invoice ${invoice.id}, which was due on ${
+          invoice.dueDate
+        }.\n\nPlease arrange for the payment or let us know if you need any clarification.\n\nWarm regards,\nFinance & Accounts Team\nKALPANAAA Software Solutions`
+      );
+      setErrorMessage(null);
+    }
+  }, [invoice]);
+
+  if (!isOpen || !invoice) return null;
 
   const phone = '+91 98201 44520';
   const email = `accounts@${invoice.client.toLowerCase().replace(/[^a-z]/g, '')}.com`;
@@ -45,12 +54,24 @@ export const CallEmailModal: React.FC<CallEmailModalProps> = ({
     setTimeout(() => setCopiedEmail(false), 2000);
   };
 
-  const handleSendEmail = () => {
-    setSentSuccess(true);
-    setTimeout(() => {
-      setSentSuccess(false);
-      onClose();
-    }, 1200);
+  const handleSendEmail = async () => {
+    if (!invoice) return;
+    setIsSubmitting(true);
+    setErrorMessage(null);
+    try {
+      await collectionsApiService.logCommunication(invoice.id, {
+        communicationType: 'EMAIL', subject: emailSubject, message: emailBody, recipient: email,
+      });
+      setSentSuccess(true);
+      setTimeout(() => {
+        setSentSuccess(false);
+        setIsSubmitting(false);
+        onClose();
+      }, 1000);
+    } catch (err: any) {
+      setErrorMessage(err?.message || 'Failed to send email and log communication');
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -278,6 +299,12 @@ export const CallEmailModal: React.FC<CallEmailModalProps> = ({
               </div>
 
               {/* Actions */}
+              {errorMessage && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#DC2626', fontSize: '12px', marginBottom: '12px', padding: '8px 12px', backgroundColor: '#FEF2F2', borderRadius: '6px' }}>
+                  <AlertCircle size={14} />
+                  <span>{errorMessage}</span>
+                </div>
+              )}
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
                 <button
                   type="button"
@@ -300,6 +327,7 @@ export const CallEmailModal: React.FC<CallEmailModalProps> = ({
                 </button>
                 <button
                   type="button"
+                  disabled={isSubmitting}
                   onClick={handleSendEmail}
                   style={{
                     height: '38px',

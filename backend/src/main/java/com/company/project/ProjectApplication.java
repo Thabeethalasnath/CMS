@@ -13,7 +13,29 @@ public class ProjectApplication {
 
     public static void main(String[] args) {
         loadDotEnv();
+        validateRequiredEnv();
         SpringApplication.run(ProjectApplication.class, args);
+    }
+
+    private static final String[] REQUIRED_VARS = {
+        "DB_HOST", "DB_PORT", "DB_NAME", "DB_USERNAME", "DB_PASSWORD", "DB_SSL_MODE", "JWT_SECRET", "CORS_ALLOWED_ORIGINS"
+    };
+
+    private static void validateRequiredEnv() {
+        String activeProfile = System.getProperty("SPRING_PROFILES_ACTIVE", System.getenv("SPRING_PROFILES_ACTIVE"));
+        if ("test".equalsIgnoreCase(activeProfile)) {
+            return;
+        }
+        for (String varName : REQUIRED_VARS) {
+            String val = System.getProperty(varName);
+            if (val == null || val.isBlank()) {
+                val = System.getenv(varName);
+            }
+            if (val == null || val.isBlank()) {
+                throw new IllegalStateException("Missing required environment variable: '" 
+                    + varName + "'. Please provide it via environment variable or backend/.env.");
+            }
+        }
     }
 
     private static void loadDotEnv() {

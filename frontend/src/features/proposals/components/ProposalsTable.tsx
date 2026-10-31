@@ -9,7 +9,7 @@ import {
   FileQuestion,
 } from 'lucide-react';
 import { Proposal, ProposalSortOption, ProposalStatus } from '../types';
-import { formatRupee } from '../mockData';
+import { formatRupee } from '@/features/collections/utils';
 import { StatusDropdownMenu, StatusItemConfig } from '../../../components/ui/StatusDropdownMenu';
 
 interface ProposalsTableProps {

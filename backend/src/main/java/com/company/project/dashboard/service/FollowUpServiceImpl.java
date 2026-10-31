@@ -9,8 +9,10 @@ import com.company.project.dashboard.entity.FollowUpItem;
 import com.company.project.dashboard.mapper.FollowUpItemMapper;
 import com.company.project.dashboard.repository.FollowUpItemRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.company.project.notification.service.NotificationService;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -23,6 +25,9 @@ public class FollowUpServiceImpl implements FollowUpService {
 
     private final FollowUpItemRepository repository;
     private final FollowUpItemMapper mapper;
+
+    @Autowired(required = false)
+    private NotificationService notificationService;
 
     @Override
     @Transactional(readOnly = true)
@@ -53,38 +58,14 @@ public class FollowUpServiceImpl implements FollowUpService {
     @Override
     @Transactional(readOnly = true)
     public FollowUpSummaryDto getSummary() {
-        List<FollowUpItem> all = repository.findAll();
+        long highPending = repository.countByPriorityAndIsDone("High", false);
+        long medPending = repository.countByPriorityAndIsDone("Medium", false);
+        long lowPending = repository.countByPriorityAndIsDone("Low", false);
+        long totalCompleted = repository.countByIsDoneTrue();
 
-        long highPending = all.stream()
-                .filter(i -> "High".equalsIgnoreCase(i.getPriority()) && !Boolean.TRUE.equals(i.getIsDone()))
-                .count();
-
-        long medPending = all.stream()
-                .filter(i -> "Medium".equalsIgnoreCase(i.getPriority()) && !Boolean.TRUE.equals(i.getIsDone()))
-                .count();
-
-        long lowPending = all.stream()
-                .filter(i -> "Low".equalsIgnoreCase(i.getPriority()) && !Boolean.TRUE.equals(i.getIsDone()))
-                .count();
-
-        long totalCompleted = all.stream()
-                .filter(i -> Boolean.TRUE.equals(i.getIsDone()))
-                .count();
-
-        long highPendingSum = all.stream()
-                .filter(i -> "High".equalsIgnoreCase(i.getPriority()) && !Boolean.TRUE.equals(i.getIsDone()))
-                .mapToLong(i -> i.getCount() != null ? i.getCount() : 0L)
-                .sum();
-
-        long medPendingSum = all.stream()
-                .filter(i -> "Medium".equalsIgnoreCase(i.getPriority()) && !Boolean.TRUE.equals(i.getIsDone()))
-                .mapToLong(i -> i.getCount() != null ? i.getCount() : 0L)
-                .sum();
-
-        long lowPendingSum = all.stream()
-                .filter(i -> "Low".equalsIgnoreCase(i.getPriority()) && !Boolean.TRUE.equals(i.getIsDone()))
-                .mapToLong(i -> i.getCount() != null ? i.getCount() : 0L)
-                .sum();
+        long highPendingSum = repository.sumCountByPriorityAndIsDoneFalse("High");
+        long medPendingSum = repository.sumCountByPriorityAndIsDoneFalse("Medium");
+        long lowPendingSum = repository.sumCountByPriorityAndIsDoneFalse("Low");
 
         return FollowUpSummaryDto.builder()
                 .highPriorityCount(highPendingSum)
@@ -137,6 +118,14 @@ public class FollowUpServiceImpl implements FollowUpService {
         if (request.getNotes() != null) item.setNotes(request.getNotes());
 
         FollowUpItem updated = repository.save(item);
+        if (notificationService != null) {
+            notificationService.createNotification(
+                    "Follow-up Updated",
+                    "Task for " + item.getKeyInfoTitle() + " (" + item.getModuleName() + ") details updated.",
+                    "FOLLOW_UP",
+                    "/management/follow-up-queue"
+            );
+        }
         return mapper.toDto(updated);
     }
 
@@ -160,6 +149,14 @@ public class FollowUpServiceImpl implements FollowUpService {
             }
         }
         FollowUpItem updated = repository.save(item);
+        if (notificationService != null) {
+            notificationService.createNotification(
+                    "Follow-up " + (newDone ? "Completed" : "Reopened"),
+                    "Task for " + item.getKeyInfoTitle() + " (" + item.getModuleName() + ") marked as " + (newDone ? "completed" : "pending") + ".",
+                    "FOLLOW_UP",
+                    "/management/follow-up-queue"
+            );
+        }
         return mapper.toDto(updated);
     }
 
@@ -189,6 +186,14 @@ public class FollowUpServiceImpl implements FollowUpService {
         }
 
         FollowUpItem updated = repository.save(item);
+        if (notificationService != null) {
+            notificationService.createNotification(
+                    "Follow-up Action Logged",
+                    "Action logged for " + item.getKeyInfoTitle() + " (" + item.getModuleName() + ").",
+                    "FOLLOW_UP",
+                    "/management/follow-up-queue"
+            );
+        }
         return mapper.toDto(updated);
     }
 

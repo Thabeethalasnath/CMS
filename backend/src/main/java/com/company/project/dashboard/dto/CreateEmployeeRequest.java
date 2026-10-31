@@ -1,5 +1,6 @@
 package com.company.project.dashboard.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
@@ -11,6 +12,7 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class CreateEmployeeRequest {
 
     private String employeeId;
@@ -59,5 +61,25 @@ public class CreateEmployeeRequest {
     private String gender;
 
     private Integer orderIndex;
+
+    private String yearsOfService;
+
+    private BigDecimal monthlyCost;
+
+    private BigDecimal basicPercentage;
+
+    private BigDecimal hraPercentage;
+
+    private BigDecimal otherAllowance;
+
+    private BigDecimal employeePfPercentage;
+
+    private BigDecimal employeeEsiPercentage;
+
+    private BigDecimal ptMonthly;
+
+    private BigDecimal tdsMonthly;
+
+    private String notes;
 }
 

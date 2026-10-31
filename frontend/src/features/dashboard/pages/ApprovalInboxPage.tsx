@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { FileCheck, RotateCw } from 'lucide-react';
 import { approvalsService, AllApprovalsData } from '../../../services/approvalsService';
 import { ApprovalMetricCards } from '../../../components/approvals/ApprovalMetricCards';
@@ -10,11 +10,15 @@ import { AddEmployeeApprovalModal } from '../../../components/approvals/AddEmplo
 import { AddClientApprovalModal } from '../../../components/approvals/AddClientApprovalModal';
 import { ToastNotification, ToastItem } from '../../../components/ui/ToastNotification';
 import { ApprovalStatus } from '../../../types/approvals';
+import { Skeleton } from '../../../components/ui/Skeleton';
+import { ErrorBanner } from '../../../components/ui/ErrorBanner';
 
 export const ApprovalInboxPage: React.FC = () => {
-  const [data, setData] = useState<AllApprovalsData>(() => approvalsService.getApprovalsData());
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [lastRefreshed, setLastRefreshed] = useState('15 Mar 2025, 10:30 AM');
+  const [data, setData] = useState<AllApprovalsData | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [lastRefreshed, setLastRefreshed] = useState<string>('—');
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<string | null>(null);
 
   // Toast notifications state
@@ -37,7 +41,6 @@ export const ApprovalInboxPage: React.FC = () => {
     };
     setToasts((prev) => [...prev, newToast]);
 
-    // Auto-dismiss after 4.5 seconds
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
     }, 4500);
@@ -52,32 +55,41 @@ export const ApprovalInboxPage: React.FC = () => {
   const [isAddEmployeeOpen, setIsAddEmployeeOpen] = useState(false);
   const [isAddClientOpen, setIsAddClientOpen] = useState(false);
 
-  useEffect(() => {
-    loadLiveApprovals();
-  }, []);
+  const loadData = useCallback(async (isManual = false) => {
+    if (isManual) {
+      setIsRefreshing(true);
+    } else {
+      setIsLoading(true);
+    }
+    setErrorMessage(null);
 
-  const loadLiveApprovals = async () => {
-    const fresh = await approvalsService.fetchApprovalsData();
-    setData(fresh);
-  };
-
-  const handleManualRefresh = async () => {
-    setIsRefreshing(true);
     try {
       const fresh = await approvalsService.fetchApprovalsData();
-      const now = new Date();
-      const timeStr =
-        now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) +
-        ', ' +
-        now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-      setLastRefreshed(timeStr);
       setData(fresh);
-      addToast('info', 'Data Refreshed', 'Approval records are up-to-date from database.');
-    } catch {
-      addToast('error', 'Refresh Failed', 'Could not refresh approvals data.');
+      if (fresh.lastUpdated) {
+        setLastRefreshed(fresh.lastUpdated);
+      }
+      if (isManual) {
+        addToast('info', 'Data Refreshed', 'Approval records are up-to-date from database.');
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Could not load approvals data';
+      setErrorMessage(msg);
+      if (isManual) {
+        addToast('error', 'Refresh Failed', msg);
+      }
     } finally {
+      setIsLoading(false);
       setIsRefreshing(false);
     }
+  }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const handleManualRefresh = () => {
+    loadData(true);
   };
 
   const handleUpdateStatus = async (
@@ -85,64 +97,82 @@ export const ApprovalInboxPage: React.FC = () => {
     id: number,
     status: ApprovalStatus
   ) => {
+    if (!data) return;
     let nameOrCode = '';
 
-    if (type === 'employee') {
-      const item = data.employees.find((e) => e.id === id);
-      nameOrCode = item ? `${item.employee_name} (${item.employee_code})` : 'Employee request';
-      const updated = await approvalsService.updateEmployeeStatus(id, status);
-      setData(updated);
-    } else if (type === 'client') {
-      const item = data.clients.find((c) => c.id === id);
-      nameOrCode = item ? `${item.client_name} (${item.approval_id})` : 'Client request';
-      const updated = await approvalsService.updateClientStatus(id, status);
-      setData(updated);
-    } else if (type === 'ticketAsset') {
-      const item = data.ticketsAssets.find((t) => t.id === id);
-      nameOrCode = item ? `${item.title} (${item.approval_id})` : 'Ticket / Asset request';
-      const updated = await approvalsService.updateTicketAssetStatus(id, status);
-      setData(updated);
-    }
+    try {
+      if (type === 'employee') {
+        const item = data.employees.find((e) => e.id === id);
+        nameOrCode = item ? `${item.employee_name} (${item.employee_code})` : 'Employee request';
+        const updated = await approvalsService.updateEmployeeStatus(id, status);
+        setData(updated);
+      } else if (type === 'client') {
+        const item = data.clients.find((c) => c.id === id);
+        nameOrCode = item ? `${item.client_name} (${item.approval_id})` : 'Client request';
+        const updated = await approvalsService.updateClientStatus(id, status);
+        setData(updated);
+      } else if (type === 'ticketAsset') {
+        const item = data.ticketsAssets.find((t) => t.id === id);
+        nameOrCode = item ? `${item.title} (${item.approval_id})` : 'Ticket / Asset request';
+        const updated = await approvalsService.updateTicketAssetStatus(id, status);
+        setData(updated);
+      }
 
-    // Trigger refined Notification at top-right below navbar
-    const toastType = status === 'Approved' ? 'success' : status === 'Rejected' ? 'error' : 'warning';
-    const title = status === 'Approved' ? 'Request Approved' : status === 'Rejected' ? 'Request Rejected' : 'Marked as Pending';
-    addToast(
-      toastType,
-      title,
-      nameOrCode,
-      status
-    );
+      const toastType = status === 'Approved' ? 'success' : status === 'Rejected' ? 'error' : 'warning';
+      const title = status === 'Approved' ? 'Request Approved' : status === 'Rejected' ? 'Request Rejected' : 'Marked as Pending';
+      addToast(toastType, title, nameOrCode, status);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Action failed';
+      addToast('error', 'Update Failed', msg);
+    }
   };
 
   const handleAddEmployeeRequest = async (
     req: Parameters<typeof approvalsService.addEmployeeRequest>[0]
   ) => {
-    const updated = await approvalsService.addEmployeeRequest(req);
-    setData(updated);
-    addToast('success', 'Leave Request Created', `${req.employee_name} request submitted as Pending.`);
+    try {
+      const updated = await approvalsService.addEmployeeRequest(req);
+      setData(updated);
+      addToast('success', 'Leave Request Created', `${req.employee_name} request submitted as Pending.`);
+      setIsAddEmployeeOpen(false);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to submit request';
+      addToast('error', 'Submission Failed', msg);
+    }
   };
 
   const handleAddClientRequest = async (
     req: Parameters<typeof approvalsService.addClientRequest>[0]
   ) => {
-    const updated = await approvalsService.addClientRequest(req);
-    setData(updated);
-    addToast('success', 'Client Approval Created', `${req.client_name} request submitted as Pending.`);
+    try {
+      const updated = await approvalsService.addClientRequest(req);
+      setData(updated);
+      addToast('success', 'Client Approval Created', `${req.client_name} request submitted as Pending.`);
+      setIsAddClientOpen(false);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to submit request';
+      addToast('error', 'Submission Failed', msg);
+    }
   };
 
   // Optional top-level filter by status (All, Pending, Approved, Rejected)
-  const filteredEmployees = selectedStatusFilter && selectedStatusFilter !== 'all'
-    ? data.employees.filter((e) => e.status === selectedStatusFilter)
-    : data.employees;
+  const filteredEmployees = data
+    ? selectedStatusFilter && selectedStatusFilter !== 'all'
+      ? data.employees.filter((e) => e.status === selectedStatusFilter)
+      : data.employees
+    : [];
 
-  const filteredClients = selectedStatusFilter && selectedStatusFilter !== 'all'
-    ? data.clients.filter((c) => c.status === selectedStatusFilter)
-    : data.clients;
+  const filteredClients = data
+    ? selectedStatusFilter && selectedStatusFilter !== 'all'
+      ? data.clients.filter((c) => c.status === selectedStatusFilter)
+      : data.clients
+    : [];
 
-  const filteredTicketsAssets = selectedStatusFilter && selectedStatusFilter !== 'all'
-    ? data.ticketsAssets.filter((t) => t.status === selectedStatusFilter)
-    : data.ticketsAssets;
+  const filteredTicketsAssets = data
+    ? selectedStatusFilter && selectedStatusFilter !== 'all'
+      ? data.ticketsAssets.filter((t) => t.status === selectedStatusFilter)
+      : data.ticketsAssets
+    : [];
 
   return (
     <div className="p-4 sm:p-6 lg:p-7 flex flex-col gap-6 max-w-[1400px] mx-auto w-full">
@@ -171,7 +201,8 @@ export const ApprovalInboxPage: React.FC = () => {
           </span>
           <button
             onClick={handleManualRefresh}
-            className="p-1 rounded hover:bg-slate-200/60 text-[#2563EB] transition-colors"
+            disabled={isLoading || isRefreshing}
+            className="p-1 rounded hover:bg-slate-200/60 text-[#2563EB] transition-colors cursor-pointer disabled:opacity-50"
             title="Refresh inbox data"
           >
             <RotateCw size={14} className={isRefreshing ? 'animate-spin' : ''} />
@@ -179,35 +210,62 @@ export const ApprovalInboxPage: React.FC = () => {
         </div>
       </div>
 
-      {/* 4 Metric Summary Cards */}
-      <ApprovalMetricCards
-        summary={data.summary}
-        selectedFilter={selectedStatusFilter}
-        onSelectFilter={setSelectedStatusFilter}
-      />
+      {/* Visible Error Banner on failure */}
+      {errorMessage && (
+        <ErrorBanner
+          title="Failed to load approvals"
+          message={errorMessage}
+          onRetry={() => loadData(false)}
+          isRetrying={isLoading}
+        />
+      )}
 
-      {/* Section 1: Employee Approvals */}
-      <EmployeeApprovalsSection
-        approvals={filteredEmployees}
-        onOpenAddModal={() => setIsAddEmployeeOpen(true)}
-        onViewDetails={(item) => setDetailItem(item)}
-        onUpdateStatus={(id, status) => handleUpdateStatus('employee', id, status)}
-      />
+      {/* Skeletons while loading initial data */}
+      {isLoading && !data ? (
+        <div className="flex flex-col gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Skeleton variant="card" height={90} />
+            <Skeleton variant="card" height={90} />
+            <Skeleton variant="card" height={90} />
+            <Skeleton variant="card" height={90} />
+          </div>
+          <Skeleton variant="card" height={260} />
+          <Skeleton variant="card" height={260} />
+          <Skeleton variant="card" height={260} />
+        </div>
+      ) : data ? (
+        <>
+          {/* 4 Metric Summary Cards */}
+          <ApprovalMetricCards
+            summary={data.summary}
+            selectedFilter={selectedStatusFilter}
+            onSelectFilter={setSelectedStatusFilter}
+          />
 
-      {/* Section 2: Client Approvals */}
-      <ClientApprovalsSection
-        approvals={filteredClients}
-        onOpenAddModal={() => setIsAddClientOpen(true)}
-        onViewDetails={(item) => setDetailItem(item)}
-        onUpdateStatus={(id, status) => handleUpdateStatus('client', id, status)}
-      />
+          {/* Section 1: Employee Approvals */}
+          <EmployeeApprovalsSection
+            approvals={filteredEmployees}
+            onOpenAddModal={() => setIsAddEmployeeOpen(true)}
+            onViewDetails={(item) => setDetailItem(item)}
+            onUpdateStatus={(id, status) => handleUpdateStatus('employee', id, status)}
+          />
 
-      {/* Section 3: Tickets & Assets Approvals */}
-      <TicketsAssetsApprovalsSection
-        approvals={filteredTicketsAssets}
-        onViewDetails={(item) => setDetailItem(item)}
-        onUpdateStatus={(id, status) => handleUpdateStatus('ticketAsset', id, status)}
-      />
+          {/* Section 2: Client Approvals */}
+          <ClientApprovalsSection
+            approvals={filteredClients}
+            onOpenAddModal={() => setIsAddClientOpen(true)}
+            onViewDetails={(item) => setDetailItem(item)}
+            onUpdateStatus={(id, status) => handleUpdateStatus('client', id, status)}
+          />
+
+          {/* Section 3: Tickets & Assets Approvals */}
+          <TicketsAssetsApprovalsSection
+            approvals={filteredTicketsAssets}
+            onViewDetails={(item) => setDetailItem(item)}
+            onUpdateStatus={(id, status) => handleUpdateStatus('ticketAsset', id, status)}
+          />
+        </>
+      ) : null}
 
       {/* Detail / Action Modal */}
       <ApprovalDetailModal

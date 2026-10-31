@@ -47,7 +47,7 @@ describe('dashboardService', () => {
     expect(normalized.people_monthly[0].employer_payroll_cost).toBe(2340000);
   });
 
-  it('getDashboardData calls apiClient.get and caches result', async () => {
+  it('getDashboardData calls apiClient.get without local caching', async () => {
     const mockData = {
       settings: { dashboard_title: 'Executive CEO Dashboard' },
       kpis: [],
@@ -63,7 +63,7 @@ describe('dashboardService', () => {
 
     const res = await dashboardService.getDashboardData();
     expect(res.settings.dashboard_title).toBe('Executive CEO Dashboard');
-    expect(localStorage.getItem('kalpanaaa_cms_dashboard_data')).toBeTruthy();
+    expect(localStorage.getItem('kalpanaaa_cms_dashboard_data')).toBeNull();
   });
 });
 

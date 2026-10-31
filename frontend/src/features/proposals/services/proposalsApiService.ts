@@ -1,5 +1,6 @@
 import { apiRequest } from '@/services/api/apiClient';
 import { API_ENDPOINTS } from '@/services/api/apiEndpoints';
+import { triggerNotificationRefresh } from '@/services/notificationService';
 import {
   Proposal,
   ProposalStatus,
@@ -8,7 +9,7 @@ import {
   PageResponse,
   CreateProposalPayload,
 } from '../types';
-import { exportProposalsToCsv } from '../mockData';
+import { exportProposalsToCsv } from '../utils';
 
 export const proposalsApiService = {
   /**
@@ -52,20 +53,46 @@ export const proposalsApiService = {
    * 3. Create a new proposal with backend validation and persistence.
    */
   async createProposal(payload: CreateProposalPayload): Promise<Proposal> {
-    return await apiRequest<Proposal>(API_ENDPOINTS.PROPOSALS.BASE, {
+    const res = await apiRequest<Proposal>(API_ENDPOINTS.PROPOSALS.BASE, {
       method: 'POST',
       body: JSON.stringify(payload),
     });
+    triggerNotificationRefresh();
+    return res;
   },
 
   /**
    * 4. Update status for a proposal (Sent, Pending, Approved, In Review, Rejected).
    */
   async updateStatus(id: string, status: ProposalStatus): Promise<Proposal> {
-    return await apiRequest<Proposal>(API_ENDPOINTS.PROPOSALS.STATUS(id), {
+    const res = await apiRequest<Proposal>(API_ENDPOINTS.PROPOSALS.STATUS(id), {
       method: 'PATCH',
       body: JSON.stringify({ status }),
     });
+    triggerNotificationRefresh();
+    return res;
+  },
+
+  /**
+   * 4b. Update proposal details (Draft or Pending).
+   */
+  async updateProposal(id: string, payload: Partial<CreateProposalPayload>): Promise<Proposal> {
+    const res = await apiRequest<Proposal>(API_ENDPOINTS.PROPOSALS.BY_ID(id), {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    });
+    triggerNotificationRefresh();
+    return res;
+  },
+
+  /**
+   * 4c. Delete proposal (Draft only).
+   */
+  async deleteProposal(id: string): Promise<void> {
+    await apiRequest<void>(API_ENDPOINTS.PROPOSALS.BY_ID(id), {
+      method: 'DELETE',
+    });
+    triggerNotificationRefresh();
   },
 
   /**

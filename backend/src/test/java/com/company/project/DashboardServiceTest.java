@@ -51,6 +51,14 @@ class DashboardServiceTest {
     private EmployeeApprovalRepository employeeApprovalRepository;
     @Mock
     private ClientApprovalRepository clientApprovalRepository;
+    @Mock
+    private TicketAssetApprovalRepository ticketAssetApprovalRepository;
+    @Mock
+    private EmployeeMasterRepository employeeMasterRepository;
+    @Mock
+    private com.company.project.collections.repository.CollectionInvoiceRepository collectionInvoiceRepository;
+    @Mock
+    private com.company.project.collections.repository.CollectionPaymentRepository collectionPaymentRepository;
 
     @InjectMocks
     private DashboardService service;
@@ -98,10 +106,8 @@ class DashboardServiceTest {
 
         when(employeeApprovalRepository.countByStatusIgnoreCase("Pending")).thenReturn(4L);
         when(clientApprovalRepository.countByStatusIgnoreCase("Pending")).thenReturn(2L);
-        when(followUpItemRepository.findAll()).thenReturn(List.of());
 
-        Opportunity opp = Opportunity.builder().weightedPipeline(new BigDecimal("5000000")).build();
-        when(opportunityRepository.findAll()).thenReturn(List.of(opp));
+        when(opportunityRepository.sumWeightedPipeline()).thenReturn(new BigDecimal("5000000"));
 
         CeoDashboardResponse response = service.getCeoDashboard();
 

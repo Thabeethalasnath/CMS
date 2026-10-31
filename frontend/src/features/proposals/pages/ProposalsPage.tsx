@@ -8,27 +8,19 @@ import { ProposalsTable } from '../components/ProposalsTable';
 import { CreateProposalModal } from '../components/CreateProposalModal';
 import { ProposalDetailsModal } from '../components/ProposalDetailsModal';
 import { ToastNotification, useToast } from '../../../components/ui/ToastNotification';
+import { ErrorBanner } from '../../../components/ui/ErrorBanner';
 
 export const ProposalsPage: React.FC = () => {
   // 1. Proposals data states
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [allFilteredProposals, setAllFilteredProposals] = useState<Proposal[]>([]);
   const [totalCount, setTotalCount] = useState<number>(0);
-  const [lastUpdated, setLastUpdated] = useState('15 Mar 2025, 10:30 AM');
+  const [lastUpdated, setLastUpdated] = useState('—');
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // 2. Dynamic KPI summary state
-  const [kpiSummary, setKpiSummary] = useState<ProposalKpiSummary>({
-    totalProposals: 0,
-    totalProposalsTrend: 12,
-    pendingDecisions: 0,
-    pendingDecisionsTrend: -8,
-    approvedProposals: 0,
-    approvedProposalsTrend: 18,
-    totalProposalValue: 0,
-    totalProposalValueTrend: 20,
-  });
+  // 2. Dynamic KPI summary state (starts null to show skeletons / real data)
+  const [kpiSummary, setKpiSummary] = useState<ProposalKpiSummary | null>(null);
 
   // 3. Filter options
   const [ownerOptions, setOwnerOptions] = useState<string[]>(['All']);
@@ -60,30 +52,43 @@ export const ProposalsPage: React.FC = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedProposal, setSelectedProposal] = useState<Proposal | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
-  const [nextProposalId, setNextProposalId] = useState<string>('P-2025-125');
+  const [nextProposalId, setNextProposalId] = useState<string>('');
 
   // 7. Designer Toast Notifications
   const { toasts, addToast, removeToast } = useToast();
 
+  const updateTimestamp = () => {
+    const now = new Date();
+    setLastUpdated(
+      `${now.toLocaleDateString('en-GB', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+      })}, ${now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`
+    );
+  };
+
   // Load filter options and next ID on mount
-  useEffect(() => {
-    const loadMetadata = async () => {
-      try {
-        const [opts, nextId] = await Promise.all([
-          proposalsApiService.getFilterOptions(),
-          proposalsApiService.getNextProposalId(),
-        ]);
-        setOwnerOptions(opts.owners);
-        setClientOptions(opts.clients);
-        setOpportunityOptions(opts.opportunities);
-        setServiceOptions(opts.services);
-        setNextProposalId(nextId);
-      } catch (err) {
-        console.warn('Metadata load notice:', err);
-      }
-    };
-    loadMetadata();
+  const loadMetadata = useCallback(async () => {
+    try {
+      const [opts, nextId] = await Promise.all([
+        proposalsApiService.getFilterOptions(),
+        proposalsApiService.getNextProposalId(),
+      ]);
+      setOwnerOptions(opts.owners);
+      setClientOptions(opts.clients);
+      setOpportunityOptions(opts.opportunities);
+      setServiceOptions(opts.services);
+      setNextProposalId(nextId);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to load filter metadata.';
+      setError(msg);
+    }
   }, []);
+
+  useEffect(() => {
+    loadMetadata();
+  }, [loadMetadata]);
 
   // Primary data query function through dedicated service layer
   const loadProposals = useCallback(async () => {
@@ -124,6 +129,7 @@ export const ProposalsPage: React.FC = () => {
       setTotalCount(pageRes.totalElements);
       setAllFilteredProposals(allFiltered);
       setKpiSummary(kpis);
+      updateTimestamp();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to fetch proposals.';
       setError(msg);
@@ -187,17 +193,9 @@ export const ProposalsPage: React.FC = () => {
         newProposal.status
       );
 
-      // Refresh proposal list, dynamic filter options, and next ID
+      setIsCreateModalOpen(false);
       await loadProposals();
-      const [opts, nextId] = await Promise.all([
-        proposalsApiService.getFilterOptions(),
-        proposalsApiService.getNextProposalId(),
-      ]);
-      setOwnerOptions(opts.owners);
-      setClientOptions(opts.clients);
-      setOpportunityOptions(opts.opportunities);
-      setServiceOptions(opts.services);
-      setNextProposalId(nextId);
+      loadMetadata();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Could not create proposal.';
       addToast('error', 'Creation Failed', msg);
@@ -206,34 +204,31 @@ export const ProposalsPage: React.FC = () => {
 
   // Handle Refresh
   const handleRefresh = async () => {
-    const now = new Date();
-    const formatted = `${now.toLocaleDateString('en-GB', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    })}, ${now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`;
-    setLastUpdated(formatted);
     await loadProposals();
+    await loadMetadata();
     addToast('success', 'Data Refreshed', 'Proposal records synchronized and updated.');
   };
 
-  // Handle Status Update (e.g. Approve, Reject, or status dropdown change)
+  // Handle Status Update with optimistic rollback
   const handleUpdateStatus = async (proposalId: string, newStatus: ProposalStatus) => {
+    const previousProposals = [...proposals];
+    const previousFiltered = [...allFilteredProposals];
+    const previousSelected = selectedProposal;
+    const previousKpis = kpiSummary;
+
+    // Optimistically update
+    setProposals((prev) =>
+      prev.map((p) => (p.proposalId === proposalId ? { ...p, status: newStatus } : p))
+    );
+    setAllFilteredProposals((prev) =>
+      prev.map((p) => (p.proposalId === proposalId ? { ...p, status: newStatus } : p))
+    );
+    setSelectedProposal((prev) =>
+      prev && prev.proposalId === proposalId ? { ...prev, status: newStatus } : prev
+    );
+
     try {
       const updated = await proposalsApiService.updateStatus(proposalId, newStatus);
-
-      // Update state locally for instantaneous responsive feedback
-      setProposals((prev) =>
-        prev.map((p) => (p.proposalId === proposalId ? { ...p, status: newStatus } : p))
-      );
-      setAllFilteredProposals((prev) =>
-        prev.map((p) => (p.proposalId === proposalId ? { ...p, status: newStatus } : p))
-      );
-      setSelectedProposal((prev) =>
-        prev && prev.proposalId === proposalId ? { ...prev, status: newStatus } : prev
-      );
-
-      // Refresh KPIs to ensure counts remain strictly consistent
       const freshKpis = await proposalsApiService.getKpis();
       setKpiSummary(freshKpis);
 
@@ -250,8 +245,42 @@ export const ProposalsPage: React.FC = () => {
         newStatus
       );
     } catch (err: unknown) {
+      // Rollback on failure
+      setProposals(previousProposals);
+      setAllFilteredProposals(previousFiltered);
+      setSelectedProposal(previousSelected);
+      setKpiSummary(previousKpis);
+
       const msg = err instanceof Error ? err.message : 'Failed to update proposal status.';
       addToast('error', 'Status Update Failed', msg);
+    }
+  };
+
+  // Handle Delete Proposal with optimistic rollback
+  const handleDeleteProposal = async (proposalId: string) => {
+    const previousProposals = [...proposals];
+    const previousFiltered = [...allFilteredProposals];
+    const previousTotal = totalCount;
+
+    setProposals((prev) => prev.filter((p) => p.proposalId !== proposalId));
+    setAllFilteredProposals((prev) => prev.filter((p) => p.proposalId !== proposalId));
+    setTotalCount((prev) => Math.max(0, prev - 1));
+
+    try {
+      await proposalsApiService.deleteProposal(proposalId);
+      addToast('success', 'Proposal Deleted', `Proposal ${proposalId} removed successfully.`);
+      setIsDetailsModalOpen(false);
+      setSelectedProposal(null);
+      const freshKpis = await proposalsApiService.getKpis();
+      setKpiSummary(freshKpis);
+      loadMetadata();
+    } catch (err: unknown) {
+      setProposals(previousProposals);
+      setAllFilteredProposals(previousFiltered);
+      setTotalCount(previousTotal);
+
+      const msg = err instanceof Error ? err.message : 'Failed to delete proposal.';
+      addToast('error', 'Delete Failed', msg);
     }
   };
 
@@ -272,8 +301,19 @@ export const ProposalsPage: React.FC = () => {
         onCreateProposal={() => setIsCreateModalOpen(true)}
       />
 
+      {/* Error Banner when initial query or load fails */}
+      {error && !isLoading && (
+        <div className="mb-6">
+          <ErrorBanner
+            title="Failed to Load Proposals"
+            message={error}
+            onRetry={loadProposals}
+          />
+        </div>
+      )}
+
       {/* 2. Four KPI Cards */}
-      <ProposalsKpiCards summary={kpiSummary} />
+      <ProposalsKpiCards summary={kpiSummary} isLoading={isLoading} />
 
       {/* 3. Search and Filter Panel */}
       <ProposalsFilterCard
@@ -325,6 +365,7 @@ export const ProposalsPage: React.FC = () => {
           setSelectedProposal(null);
         }}
         onUpdateStatus={handleUpdateStatus}
+        onDelete={handleDeleteProposal}
       />
     </div>
   );

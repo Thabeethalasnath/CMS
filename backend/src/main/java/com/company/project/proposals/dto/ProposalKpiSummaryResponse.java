@@ -13,11 +13,11 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 public class ProposalKpiSummaryResponse {
     private long totalProposals;
-    private double totalProposalsTrend;
+    private Double totalProposalsTrend;
     private long pendingDecisions;
-    private double pendingDecisionsTrend;
+    private Double pendingDecisionsTrend;
     private long approvedProposals;
-    private double approvedProposalsTrend;
+    private Double approvedProposalsTrend;
     private BigDecimal totalProposalValue;
-    private double totalProposalValueTrend;
+    private Double totalProposalValueTrend;
 }

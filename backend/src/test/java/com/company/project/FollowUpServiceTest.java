@@ -130,7 +130,13 @@ class FollowUpServiceTest {
                 .isDone(false)
                 .build();
 
-        when(repository.findAll()).thenReturn(Arrays.asList(sampleItem, medItem, lowItem));
+        when(repository.sumCountByPriorityAndIsDoneFalse("High")).thenReturn(12L);
+        when(repository.sumCountByPriorityAndIsDoneFalse("Medium")).thenReturn(6L);
+        when(repository.sumCountByPriorityAndIsDoneFalse("Low")).thenReturn(3L);
+        when(repository.countByPriorityAndIsDone("High", false)).thenReturn(1L);
+        when(repository.countByPriorityAndIsDone("Medium", false)).thenReturn(1L);
+        when(repository.countByPriorityAndIsDone("Low", false)).thenReturn(1L);
+        when(repository.countByIsDoneTrue()).thenReturn(0L);
 
         FollowUpSummaryDto summary = service.getSummary();
 

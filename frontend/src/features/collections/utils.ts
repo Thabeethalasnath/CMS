@@ -299,3 +299,7 @@ export const computeDynamicInsights = (invoices: Invoice[]) => {
     },
   ];
 };
+
+export const exportProposalsToCsv = <T extends object>(proposals: T[], filename: string = 'proposals_export'): void => {
+  exportInvoicesToCsv(filename || 'proposals_export', proposals);
+};

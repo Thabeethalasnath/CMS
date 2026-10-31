@@ -22,10 +22,14 @@ export interface OpportunityData {
 
 export interface OpportunitySummaryData {
   totalOpportunities: number;
+  totalOpportunitiesTrend?: string | null;
   openOpportunities: number;
+  openOpportunitiesTrend?: string | null;
   weightedPipeline: number;
   weightedPipelineFormatted: string;
+  weightedPipelineTrend?: string | null;
   wonOpportunities: number;
+  wonOpportunitiesTrend?: string | null;
 }
 
 export interface CreateOpportunityPayload {

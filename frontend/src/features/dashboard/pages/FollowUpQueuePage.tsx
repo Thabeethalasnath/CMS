@@ -66,13 +66,9 @@ const renderModuleIcon = (moduleCode?: string, moduleName?: string) => {
 
 // Route mapping for module navigation
 const MODULE_ROUTES: Record<string, string> = {
-  INVOICES: '/finance/invoices',
-  COMPLIANCE: '/support/amc-sla',
+  INVOICES: '/management/collections',
   APPROVALS: '/management/approval-inbox',
-  DOCUMENTS: '/documents/lifecycle',
-  ASSETS: '/hr/assets',
   OPPORTUNITIES: '/sales/opportunities',
-  PROJECT_CONTROL: '/projects/tasks',
   CANDIDATES: '/hr/employee-master',
 };
 
@@ -96,7 +92,7 @@ export const FollowUpQueuePage: React.FC<FollowUpQueuePageProps> = (props) => {
   const [items, setItems] = useState<FollowUpItemData[]>([]);
   const [summary, setSummary] = useState<FollowUpSummaryData | null>(null);
   const [selectedFilter, setSelectedFilter] = useState<PriorityLevel | 'all'>('all');
-  const [lastRefreshed, setLastRefreshed] = useState<string>('15 Mar 2025, 10:30 AM');
+  const [lastRefreshed, setLastRefreshed] = useState<string>('—');
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -242,8 +238,9 @@ export const FollowUpQueuePage: React.FC<FollowUpQueuePageProps> = (props) => {
           ? `Marked "${updated.moduleName}" as done`
           : `Reopened "${updated.moduleName}"`
       );
-    } catch {
-      showToast('Failed to update follow-up status');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to update follow-up status';
+      showToast(msg);
     }
   };
 
@@ -283,8 +280,6 @@ export const FollowUpQueuePage: React.FC<FollowUpQueuePageProps> = (props) => {
     const route = MODULE_ROUTES[code];
     if (route) {
       navigate(route);
-    } else {
-      showToast(`Navigating to ${item.secondaryActionLabel}...`);
     }
   };
 
@@ -581,13 +576,15 @@ export const FollowUpQueuePage: React.FC<FollowUpQueuePageProps> = (props) => {
             <span>{errorMessage}</span>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => handleResetData()}
-              className="px-3 py-1 bg-white border border-red-300 hover:bg-red-100 text-red-700 rounded-lg font-medium text-xs transition-colors"
-            >
-              Reset Seed Data
-            </button>
+            {import.meta.env.DEV && (
+              <button
+                type="button"
+                onClick={() => handleResetData()}
+                className="px-3 py-1 bg-white border border-red-300 hover:bg-red-100 text-red-700 rounded-lg font-medium text-xs transition-colors"
+              >
+                Reset Seed Data
+              </button>
+            )}
             <button
               type="button"
               onClick={() => loadData()}
@@ -804,7 +801,7 @@ export const FollowUpQueuePage: React.FC<FollowUpQueuePageProps> = (props) => {
                             Clear all filters
                           </button>
                         )}
-                        {items.length === 0 && (
+                        {import.meta.env.DEV && items.length === 0 && (
                           <button
                             type="button"
                             onClick={handleResetData}
@@ -965,15 +962,27 @@ export const FollowUpQueuePage: React.FC<FollowUpQueuePageProps> = (props) => {
                           </button>
 
                           {/* Secondary Action Button: 179.2px x 30px */}
-                          <button
-                            type="button"
-                            onClick={() => handleSecondaryAction(item)}
-                            style={{ width: '179.2px', height: '30px' }}
-                            className="box-border flex flex-row items-center justify-center px-3 h-[30px] w-[179.2px] gap-1.5 border border-[#BFDBFE] hover:bg-indigo-50/50 rounded-lg text-xs font-medium text-[#4F46E5] transition-colors shrink-0"
-                          >
-                            <FileText className="w-3.5 h-3.5 text-[#4F46E5] stroke-[1.17] shrink-0" />
-                            <span className="truncate">{item.secondaryActionLabel}</span>
-                          </button>
+                          {(() => {
+                            const code = (item.moduleCode || '').toUpperCase();
+                            const isRoutable = Boolean(MODULE_ROUTES[code]);
+                            return (
+                              <button
+                                type="button"
+                                disabled={!isRoutable}
+                                onClick={() => handleSecondaryAction(item)}
+                                title={isRoutable ? `Open in ${item.secondaryActionLabel}` : 'Module coming soon'}
+                                style={{ width: '179.2px', height: '30px' }}
+                                className={`box-border flex flex-row items-center justify-center px-3 h-[30px] w-[179.2px] gap-1.5 border rounded-lg text-xs font-medium transition-colors shrink-0 ${
+                                  isRoutable
+                                    ? 'border-[#BFDBFE] hover:bg-indigo-50/50 text-[#4F46E5] cursor-pointer'
+                                    : 'border-slate-200 text-slate-400 opacity-60 cursor-not-allowed bg-slate-50'
+                                }`}
+                              >
+                                <FileText className={`w-3.5 h-3.5 stroke-[1.17] shrink-0 ${isRoutable ? 'text-[#4F46E5]' : 'text-slate-400'}`} />
+                                <span className="truncate">{item.secondaryActionLabel}</span>
+                              </button>
+                            );
+                          })()}
                         </div>
                       </td>
                     </tr>

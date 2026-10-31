@@ -77,6 +77,9 @@ class ApprovalServiceTest {
         when(employeeRepo.findAllByOrderBySortOrderAscIdAsc()).thenReturn(List.of(sampleEmployee));
         when(clientRepo.findAllByOrderBySortOrderAscIdAsc()).thenReturn(List.of(sampleClient));
         when(ticketAssetRepo.findAllByOrderBySortOrderAscIdAsc()).thenReturn(List.of(sampleTicketAsset));
+        when(employeeRepo.countByStatusIgnoreCase("Pending")).thenReturn(1L);
+        when(clientRepo.countByStatusIgnoreCase("Pending")).thenReturn(1L);
+        when(ticketAssetRepo.countByStatusIgnoreCase("Pending")).thenReturn(1L);
 
         ApprovalsResponse response = service.getAllApprovals();
 
@@ -163,7 +166,7 @@ class ApprovalServiceTest {
         ClientApproval created = service.createClientApproval(newClient);
 
         assertNotNull(created);
-        assertEquals("APP-CL-003", created.getApprovalId());
+        assertTrue(created.getApprovalId().matches("^APP-\\d{4}-003$"));
         assertEquals("Pending", created.getStatus());
     }
 

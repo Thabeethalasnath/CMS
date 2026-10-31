@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Crown, RotateCw } from 'lucide-react';
 import { FullDashboardData } from '../../../types/dashboard';
-import { initialDashboardData } from '../../../constants/initialDashboardData';
 import { dashboardService } from '../../../services/dashboardService';
 import { KpiCardsGrid } from '../../../components/dashboard/KpiCardsGrid';
 import { FinanceOverviewSection } from '../../../components/dashboard/FinanceOverviewSection';
@@ -9,6 +8,8 @@ import { SalesDeliverySection } from '../../../components/dashboard/SalesDeliver
 import { PeopleOverviewSection } from '../../../components/dashboard/PeopleOverviewSection';
 import { ManagementAlertsSection } from '../../../components/dashboard/ManagementAlertsSection';
 import { EditDataModal } from '../../../components/dashboard/EditDataModal';
+import { Skeleton } from '../../../components/ui/Skeleton';
+import { ErrorBanner } from '../../../components/ui/ErrorBanner';
 
 interface CeoDashboardPageProps {
   dateRange: string;
@@ -20,50 +21,67 @@ export const CeoDashboardPage: React.FC<CeoDashboardPageProps> = ({
   isEditModalOpen,
   onCloseEditModal
 }) => {
-  const [data, setData] = useState<FullDashboardData>(initialDashboardData);
-  const [isLoading, setIsLoading] = useState(false);
-  const [lastRefreshed, setLastRefreshed] = useState('15 Mar 2025, 10:30 AM');
+  const [data, setData] = useState<FullDashboardData | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [lastRefreshed, setLastRefreshed] = useState<string>('—');
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  const loadData = useCallback(async (isManual = false) => {
+    if (isManual) {
+      setIsRefreshing(true);
+    } else {
+      setIsLoading(true);
+    }
+    setErrorMessage(null);
 
-  const loadData = async () => {
-    setIsLoading(true);
     try {
       const fetched = await dashboardService.getDashboardData();
       setData(fetched);
-      if (fetched.settings?.last_updated) {
+      if (fetched.settings?.last_updated && fetched.settings.last_updated !== '—') {
         setLastRefreshed(fetched.settings.last_updated);
+      } else {
+        const now = new Date();
+        setLastRefreshed(
+          `${now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}, ${now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`
+        );
       }
-    } catch (err) {
-      console.error('Failed to load dashboard data:', err);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to connect to backend server';
+      setErrorMessage(msg);
     } finally {
       setIsLoading(false);
+      setIsRefreshing(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const handleManualRefresh = () => {
-    setIsLoading(true);
-    setTimeout(() => {
-      const now = new Date();
-      const timeStr =
-        now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) +
-        ', ' +
-        now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-      setLastRefreshed(timeStr);
-      loadData();
-    }, 400);
+    loadData(true);
   };
 
   const handleSaveData = async (updated: FullDashboardData) => {
+    const previous = data;
     setData(updated);
-    await dashboardService.saveDashboardData(updated);
+    try {
+      await dashboardService.saveDashboardData(updated);
+    } catch (err: unknown) {
+      setData(previous);
+      throw err;
+    }
   };
 
   const handleUpdateAlertCount = async (alertId: number, delta: number) => {
-    const updated = await dashboardService.updateAlertCount(alertId, delta);
-    setData(updated);
+    try {
+      const updated = await dashboardService.updateAlertCount(alertId, delta);
+      setData(updated);
+    } catch {
+      // Re-fetch to sync
+      loadData(false);
+    }
   };
 
   return (
@@ -76,10 +94,10 @@ export const CeoDashboardPage: React.FC<CeoDashboardPageProps> = ({
           </div>
           <div>
             <h1 className="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight leading-tight">
-              {data.settings.dashboard_title || 'CEO Dashboard'}
+              {data?.settings?.dashboard_title || 'CEO Dashboard'}
             </h1>
             <p className="text-xs text-slate-500">
-              {data.settings.dashboard_subtitle ||
+              {data?.settings?.dashboard_subtitle ||
                 'Executive view of business performance across Finance, Sales, Delivery, People and Risk.'}
             </p>
           </div>
@@ -92,48 +110,81 @@ export const CeoDashboardPage: React.FC<CeoDashboardPageProps> = ({
           </span>
           <button
             onClick={handleManualRefresh}
-            className="p-1.5 rounded-md hover:bg-slate-200/60 text-slate-500 hover:text-slate-800 transition-colors"
+            disabled={isLoading || isRefreshing}
+            className="p-1.5 rounded-md hover:bg-slate-200/60 text-slate-500 hover:text-slate-800 transition-colors cursor-pointer disabled:opacity-50"
             title="Refresh dashboard data"
           >
-            <RotateCw size={14} className={isLoading ? 'animate-spin' : ''} />
+            <RotateCw size={14} className={isRefreshing ? 'animate-spin text-amber-600' : ''} />
           </button>
         </div>
       </div>
 
-      {/* A. KPI Cards (Two rows of 5 on desktop, responsive to 2 -> 1) */}
-      <KpiCardsGrid cards={data.kpis} />
+      {/* Visible Error Banner on failure */}
+      {errorMessage && (
+        <ErrorBanner
+          title="Failed to load CEO Dashboard data"
+          message={errorMessage}
+          onRetry={() => loadData(false)}
+          isRetrying={isLoading}
+        />
+      )}
 
-      {/* B. Finance Overview Section (4 panels) */}
-      <FinanceOverviewSection
-        monthlyData={data.finance_monthly}
-        expenseBreakdown={data.expense_breakdown}
-      />
+      {/* Skeletons while loading initial data */}
+      {isLoading && !data ? (
+        <div className="flex flex-col gap-5">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3.5">
+            {Array.from({ length: 10 }).map((_, i) => (
+              <Skeleton key={i} variant="card" height={96} />
+            ))}
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <Skeleton variant="card" height={280} />
+            <Skeleton variant="card" height={280} />
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <Skeleton variant="card" height={260} />
+            <Skeleton variant="card" height={260} />
+          </div>
+          <Skeleton variant="card" height={320} />
+        </div>
+      ) : data ? (
+        <>
+          {/* A. KPI Cards (Two rows of 5 on desktop, responsive to 2 -> 1) */}
+          <KpiCardsGrid cards={data.kpis} />
 
-      {/* C. Sales & Delivery Overview Section (2 panels) */}
-      <SalesDeliverySection
-        pipelineStages={data.sales_pipeline}
-        projectStatuses={data.project_status}
-      />
+          {/* B. Finance Overview Section (4 panels) */}
+          <FinanceOverviewSection
+            monthlyData={data.finance_monthly}
+            expenseBreakdown={data.expense_breakdown}
+          />
 
-      {/* D. People Overview Section (3 panels) */}
-      <PeopleOverviewSection
-        monthlyData={data.people_monthly}
-        summary={data.people_summary}
-      />
+          {/* C. Sales & Delivery Overview Section (2 panels) */}
+          <SalesDeliverySection
+            pipelineStages={data.sales_pipeline}
+            projectStatuses={data.project_status}
+          />
 
-      {/* E. Management Alerts Section (10 rows table) */}
-      <ManagementAlertsSection
-        alerts={data.alerts}
-        onUpdateAlertCount={handleUpdateAlertCount}
-      />
+          {/* D. People Overview Section (3 panels) */}
+          <PeopleOverviewSection
+            monthlyData={data.people_monthly}
+            summary={data.people_summary}
+          />
 
-      {/* Interactive Edit Modal */}
-      <EditDataModal
-        isOpen={isEditModalOpen}
-        onClose={onCloseEditModal}
-        dashboardData={data}
-        onSaveData={handleSaveData}
-      />
+          {/* E. Management Alerts Section (10 rows table) */}
+          <ManagementAlertsSection
+            alerts={data.alerts}
+            onUpdateAlertCount={handleUpdateAlertCount}
+          />
+
+          {/* Interactive Edit Modal */}
+          <EditDataModal
+            isOpen={isEditModalOpen}
+            onClose={onCloseEditModal}
+            dashboardData={data}
+            onSaveData={handleSaveData}
+          />
+        </>
+      ) : null}
     </div>
   );
 };

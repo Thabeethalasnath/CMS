@@ -6,13 +6,16 @@ import com.company.project.dashboard.dto.ContractSummaryDto;
 import com.company.project.dashboard.dto.CreateContractRequest;
 import com.company.project.dashboard.entity.Contract;
 import com.company.project.dashboard.repository.ContractRepository;
+import com.company.project.notification.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.text.NumberFormat;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -24,6 +27,9 @@ import java.util.stream.Collectors;
 public class ContractServiceImpl implements ContractService {
 
     private final ContractRepository contractRepository;
+
+    @Autowired(required = false)
+    private NotificationService notificationService;
 
     @Override
     @Transactional(readOnly = true)
@@ -68,16 +74,29 @@ public class ContractServiceImpl implements ContractService {
             totalVal = BigDecimal.ZERO;
         }
 
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime startOfThisMonth = now.withDayOfMonth(1).toLocalDate().atStartOfDay();
+
+        long totalBefore = contractRepository.countBefore(startOfThisMonth);
+        long activeBefore = contractRepository.countByStatusBefore("Active", startOfThisMonth);
+        long expiringBefore = contractRepository.countByStatusBefore("Expiring", startOfThisMonth);
+        BigDecimal totalValBefore = contractRepository.sumTotalContractValueBefore(startOfThisMonth);
+
+        Double totalPct = com.company.project.common.util.TrendCalculationUtil.calculateMoMPercentage(total, totalBefore);
+        Double activePct = com.company.project.common.util.TrendCalculationUtil.calculateMoMPercentage(active, activeBefore);
+        Double expiringPct = com.company.project.common.util.TrendCalculationUtil.calculateMoMPercentage(expiring, expiringBefore);
+        Double totalValPct = com.company.project.common.util.TrendCalculationUtil.calculateMoMPercentage(totalVal, totalValBefore);
+
         return ContractSummaryDto.builder()
-                .totalContracts(total > 0 ? total : 72)
-                .totalContractsTrend("↑ 14% vs last month")
-                .activeContracts(active > 0 ? active : 56)
-                .activeContractsTrend("↑ 8% vs last month")
-                .expiringContracts(expiring > 0 ? expiring : 8)
-                .expiringContractsTrend("↓ 20% vs last month")
+                .totalContracts(total)
+                .totalContractsTrend(com.company.project.common.util.TrendCalculationUtil.formatTrendString(totalPct))
+                .activeContracts(active)
+                .activeContractsTrend(com.company.project.common.util.TrendCalculationUtil.formatTrendString(activePct))
+                .expiringContracts(expiring)
+                .expiringContractsTrend(com.company.project.common.util.TrendCalculationUtil.formatTrendString(expiringPct))
                 .totalContractValue(totalVal)
                 .totalContractValueFormatted(formatIndianCurrency(totalVal))
-                .totalContractValueTrend("↑ 22% vs last month")
+                .totalContractValueTrend(com.company.project.common.util.TrendCalculationUtil.formatTrendString(totalValPct))
                 .build();
     }
 
@@ -94,8 +113,14 @@ public class ContractServiceImpl implements ContractService {
     public ContractDto createContract(CreateContractRequest req) {
         String contractId = req.getContractId();
         if (contractId == null || contractId.isBlank()) {
+            int year = java.time.LocalDate.now().getYear();
             long count = contractRepository.count() + 1;
-            contractId = String.format("C-2025-%03d", count);
+            String candidate = String.format("C-%04d-%03d", year, count);
+            while (contractRepository.existsByContractId(candidate)) {
+                count++;
+                candidate = String.format("C-%04d-%03d", year, count);
+            }
+            contractId = candidate;
         }
 
         Contract contract = Contract.builder()
@@ -115,6 +140,14 @@ public class ContractServiceImpl implements ContractService {
                 .build();
 
         Contract saved = contractRepository.save(contract);
+        if (notificationService != null) {
+            notificationService.createNotification(
+                    "New Contract Created",
+                    "Contract " + saved.getContractId() + " (" + saved.getContractType() + ") was created.",
+                    "CONTRACT",
+                    "/sales/contracts"
+            );
+        }
         return mapToDto(saved);
     }
 
@@ -138,6 +171,14 @@ public class ContractServiceImpl implements ContractService {
         if (req.getOrderIndex() != null) existing.setOrderIndex(req.getOrderIndex());
 
         Contract updated = contractRepository.save(existing);
+        if (notificationService != null) {
+            notificationService.createNotification(
+                    "Contract Updated",
+                    "Contract " + updated.getContractId() + " (" + updated.getStatus() + ") was updated.",
+                    "CONTRACT",
+                    "/sales/contracts"
+            );
+        }
         return mapToDto(updated);
     }
 

@@ -9,6 +9,7 @@ import com.company.project.proposals.repository.ProposalRepository;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -16,6 +17,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.company.project.notification.service.NotificationService;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -29,12 +31,15 @@ import java.util.*;
 public class ProposalService {
 
     private static final Set<String> ALLOWED_STATUSES = Set.of(
-            "Sent", "Pending", "Approved", "In Review", "Rejected"
+            "Draft", "Sent", "Pending", "Approved", "In Review", "Rejected"
     );
 
     private final ProposalRepository proposalRepository;
     private final ProposalCalculationService calculationService;
     private final ProposalIdGeneratorService idGeneratorService;
+
+    @Autowired(required = false)
+    private NotificationService notificationService;
 
     @Transactional(readOnly = true)
     public PageResponse<ProposalResponse> getProposals(
@@ -217,6 +222,14 @@ public class ProposalService {
         entity.setStatus(cleanStatus);
         ProposalEntity updated = proposalRepository.save(entity);
         log.info("Updated status for proposal {} to {}", id, cleanStatus);
+        if (notificationService != null) {
+            notificationService.createNotification(
+                    "Proposal " + cleanStatus,
+                    "Proposal " + updated.getId() + " (" + updated.getTitle() + ") marked as " + cleanStatus + ".",
+                    "PROPOSAL",
+                    "/sales/proposals"
+            );
+        }
         return mapToResponse(updated);
     }
 
@@ -227,16 +240,91 @@ public class ProposalService {
         long approvedProposals = proposalRepository.countByStatus("Approved");
         BigDecimal totalValue = proposalRepository.sumTotalAmount();
 
+        java.time.OffsetDateTime now = java.time.OffsetDateTime.now();
+        java.time.OffsetDateTime startOfThisMonth = now.withDayOfMonth(1).toLocalDate().atStartOfDay().atOffset(now.getOffset());
+
+        long totalBefore = proposalRepository.countBefore(startOfThisMonth);
+        long pendingBefore = proposalRepository.countByStatusBefore("Pending", startOfThisMonth);
+        long approvedBefore = proposalRepository.countByStatusBefore("Approved", startOfThisMonth);
+        BigDecimal totalValBefore = proposalRepository.sumTotalAmountBefore(startOfThisMonth);
+
+        Double totalTrend = com.company.project.common.util.TrendCalculationUtil.calculateMoMPercentage(totalProposals, totalBefore);
+        Double pendingTrend = com.company.project.common.util.TrendCalculationUtil.calculateMoMPercentage(pendingDecisions, pendingBefore);
+        Double approvedTrend = com.company.project.common.util.TrendCalculationUtil.calculateMoMPercentage(approvedProposals, approvedBefore);
+        Double totalValTrend = com.company.project.common.util.TrendCalculationUtil.calculateMoMPercentage(totalValue, totalValBefore);
+
         return ProposalKpiSummaryResponse.builder()
                 .totalProposals(totalProposals)
-                .totalProposalsTrend(12.0)
+                .totalProposalsTrend(totalTrend)
                 .pendingDecisions(pendingDecisions)
-                .pendingDecisionsTrend(-8.0)
+                .pendingDecisionsTrend(pendingTrend)
                 .approvedProposals(approvedProposals)
-                .approvedProposalsTrend(18.0)
+                .approvedProposalsTrend(approvedTrend)
                 .totalProposalValue(totalValue != null ? totalValue : BigDecimal.ZERO)
-                .totalProposalValueTrend(20.0)
+                .totalProposalValueTrend(totalValTrend)
                 .build();
+    }
+
+    @Transactional
+    public ProposalResponse updateProposal(String id, UpdateProposalRequest request) {
+        ProposalEntity existing = proposalRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Proposal not found with id: " + id));
+
+        if (!"Draft".equalsIgnoreCase(existing.getStatus()) && !"Pending".equalsIgnoreCase(existing.getStatus())) {
+            throw new BusinessValidationException("Only Draft or Pending proposals can be edited");
+        }
+
+        if (request.getTitle() != null && !request.getTitle().isBlank()) {
+            existing.setTitle(request.getTitle().trim());
+        }
+        if (request.getValidUntil() != null && !request.getValidUntil().isBlank()) {
+            existing.setValidUntil(calculationService.parseDate(request.getValidUntil()));
+        }
+        if (request.getExpectedDecisionDate() != null && !request.getExpectedDecisionDate().isBlank()) {
+            existing.setExpectedDecisionDate(calculationService.parseDate(request.getExpectedDecisionDate()));
+        }
+        if (request.getServiceId() != null) {
+            existing.setServiceId(request.getServiceId());
+        }
+        if (request.getServiceName() != null) {
+            existing.setServiceName(request.getServiceName());
+        }
+        if (request.getServiceBeforeTax() != null) {
+            existing.setServiceBeforeTax(request.getServiceBeforeTax());
+            BigDecimal tax = request.getTaxAmount() != null
+                    ? request.getTaxAmount()
+                    : request.getServiceBeforeTax().multiply(BigDecimal.valueOf(0.18));
+            existing.setTaxAmount(tax);
+            BigDecimal total = request.getTotalAmount() != null
+                    ? request.getTotalAmount()
+                    : request.getServiceBeforeTax().add(tax);
+            existing.setTotalAmount(total);
+        }
+        if (request.getOwnerId() != null) {
+            existing.setOwnerId(request.getOwnerId());
+        }
+        if (request.getOwnerName() != null) {
+            existing.setOwnerName(request.getOwnerName());
+        }
+        if (request.getDescription() != null) {
+            existing.setDescription(request.getDescription());
+        }
+
+        existing.setUpdatedAt(java.time.OffsetDateTime.now());
+        ProposalEntity saved = proposalRepository.save(existing);
+        return mapToResponse(saved);
+    }
+
+    @Transactional
+    public void deleteProposal(String id) {
+        ProposalEntity existing = proposalRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Proposal not found with id: " + id));
+
+        if (!"Draft".equalsIgnoreCase(existing.getStatus())) {
+            throw new BusinessValidationException("Only Draft proposals can be deleted");
+        }
+
+        proposalRepository.delete(existing);
     }
 
     @Transactional(readOnly = true)

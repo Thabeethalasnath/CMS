@@ -15,7 +15,7 @@ export const CollectionsHeader: React.FC<CollectionsHeaderProps> = ({
   onExport,
   onOpenLogPayment,
   onLogPayment,
-  lastUpdated = '15 Mar 2025, 10:30 AM',
+  lastUpdated = '—',
   isRefreshing: externalRefreshing = false,
 }) => {
   const [internalRefreshing, setInternalRefreshing] = useState(false);

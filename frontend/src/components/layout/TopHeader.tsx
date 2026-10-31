@@ -8,6 +8,8 @@ interface TopHeaderProps {
   onOpenEditModal: () => void;
   onToggleMobileSidebar?: () => void;
   unreadCount?: number;
+  userName?: string;
+  userRole?: string;
 }
 
 export const TopHeader: React.FC<TopHeaderProps> = ({
@@ -15,7 +17,9 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
   onDateRangeChange,
   onOpenEditModal,
   onToggleMobileSidebar = () => {},
-  unreadCount = 3
+  unreadCount = 3,
+  userName = '—',
+  userRole = '—'
 }) => {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -71,14 +75,6 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
     <header className="h-[68px] min-h-[68px] bg-white border-b border-slate-200 sticky top-0 z-20 flex items-center justify-between px-4 sm:px-6 shadow-sm">
       {/* Left: Hamburger + Wide Search Bar */}
       <div className="flex items-center gap-3 sm:gap-4 flex-1 max-w-2xl">
-        <button
-          onClick={onToggleMobileSidebar}
-          className="p-2 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors"
-          title="Toggle navigation"
-        >
-          <Menu size={20} />
-        </button>
-
         <div className="flex items-center bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 w-full gap-2.5 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
           <Search size={16} className="text-slate-400 shrink-0" />
           <input
@@ -110,15 +106,6 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
           />
         </div>
 
-        {/* Quick DB Edit Trigger Button */}
-        <button
-          onClick={onOpenEditModal}
-          className="flex items-center gap-1.5 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold shadow-xs hover:shadow transition-all"
-          title="Edit and persist live data to Supabase PostgreSQL"
-        >
-          <Database size={13} />
-          <span className="hidden sm:inline">Edit DB Data</span>
-        </button>
 
         {/* Notification Bell with Badge & Dropdown */}
         <div className="relative" ref={notifRef}>

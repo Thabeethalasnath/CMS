@@ -139,8 +139,9 @@ class OpportunityServiceTest {
                 .status("Open")
                 .build();
 
+        String expectedId = "O-" + java.time.LocalDate.now().getYear() + "-002";
         when(repository.count()).thenReturn(1L);
-        when(repository.findByOpportunityId("O-2025-002")).thenReturn(Optional.empty());
+        when(repository.findByOpportunityId(expectedId)).thenReturn(Optional.empty());
         when(repository.save(any(Opportunity.class))).thenAnswer(invocation -> {
             Opportunity o = invocation.getArgument(0);
             o.setId(2L);
@@ -151,7 +152,7 @@ class OpportunityServiceTest {
 
         assertNotNull(created);
         assertEquals("Mobile App MVP", created.getOpportunityName());
-        assertEquals("O-2025-002", created.getOpportunityId());
+        assertEquals(expectedId, created.getOpportunityId());
         assertEquals(new BigDecimal("500000"), created.getWeightedPipeline());
     }
 

@@ -20,14 +20,14 @@ export interface ContractData {
 
 export interface ContractSummaryData {
   totalContracts: number;
-  totalContractsTrend?: string;
+  totalContractsTrend?: string | null;
   activeContracts: number;
-  activeContractsTrend?: string;
+  activeContractsTrend?: string | null;
   expiringContracts: number;
-  expiringContractsTrend?: string;
+  expiringContractsTrend?: string | null;
   totalContractValue: number;
   totalContractValueFormatted: string;
-  totalContractValueTrend?: string;
+  totalContractValueTrend?: string | null;
 }
 
 export interface CreateContractPayload {

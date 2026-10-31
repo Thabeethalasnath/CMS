@@ -46,8 +46,8 @@ export const AddEmployeeApprovalModal: React.FC<AddEmployeeApprovalModalProps> =
       employee_name: employeeName.trim(),
       employee_code: employeeCode.trim(),
       request_type: requestType,
-      from_date: fromDate || '18 Mar 2025',
-      to_date: toDate || '19 Mar 2025',
+      from_date: fromDate || new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+      to_date: toDate || new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
       duration: duration || '2 days',
       reason: reason.trim()
     });

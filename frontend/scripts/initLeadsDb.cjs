@@ -1,0 +1,388 @@
+const { Pool } = require('pg');
+
+const pool = new Pool({
+  host: 'aws-0-ap-southeast-1.pooler.supabase.com',
+  port: 5432,
+  database: 'postgres',
+  user: 'postgres.cwjahqpeaxxawpfcbykr',
+  password: 'Kalpanaaasoftwaresolu',
+  ssl: { rejectUnauthorized: false }
+});
+
+const initialLeads = [
+  {
+    id: 'L-2025-001',
+    lead_date: '15 Mar 2025',
+    company: 'Acme Pvt Ltd',
+    contact_name: 'Rahul Mehta',
+    email: 'rahul@acme.com',
+    phone: '+91 98765 43210',
+    source: 'Website',
+    service_interest: 'Web Development',
+    country: 'India',
+    city: 'Mumbai',
+    owner_id: 'Akshit Ujjain (CEO)',
+    stage: 'Qualified',
+    status: 'Active',
+    next_follow_up: '18 Mar 2025',
+    estimated_value: '₹8,50,000',
+    notes: 'Inquired for enterprise corporate portal redesign and CMS integration with headless React architecture.',
+    created_at: '2025-03-15T10:15:00Z'
+  },
+  {
+    id: 'L-2025-002',
+    lead_date: '14 Mar 2025',
+    company: 'Bright Solutions',
+    contact_name: 'Sneha Kapoor',
+    email: 'sneha@bright.com',
+    phone: '+91 91234 56789',
+    source: 'Referral',
+    service_interest: 'Mobile App',
+    country: 'India',
+    city: 'Bengaluru',
+    owner_id: 'Rajesh Sharma (Sales VP)',
+    stage: 'Contacted',
+    status: 'Follow-up Required',
+    next_follow_up: '16 Mar 2025',
+    estimated_value: '₹12,00,000',
+    notes: 'Referred by existing client Zeta Tech. Looking for cross-platform iOS & Android mobile app for field agents.',
+    created_at: '2025-03-14T14:30:00Z'
+  },
+  {
+    id: 'L-2025-003',
+    lead_date: '14 Mar 2025',
+    company: 'CloudTech Services',
+    contact_name: 'Vikram T',
+    email: 'vikram@cloudtech.com',
+    phone: '+91 98450 11223',
+    source: 'LinkedIn',
+    service_interest: 'AI Solutions',
+    country: 'India',
+    city: 'Delhi NCR',
+    owner_id: 'Ananya Roy (Account Exec)',
+    stage: 'Proposal Sent',
+    status: 'Active',
+    next_follow_up: '20 Mar 2025',
+    estimated_value: '₹24,00,000',
+    notes: 'Requires LLM-based customer support copilot and internal document intelligence search system.',
+    created_at: '2025-03-14T09:45:00Z'
+  },
+  {
+    id: 'L-2025-004',
+    lead_date: '13 Mar 2025',
+    company: 'Delta Systems',
+    contact_name: 'Priya Nair',
+    email: 'priya@deltasys.com',
+    phone: '+91 98987 65432',
+    source: 'Event',
+    service_interest: 'ERP Solution',
+    country: 'India',
+    city: 'Pune',
+    owner_id: 'Amit Patel (BDM)',
+    stage: 'Negotiation',
+    status: 'Active',
+    next_follow_up: '19 Mar 2025',
+    estimated_value: '₹18,50,000',
+    notes: 'Met at Bangalore Tech Summit 2025. Needs custom manufacturing ERP modules for supply chain & procurement.',
+    created_at: '2025-03-13T16:20:00Z'
+  },
+  {
+    id: 'L-2025-005',
+    lead_date: '13 Mar 2025',
+    company: 'Evergreen Retail',
+    contact_name: 'Manoj J',
+    email: 'manoj@egretail.com',
+    phone: '+91 99887 77665',
+    source: 'Website',
+    service_interest: 'E-commerce',
+    country: 'India',
+    city: 'Hyderabad',
+    owner_id: 'Neha Verma (Sales Mgr)',
+    stage: 'Contacted',
+    status: 'Follow-up Required',
+    next_follow_up: '17 Mar 2025',
+    estimated_value: '₹6,50,000',
+    notes: 'Omnichannel B2C e-commerce platform with multi-store inventory sync and payment gateway integration.',
+    created_at: '2025-03-13T11:10:00Z'
+  },
+  {
+    id: 'L-2025-006',
+    lead_date: '12 Mar 2025',
+    company: 'Global Traders',
+    contact_name: 'Anita Sharma',
+    email: 'anita@global.com',
+    phone: '+91 90000 11223',
+    source: 'Cold Call',
+    service_interest: 'Digital Marketing',
+    country: 'India',
+    city: 'Chennai',
+    owner_id: 'Rajesh Sharma (Sales VP)',
+    stage: 'New',
+    status: 'Active',
+    next_follow_up: '22 Mar 2025',
+    estimated_value: '₹4,20,000',
+    notes: 'Initial outreach call showed strong interest in SEO optimization, performance marketing, and branding refresh.',
+    created_at: '2025-03-12T15:00:00Z'
+  },
+  {
+    id: 'L-2025-007',
+    lead_date: '12 Mar 2025',
+    company: 'NextGen Labs',
+    contact_name: 'Rakesh Kumar',
+    email: 'rakesh@nextgen.com',
+    phone: '+91 91230 44556',
+    source: 'Partner',
+    service_interest: 'Cloud & DevOps',
+    country: 'United States',
+    city: 'New York',
+    owner_id: 'Akshit Ujjain (CEO)',
+    stage: 'Won',
+    status: 'Converted',
+    next_follow_up: '15 Mar 2025',
+    estimated_value: '$45,000',
+    notes: 'Contract signed! Cloud infrastructure migration to AWS with Kubernetes microservices and CI/CD pipelines.',
+    created_at: '2025-03-12T18:40:00Z'
+  },
+  {
+    id: 'L-2025-008',
+    lead_date: '11 Mar 2025',
+    company: 'Sunrise Foods',
+    contact_name: 'Karthik R',
+    email: 'karthik@sunrise.com',
+    phone: '+91 93456 77889',
+    source: 'Website',
+    service_interest: 'Custom Software',
+    country: 'India',
+    city: 'Mumbai',
+    owner_id: 'Ananya Roy (Account Exec)',
+    stage: 'Qualified',
+    status: 'Active',
+    next_follow_up: '21 Mar 2025',
+    estimated_value: '₹14,00,000',
+    notes: 'Custom food distribution logistics tracking system with barcode scanning and IoT temperature monitoring.',
+    created_at: '2025-03-11T13:25:00Z'
+  },
+  {
+    id: 'L-2025-009',
+    lead_date: '10 Mar 2025',
+    company: 'Pinnacle Infotech',
+    contact_name: 'Deepak Varma',
+    email: 'deepak@pinnacle.in',
+    phone: '+91 97654 32109',
+    source: 'LinkedIn',
+    service_interest: 'AI Solutions',
+    country: 'India',
+    city: 'Bengaluru',
+    owner_id: 'Amit Patel (BDM)',
+    stage: 'New',
+    status: 'Active',
+    next_follow_up: '24 Mar 2025',
+    estimated_value: '₹15,00,000',
+    notes: 'Interested in predictive analytics dashboard for financial risk modeling.',
+    created_at: '2025-03-10T10:00:00Z'
+  },
+  {
+    id: 'L-2025-010',
+    lead_date: '09 Mar 2025',
+    company: 'Zenith Logistics',
+    contact_name: 'Pooja Hegde',
+    email: 'pooja@zenithlog.com',
+    phone: '+91 98231 65490',
+    source: 'Website',
+    service_interest: 'Web Development',
+    country: 'India',
+    city: 'Mumbai',
+    owner_id: 'Neha Verma (Sales Mgr)',
+    stage: 'Won',
+    status: 'Converted',
+    next_follow_up: '12 Mar 2025',
+    estimated_value: '₹9,80,000',
+    notes: 'Converted to active project. Client portal and live fleet tracking interface development.',
+    created_at: '2025-03-09T14:15:00Z'
+  },
+  {
+    id: 'L-2025-011',
+    lead_date: '08 Mar 2025',
+    company: 'FinEdge Corp',
+    contact_name: 'Sanjay Dutt',
+    email: 'sanjay@finedge.com',
+    phone: '+91 96325 87410',
+    source: 'Partner',
+    service_interest: 'Mobile App',
+    country: 'United Arab Emirates',
+    city: 'Dubai',
+    owner_id: 'Akshit Ujjain (CEO)',
+    stage: 'Proposal Sent',
+    status: 'Follow-up Required',
+    next_follow_up: '17 Mar 2025',
+    estimated_value: '$32,00,000',
+    notes: 'Wealth management iOS app for high-net-worth clients with biometric authentication.',
+    created_at: '2025-03-08T11:45:00Z'
+  },
+  {
+    id: 'L-2025-012',
+    lead_date: '07 Mar 2025',
+    company: 'Apex Healthcare',
+    contact_name: 'Dr. Meera Iyer',
+    email: 'meera@apexhealth.org',
+    phone: '+91 95412 36987',
+    source: 'Event',
+    service_interest: 'ERP Solution',
+    country: 'India',
+    city: 'Chennai',
+    owner_id: 'Rajesh Sharma (Sales VP)',
+    stage: 'Contacted',
+    status: 'Active',
+    next_follow_up: '25 Mar 2025',
+    estimated_value: '₹22,00,000',
+    notes: 'Hospital management ERP with patient electronic health records (EHR) and pharmacy modules.',
+    created_at: '2025-03-07T16:50:00Z'
+  },
+  {
+    id: 'L-2025-013',
+    lead_date: '06 Mar 2025',
+    company: 'Hyperion Media',
+    contact_name: 'Rohan Joshi',
+    email: 'rohan@hyperion.co',
+    phone: '+91 94123 65890',
+    source: 'Referral',
+    service_interest: 'Digital Marketing',
+    country: 'India',
+    city: 'Pune',
+    owner_id: 'Amit Patel (BDM)',
+    stage: 'New',
+    status: 'Active',
+    next_follow_up: '23 Mar 2025',
+    estimated_value: '₹5,50,000',
+    notes: 'Comprehensive content marketing, viral social campaigns, and influencer partnership management.',
+    created_at: '2025-03-06T09:30:00Z'
+  },
+  {
+    id: 'L-2025-014',
+    lead_date: '05 Mar 2025',
+    company: 'Metro Retail Mart',
+    contact_name: 'Sunil Rao',
+    email: 'sunil@metromart.in',
+    phone: '+91 98741 25896',
+    source: 'Website',
+    service_interest: 'E-commerce',
+    country: 'India',
+    city: 'Hyderabad',
+    owner_id: 'Neha Verma (Sales Mgr)',
+    stage: 'Won',
+    status: 'Converted',
+    next_follow_up: '10 Mar 2025',
+    estimated_value: '₹11,50,000',
+    notes: 'B2B Wholesale grocery supply chain mobile portal and automated billing system.',
+    created_at: '2025-03-05T13:00:00Z'
+  },
+  {
+    id: 'L-2025-015',
+    lead_date: '04 Mar 2025',
+    company: 'Stratum Technologies',
+    contact_name: 'Arjun Sen',
+    email: 'arjun@stratumtech.com',
+    phone: '+91 91238 74561',
+    source: 'LinkedIn',
+    service_interest: 'Cloud & DevOps',
+    country: 'Singapore',
+    city: 'Singapore',
+    owner_id: 'Ananya Roy (Account Exec)',
+    stage: 'Negotiation',
+    status: 'Active',
+    next_follow_up: '19 Mar 2025',
+    estimated_value: '$28,000',
+    notes: 'Multi-region AWS Terraform automation with automated blue-green zero-downtime deployment pipelines.',
+    created_at: '2025-03-04T15:20:00Z'
+  },
+  {
+    id: 'L-2025-016',
+    lead_date: '03 Mar 2025',
+    company: 'Kavita Jewellers',
+    contact_name: 'Kavita Singhania',
+    email: 'kavita@singhaniaj.com',
+    phone: '+91 99874 56123',
+    source: 'Cold Call',
+    service_interest: 'Custom Software',
+    country: 'India',
+    city: 'Delhi NCR',
+    owner_id: 'Rajesh Sharma (Sales VP)',
+    stage: 'Contacted',
+    status: 'Follow-up Required',
+    next_follow_up: '18 Mar 2025',
+    estimated_value: '₹7,50,000',
+    notes: 'Jewellery inventory barcode & RFID tagging with real-time gold price fluctuation rate calculator.',
+    created_at: '2025-03-03T11:10:00Z'
+  }
+];
+
+async function run() {
+  console.log('Connecting to Supabase PostgreSQL database...');
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS leads (
+      id VARCHAR(64) PRIMARY KEY,
+      lead_date VARCHAR(64) NOT NULL,
+      company VARCHAR(255) NOT NULL,
+      contact_name VARCHAR(255) NOT NULL,
+      email VARCHAR(255) NOT NULL,
+      phone VARCHAR(64) NOT NULL,
+      source VARCHAR(64) NOT NULL,
+      service_interest VARCHAR(128) NOT NULL,
+      country VARCHAR(128) NOT NULL,
+      city VARCHAR(128) NOT NULL,
+      owner_id VARCHAR(128) NOT NULL,
+      stage VARCHAR(64) NOT NULL,
+      status VARCHAR(64) NOT NULL,
+      next_follow_up VARCHAR(64),
+      estimated_value VARCHAR(64),
+      notes TEXT,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    );
+  `);
+  console.log('Leads table verified in Supabase PostgreSQL.');
+
+  for (const lead of initialLeads) {
+    await pool.query(`
+      INSERT INTO leads (
+        id, lead_date, company, contact_name, email, phone, source,
+        service_interest, country, city, owner_id, stage, status,
+        next_follow_up, estimated_value, notes, created_at, updated_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, NOW())
+      ON CONFLICT (id) DO UPDATE SET
+        company = EXCLUDED.company,
+        contact_name = EXCLUDED.contact_name,
+        email = EXCLUDED.email,
+        phone = EXCLUDED.phone,
+        source = EXCLUDED.source,
+        service_interest = EXCLUDED.service_interest,
+        country = EXCLUDED.country,
+        city = EXCLUDED.city,
+        owner_id = EXCLUDED.owner_id,
+        stage = EXCLUDED.stage,
+        status = EXCLUDED.status,
+        next_follow_up = EXCLUDED.next_follow_up,
+        estimated_value = EXCLUDED.estimated_value,
+        notes = EXCLUDED.notes,
+        updated_at = NOW();
+    `, [
+      lead.id, lead.lead_date, lead.company, lead.contact_name, lead.email, lead.phone,
+      lead.source, lead.service_interest, lead.country, lead.city, lead.owner_id,
+      lead.stage, lead.status, lead.next_follow_up, lead.estimated_value, lead.notes,
+      lead.created_at
+    ]);
+  }
+
+  const res = await pool.query('SELECT COUNT(*) FROM leads');
+  console.log(`Successfully populated leads table! Total records in DB: ${res.rows[0].count}`);
+
+  const sample = await pool.query('SELECT id, company, contact_name, stage, status FROM leads ORDER BY id ASC LIMIT 5');
+  console.log('Sample DB rows:', sample.rows);
+
+  await pool.end();
+}
+
+run().catch(err => {
+  console.error('Migration failed:', err);
+  pool.end();
+});

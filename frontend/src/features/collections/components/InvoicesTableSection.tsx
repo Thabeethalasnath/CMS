@@ -31,7 +31,7 @@ const COLLECTION_STATUS_CONFIGS: StatusItemConfig[] = [
 
 interface InvoicesTableSectionProps {
   invoices: Invoice[];
-  selectedInvoiceId: string;
+  selectedInvoiceId?: string;
   onSelectInvoice: (invoice: Invoice) => void;
   statusFilter: string;
   setStatusFilter: (status: string) => void;

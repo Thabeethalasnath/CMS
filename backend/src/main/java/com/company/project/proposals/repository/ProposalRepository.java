@@ -4,9 +4,11 @@ import com.company.project.proposals.entity.ProposalEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 @Repository
@@ -28,4 +30,13 @@ public interface ProposalRepository extends JpaRepository<ProposalEntity, String
 
     @Query("SELECT COALESCE(SUM(p.totalAmount), 0) FROM ProposalEntity p")
     BigDecimal sumTotalAmount();
+
+    @Query("SELECT COUNT(p) FROM ProposalEntity p WHERE p.createdAt < :cutoff")
+    long countBefore(@Param("cutoff") OffsetDateTime cutoff);
+
+    @Query("SELECT COUNT(p) FROM ProposalEntity p WHERE p.status = :status AND p.createdAt < :cutoff")
+    long countByStatusBefore(@Param("status") String status, @Param("cutoff") OffsetDateTime cutoff);
+
+    @Query("SELECT COALESCE(SUM(p.totalAmount), 0) FROM ProposalEntity p WHERE p.createdAt < :cutoff")
+    BigDecimal sumTotalAmountBefore(@Param("cutoff") OffsetDateTime cutoff);
 }

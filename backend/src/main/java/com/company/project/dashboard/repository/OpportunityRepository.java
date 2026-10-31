@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -38,4 +39,7 @@ public interface OpportunityRepository extends JpaRepository<Opportunity, Long> 
             @Param("search") String search);
 
     long countByStatusIgnoreCase(String status);
+
+    @Query("SELECT COALESCE(SUM(o.weightedPipeline), 0) FROM Opportunity o")
+    BigDecimal sumWeightedPipeline();
 }

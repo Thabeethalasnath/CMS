@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Repository
@@ -15,4 +16,15 @@ public interface CollectionInvoiceRepository extends JpaRepository<CollectionInv
     List<String> findDistinctClientNames();
 
     List<CollectionInvoiceEntity> findByStatus(String status);
+
+    @Query("SELECT COALESCE(SUM(i.invoiceAmount), 0) FROM CollectionInvoiceEntity i")
+    BigDecimal sumTotalInvoiceAmount();
+
+    @Query("SELECT COALESCE(SUM(i.outstanding), 0) FROM CollectionInvoiceEntity i")
+    BigDecimal sumTotalOutstanding();
+
+    @Query("SELECT COALESCE(SUM(i.amountPaid), 0) FROM CollectionInvoiceEntity i")
+    BigDecimal sumTotalAmountPaid();
+
+    long countByStatusIgnoreCase(String status);
 }
