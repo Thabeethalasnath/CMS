@@ -46,7 +46,7 @@ export const AddClientApprovalModal: React.FC<AddClientApprovalModalProps> = ({
       request_type: requestType,
       reference_id: referenceId.trim(),
       requester: requester.trim() || 'Akshit Ujjain',
-      due_date: dueDate || '25 Mar 2025',
+      due_date: dueDate || new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
       amount: amount.trim() || '-'
     });
 

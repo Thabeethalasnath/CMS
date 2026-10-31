@@ -48,9 +48,8 @@ export const LogPaymentModal: React.FC<LogPaymentModalProps> = ({
           }
         })
         .catch((err) => {
-          console.warn('Could not fetch next invoice ID from database:', err);
-          if (isMounted && !invoiceId) {
-            setInvoiceId('INV-2025-100');
+          if (isMounted) {
+            setError(err?.message || 'Could not fetch next invoice ID from database');
           }
         })
         .finally(() => {

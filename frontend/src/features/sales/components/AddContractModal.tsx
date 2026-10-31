@@ -14,13 +14,13 @@ export const AddContractModal: React.FC<AddContractModalProps> = ({
   onSubmit,
 }) => {
   const [contractId, setContractId] = useState('');
-  const [clientId, setClientId] = useState('C-001');
-  const [proposalId, setProposalId] = useState('P-2025-001');
+  const [clientId, setClientId] = useState('');
+  const [proposalId, setProposalId] = useState('');
   const [contractType, setContractType] = useState('Service Agreement');
-  const [startDate, setStartDate] = useState('15 Mar 2025');
-  const [endDate, setEndDate] = useState('14 Mar 2026');
-  const [renewalDate, setRenewalDate] = useState('14 Feb 2026');
-  const [contractValue, setContractValue] = useState('1200000');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [renewalDate, setRenewalDate] = useState('');
+  const [contractValue, setContractValue] = useState('');
   const [noticePeriod, setNoticePeriod] = useState<number>(30);
   const [paymentTerms, setPaymentTerms] = useState('Monthly');
   const [status, setStatus] = useState('Active');
@@ -45,6 +45,19 @@ export const AddContractModal: React.FC<AddContractModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    if (!clientId.trim()) {
+      setError('Client ID is required.');
+      return;
+    }
+    if (!startDate.trim()) {
+      setError('Start date is required.');
+      return;
+    }
+    if (!endDate.trim()) {
+      setError('End date is required.');
+      return;
+    }
 
     const val = parseFloat(contractValue.replace(/[^0-9.]/g, ''));
     if (isNaN(val) || val <= 0) {
@@ -240,7 +253,7 @@ export const AddContractModal: React.FC<AddContractModalProps> = ({
                   type="text"
                   value={proposalId}
                   onChange={(e) => setProposalId(e.target.value)}
-                  placeholder="e.g. P-2025-001"
+                  placeholder="Enter proposal ID"
                   style={{
                     width: '100%',
                     height: '36px',
@@ -381,7 +394,7 @@ export const AddContractModal: React.FC<AddContractModalProps> = ({
                   required
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  placeholder="15 Mar 2025"
+                  placeholder="YYYY-MM-DD"
                   style={{
                     width: '100%',
                     height: '36px',

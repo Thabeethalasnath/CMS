@@ -326,3 +326,183 @@ html, body {
   line-height: 16px;
 }
 
+/* Custom Horizontal Table Scrollbar */
+.horizontal-table-scroll::-webkit-scrollbar {
+  height: 8px;
+}
+
+.horizontal-table-scroll::-webkit-scrollbar-track {
+  background: #F8FAFC;
+  border-radius: 4px;
+}
+
+.horizontal-table-scroll::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 4px;
+}
+
+.horizontal-table-scroll::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
+
+.horizontal-table-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #CBD5E1 #F8FAFC;
+}
+
+
+/* ==========================================================================
+   Section 8: Sidebar Interactive Styles
+   ========================================================================== */
+
+.sidebar-nav-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 40px;
+  width: 100%;
+  padding: 0 14px;
+  border-radius: 12px;
+  text-decoration: none;
+  font-size: 14px;
+  font-family: 'Inter', sans-serif;
+  box-sizing: border-box;
+  color: #94A3B8;
+  font-weight: 400;
+  background-color: transparent;
+  border-left: 3.5px solid transparent;
+  transition: background-color 0.12s ease, color 0.12s ease;
+  outline: none;
+}
+
+.sidebar-nav-item:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #FFFFFF;
+}
+
+.sidebar-nav-item:hover .sidebar-item-icon svg {
+  color: #CBD5E1;
+}
+
+.sidebar-nav-item:focus-visible {
+  outline: 2px solid #4F46E5;
+  outline-offset: 1px;
+}
+
+.sidebar-nav-item.active {
+  background-color: #112D65;
+  border-left: 3.5px solid #4F46E5;
+  color: #FFFFFF;
+  font-weight: 500;
+}
+
+.sidebar-nav-item.active .sidebar-item-icon svg {
+  color: #93C5FD;
+}
+
+.sidebar-item-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.sidebar-item-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+}
+
+/* Accordion Smooth Expansion using Grid - fast and crisp */
+.sidebar-accordion-wrapper {
+  display: grid;
+  transition: grid-template-rows 0.15s ease-out;
+}
+
+.sidebar-accordion-wrapper.expanded {
+  grid-template-rows: 1fr;
+}
+
+.sidebar-accordion-wrapper.collapsed {
+  grid-template-rows: 0fr;
+}
+
+.sidebar-accordion-content {
+  overflow: hidden;
+}
+
+/* Chevron Rotation */
+.sidebar-chevron {
+  transition: transform 0.15s ease-out;
+}
+
+.sidebar-chevron.expanded {
+  transform: rotate(180deg);
+}
+
+/* Live Count Badges */
+.sidebar-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 2px 6.5px;
+  border-radius: 9999px;
+  margin-left: auto;
+}
+
+.sidebar-badge-amber {
+  background-color: rgba(245, 158, 11, 0.2);
+  color: #FBBF24;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+.sidebar-badge-red {
+  background-color: rgba(239, 68, 68, 0.2);
+  color: #F87171;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+/* Page Extra: Card lift on hover */
+.card-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+}
+
+/* Table Row Status Highlight Animation */
+@keyframes rowStatusFlash {
+  0% { background-color: rgba(99, 102, 241, 0.15); }
+  100% { background-color: transparent; }
+}
+
+.row-status-changed {
+  animation: rowStatusFlash 1.4s ease-out;
+}
+
+/* Accessibility: Respect prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-nav-item,
+  .sidebar-nav-item::before,
+  .sidebar-item-icon,
+  .sidebar-item-label,
+  .sidebar-icon-followup,
+  .sidebar-icon-inbox,
+  .sidebar-accordion-wrapper,
+  .sidebar-chevron,
+  .sidebar-stagger-item,
+  .badge-pulse,
+  .card-lift,
+  .row-status-changed {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+}

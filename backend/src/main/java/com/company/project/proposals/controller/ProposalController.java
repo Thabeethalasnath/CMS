@@ -1,5 +1,6 @@
 package com.company.project.proposals.controller;
 
+import com.company.project.common.response.ApiResponse;
 import com.company.project.common.response.PageResponse;
 import com.company.project.proposals.dto.*;
 import com.company.project.proposals.service.ProposalService;
@@ -21,7 +22,7 @@ public class ProposalController {
 
     @GetMapping
     @Operation(summary = "Get paginated, filtered, and sorted proposals")
-    public ResponseEntity<PageResponse<ProposalResponse>> getProposals(
+    public ResponseEntity<ApiResponse<PageResponse<ProposalResponse>>> getProposals(
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String ownerId,
@@ -35,52 +36,73 @@ public class ProposalController {
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
-        return ResponseEntity.ok(proposalService.getProposals(
+        PageResponse<ProposalResponse> pageResponse = proposalService.getProposals(
                 search, status, ownerId, clientId, opportunityId, serviceId,
                 proposalDateRange, validUntilRange, expectedDecisionDateRange,
                 sort, page, size
-        ));
+        );
+        return ResponseEntity.ok(ApiResponse.success(pageResponse));
     }
 
     @GetMapping("/next-id")
     @Operation(summary = "Get suggested next proposal ID")
-    public ResponseEntity<NextProposalIdResponse> getNextProposalId(
+    public ResponseEntity<ApiResponse<NextProposalIdResponse>> getNextProposalId(
             @RequestParam(required = false) Integer year
     ) {
-        return ResponseEntity.ok(proposalService.getNextProposalId(year));
+        return ResponseEntity.ok(ApiResponse.success(proposalService.getNextProposalId(year)));
     }
 
     @GetMapping("/filters")
     @Operation(summary = "Get distinct proposal filter options")
-    public ResponseEntity<ProposalFilterOptionsResponse> getFilterOptions() {
-        return ResponseEntity.ok(proposalService.getFilterOptions());
+    public ResponseEntity<ApiResponse<ProposalFilterOptionsResponse>> getFilterOptions() {
+        return ResponseEntity.ok(ApiResponse.success(proposalService.getFilterOptions()));
     }
 
     @GetMapping("/kpis")
     @Operation(summary = "Get dynamic KPI metrics calculated from proposals dataset")
-    public ResponseEntity<ProposalKpiSummaryResponse> getKpiSummary() {
-        return ResponseEntity.ok(proposalService.getKpiSummary());
+    public ResponseEntity<ApiResponse<ProposalKpiSummaryResponse>> getKpiSummary() {
+        return ResponseEntity.ok(ApiResponse.success(proposalService.getKpiSummary()));
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "Get single proposal details by ID")
-    public ResponseEntity<ProposalResponse> getProposalById(@PathVariable String id) {
-        return ResponseEntity.ok(proposalService.getProposalById(id));
+    public ResponseEntity<ApiResponse<ProposalResponse>> getProposalById(@PathVariable String id) {
+        return ResponseEntity.ok(ApiResponse.success(proposalService.getProposalById(id)));
     }
 
     @PostMapping
     @Operation(summary = "Create a new proposal with validation")
-    public ResponseEntity<ProposalResponse> createProposal(@Valid @RequestBody CreateProposalRequest request) {
+    public ResponseEntity<ApiResponse<ProposalResponse>> createProposal(@Valid @RequestBody CreateProposalRequest request) {
         ProposalResponse created = proposalService.createProposal(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success("Proposal created successfully", created));
+    }
+
+    @PutMapping("/{id}")
+    @Operation(summary = "Update an existing draft or pending proposal")
+    public ResponseEntity<ApiResponse<ProposalResponse>> updateProposal(
+            @PathVariable String id,
+            @Valid @RequestBody UpdateProposalRequest request
+    ) {
+        ProposalResponse updated = proposalService.updateProposal(id, request);
+        return ResponseEntity.ok(ApiResponse.success("Proposal updated successfully", updated));
+    }
+
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Delete a draft proposal (restricted to dev or admin)")
+    public ResponseEntity<ApiResponse<Void>> deleteProposal(@PathVariable String id) {
+        proposalService.deleteProposal(id);
+        return ResponseEntity.ok(ApiResponse.success("Proposal deleted successfully", null));
     }
 
     @PatchMapping("/{id}/status")
     @Operation(summary = "Update proposal status directly from table dropdown or details modal")
-    public ResponseEntity<ProposalResponse> updateStatus(
+    public ResponseEntity<ApiResponse<ProposalResponse>> updateStatus(
             @PathVariable String id,
             @Valid @RequestBody UpdateProposalStatusRequest request
     ) {
-        return ResponseEntity.ok(proposalService.updateProposalStatus(id, request.getStatus()));
+        return ResponseEntity.ok(ApiResponse.success(
+                "Proposal status updated successfully",
+                proposalService.updateProposalStatus(id, request.getStatus())
+        ));
     }
 }

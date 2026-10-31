@@ -13,7 +13,7 @@ import { formatRupee } from '../utils';
 import { SemanticStatusBadge } from '../../../components/ui/SemanticStatusBadge';
 
 interface InvoiceDetailsCardProps {
-  invoice: Invoice;
+  invoice: Invoice | null;
   onLogPayment: (invoice: Invoice) => void;
   onCallEmail: (invoice: Invoice) => void;
   onSendReminder: (invoice: Invoice) => void;
@@ -29,6 +29,24 @@ export const InvoiceDetailsCard: React.FC<InvoiceDetailsCardProps> = ({
   onViewHistory,
   onViewInvoice,
 }) => {
+  if (!invoice) {
+    return (
+      <div style={{
+        backgroundColor: '#FFFFFF',
+        borderRadius: '12px',
+        border: '1px dashed #CBD5E1',
+        padding: '32px 20px',
+        marginBottom: '24px',
+        textAlign: 'center',
+        color: '#64748B',
+        fontSize: '13px',
+        fontFamily: "'Inter', sans-serif"
+      }}>
+        No invoice selected. Select an invoice from the list below to view its details and record actions.
+      </div>
+    );
+  }
+
   return (
     <div
       style={{

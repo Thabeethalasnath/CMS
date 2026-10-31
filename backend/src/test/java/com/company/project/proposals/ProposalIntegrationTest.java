@@ -20,7 +20,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
-@AutoConfigureMockMvc
+@AutoConfigureMockMvc(addFilters = false)
 class ProposalIntegrationTest {
 
     static {
@@ -68,10 +68,10 @@ class ProposalIntegrationTest {
                         .param("size", "10")
                         .param("sort", "date-newest"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content", hasSize(greaterThanOrEqualTo(1))))
-                .andExpect(jsonPath("$.pageNumber", is(1)))
-                .andExpect(jsonPath("$.pageSize", is(10)))
-                .andExpect(jsonPath("$.totalElements", greaterThanOrEqualTo(124)));
+                .andExpect(jsonPath("$.data.content", hasSize(greaterThanOrEqualTo(1))))
+                .andExpect(jsonPath("$.data.pageNumber", is(1)))
+                .andExpect(jsonPath("$.data.pageSize", is(10)))
+                .andExpect(jsonPath("$.data.totalElements", greaterThanOrEqualTo(124)));
     }
 
     @Test
@@ -80,8 +80,8 @@ class ProposalIntegrationTest {
         mockMvc.perform(get("/api/v1/proposals")
                         .param("search", "Website Redesign"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content", hasSize(greaterThanOrEqualTo(1))))
-                .andExpect(jsonPath("$.content[0].title", containsString("Website Redesign")));
+                .andExpect(jsonPath("$.data.content", hasSize(greaterThanOrEqualTo(1))))
+                .andExpect(jsonPath("$.data.content[0].title", containsString("Website Redesign")));
     }
 
     @Test
@@ -91,7 +91,7 @@ class ProposalIntegrationTest {
                         .param("status", "Pending")
                         .param("size", "10"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content[0].status", is("Pending")));
+                .andExpect(jsonPath("$.data.content[0].status", is("Pending")));
     }
 
     @Test
@@ -99,12 +99,12 @@ class ProposalIntegrationTest {
     void testGetProposalDetails() throws Exception {
         mockMvc.perform(get("/api/v1/proposals/P-2025-001"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.proposalId", is("P-2025-001")))
-                .andExpect(jsonPath("$.clientId", is("C-001")))
-                .andExpect(jsonPath("$.opportunityId", is("O-2025-003")))
-                .andExpect(jsonPath("$.serviceBeforeTax", is(100000.0)))
-                .andExpect(jsonPath("$.taxAmount", is(18000.0)))
-                .andExpect(jsonPath("$.totalAmount", is(118000.0)));
+                .andExpect(jsonPath("$.data.proposalId", is("P-2025-001")))
+                .andExpect(jsonPath("$.data.clientId", is("C-001")))
+                .andExpect(jsonPath("$.data.opportunityId", is("O-2025-003")))
+                .andExpect(jsonPath("$.data.serviceBeforeTax", is(100000.0)))
+                .andExpect(jsonPath("$.data.taxAmount", is(18000.0)))
+                .andExpect(jsonPath("$.data.totalAmount", is(118000.0)));
     }
 
     @Test
@@ -121,10 +121,10 @@ class ProposalIntegrationTest {
     void testGetKpis() throws Exception {
         mockMvc.perform(get("/api/v1/proposals/kpis"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.totalProposals", greaterThanOrEqualTo(124)))
-                .andExpect(jsonPath("$.pendingDecisions", greaterThanOrEqualTo(36)))
-                .andExpect(jsonPath("$.approvedProposals", greaterThanOrEqualTo(52)))
-                .andExpect(jsonPath("$.totalProposalValue", notNullValue()));
+                .andExpect(jsonPath("$.data.totalProposals", greaterThanOrEqualTo(124)))
+                .andExpect(jsonPath("$.data.pendingDecisions", greaterThanOrEqualTo(36)))
+                .andExpect(jsonPath("$.data.approvedProposals", greaterThanOrEqualTo(52)))
+                .andExpect(jsonPath("$.data.totalProposalValue", notNullValue()));
     }
 
     @Test
@@ -132,7 +132,7 @@ class ProposalIntegrationTest {
     void testGetNextId() throws Exception {
         mockMvc.perform(get("/api/v1/proposals/next-id"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.nextId", matchesPattern("^P-2025-\\d{3,}$")));
+                .andExpect(jsonPath("$.data.nextId", matchesPattern("^P-2025-\\d{3,}$")));
     }
 
     @Test
@@ -164,14 +164,14 @@ class ProposalIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(payload)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.proposalId", is(uniqueId)))
-                .andExpect(jsonPath("$.totalAmount", is(177000.0)));
+                .andExpect(jsonPath("$.data.proposalId", is(uniqueId)))
+                .andExpect(jsonPath("$.data.totalAmount", is(177000.0)));
 
         // Retrieve saved proposal
         mockMvc.perform(get("/api/v1/proposals/" + uniqueId))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.proposalId", is(uniqueId)))
-                .andExpect(jsonPath("$.title", is("Integration Test Proposal")));
+                .andExpect(jsonPath("$.data.proposalId", is(uniqueId)))
+                .andExpect(jsonPath("$.data.title", is("Integration Test Proposal")));
 
         // Update its status
         Map<String, String> statusUpdate = Map.of("status", "Approved");
@@ -179,7 +179,7 @@ class ProposalIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(statusUpdate)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status", is("Approved")));
+                .andExpect(jsonPath("$.data.status", is("Approved")));
     }
 
     @Test
@@ -217,5 +217,54 @@ class ProposalIntegrationTest {
                         .content(objectMapper.writeValueAsString(payload)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error", is("Bad Request")));
+    }
+
+    @Test
+    @DisplayName("PUT /api/v1/proposals/{id} should update draft proposal")
+    void testUpdateDraftProposal() throws Exception {
+        String draftId = "P-2025-998";
+        proposalRepository.findById(draftId).ifPresent(proposalRepository::delete);
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("proposalId", draftId);
+        payload.put("opportunityId", "O-2025-001");
+        payload.put("clientId", "C-001");
+        payload.put("clientName", "Tata Consultancy Enterprise");
+        payload.put("proposalDate", "15 Mar 2025");
+        payload.put("validUntil", "30 Apr 2025");
+        payload.put("version", "V1.0");
+        payload.put("title", "Draft To Update");
+        payload.put("serviceId", "S-001");
+        payload.put("serviceName", "Web & UI Engineering");
+        payload.put("serviceBeforeTax", 100000.00);
+        payload.put("taxAmount", 18000.00);
+        payload.put("totalAmount", 118000.00);
+        payload.put("ownerId", "EMP-001");
+        payload.put("ownerName", "Akshit Ujjain");
+        payload.put("status", "Draft");
+        payload.put("expectedDecisionDate", "25 Apr 2025");
+
+        mockMvc.perform(post("/api/v1/proposals")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(payload)))
+                .andExpect(status().isCreated());
+
+        Map<String, Object> updatePayload = new HashMap<>();
+        updatePayload.put("title", "Updated Draft Title");
+        updatePayload.put("serviceBeforeTax", 120000.00);
+        updatePayload.put("taxAmount", 21600.00);
+        updatePayload.put("totalAmount", 141600.00);
+
+        mockMvc.perform(put("/api/v1/proposals/" + draftId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(updatePayload)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.title", is("Updated Draft Title")))
+                .andExpect(jsonPath("$.data.totalAmount", is(141600.0)));
+
+        // Clean up
+        mockMvc.perform(delete("/api/v1/proposals/" + draftId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success", is(true)));
     }
 }

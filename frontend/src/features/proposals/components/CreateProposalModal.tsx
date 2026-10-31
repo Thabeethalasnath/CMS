@@ -1,6 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { X, Calendar, ChevronDown, FileText, User, IndianRupee, AlertCircle } from 'lucide-react';
 import { Proposal, ProposalStatus } from '../types';
+import {
+  masterDataService,
+  MasterEmployee,
+  MasterClient,
+  MasterOpportunity,
+} from '@/services/masterDataService';
 
 interface CreateProposalModalProps {
   isOpen: boolean;
@@ -35,6 +41,11 @@ export const CreateProposalModal: React.FC<CreateProposalModalProps> = ({
   const [notes, setNotes] = useState('');
   const [error, setError] = useState('');
 
+  const [clientOptions, setClientOptions] = useState<MasterClient[]>([]);
+  const [employeeOptions, setEmployeeOptions] = useState<MasterEmployee[]>([]);
+  const [serviceOptions, setServiceOptions] = useState<string[]>([]);
+  const [opportunityOptions, setOpportunityOptions] = useState<MasterOpportunity[]>([]);
+
   useEffect(() => {
     if (isOpen) {
       setProposalId(nextId);
@@ -53,6 +64,11 @@ export const CreateProposalModal: React.FC<CreateProposalModalProps> = ({
       setStatus('');
       setNotes('');
       setError('');
+
+      masterDataService.getClients().then(setClientOptions).catch(() => {});
+      masterDataService.getEmployees().then(setEmployeeOptions).catch(() => {});
+      masterDataService.getServices().then(setServiceOptions).catch(() => {});
+      masterDataService.getOpportunities().then(setOpportunityOptions).catch(() => {});
     }
   }, [isOpen, nextId]);
 
@@ -165,45 +181,19 @@ export const CreateProposalModal: React.FC<CreateProposalModalProps> = ({
       return;
     }
 
-    const clientNameMap: Record<string, string> = {
-      'C-001': 'Tata Consultancy Enterprise',
-      'C-002': 'Reliance Digital Services',
-      'C-003': 'Infosys BPM Limited',
-      'C-004': 'Wipro Cloud Innovations',
-      'C-005': 'HCL Tech Solutions',
-      'C-006': 'Larsen & Toubro Infotech',
-      'C-007': 'Mahindra Digital',
-      'C-008': 'Bharti Airtel B2B',
-      'C-009': 'Adani Digital Labs',
-    };
+    const selectedClient = clientOptions.find((c) => c.id === clientId);
+    const resolvedClientName = selectedClient
+      ? selectedClient.companyName || selectedClient.clientName || selectedClient.name || clientId
+      : clientId;
 
-    const serviceNameMap: Record<string, string> = {
-      'S-001': 'Web & UI Engineering',
-      'S-002': 'Mobile App Development',
-      'S-003': 'Digital Marketing Package',
-      'S-004': 'ERP Implementation',
-      'S-005': 'Cloud Infrastructure Setup',
-      'S-006': 'IT Support & Maintenance',
-      'S-007': 'Cybersecurity Audit',
-    };
+    const selectedOwner = employeeOptions.find((e) => e.employeeId === ownerId);
+    const resolvedOwnerName = selectedOwner ? selectedOwner.fullName : ownerId;
 
-    const ownerNameMap: Record<string, string> = {
-      'EMP-001': 'Akshit Ujjain',
-      'EMP-002': 'Priya Sharma',
-      'EMP-003': 'Rahul Verma',
-      'EMP-004': 'Vikram Mehta',
-      'EMP-005': 'Ananya Roy',
-    };
-
-    const resolvedClientId = clientId || 'C-001';
-    const resolvedOpportunityId = opportunityId || 'O-2025-001';
-    const resolvedServiceId = serviceId || 'S-001';
-    const resolvedOwnerId = ownerId || 'EMP-001';
-    const resolvedStatus: ProposalStatus = (status as ProposalStatus) || 'Pending';
+    const resolvedStatus: ProposalStatus = status as ProposalStatus;
     const resolvedVersion = version ? (version.startsWith('V') ? version : `V${version}.0`) : 'V1.0';
 
-    const formatDateDisplay = (dateStr: string, fallback: string) => {
-      if (!dateStr) return fallback;
+    const formatDateDisplay = (dateStr: string) => {
+      if (!dateStr) return '';
       const d = new Date(dateStr);
       if (isNaN(d.getTime())) return dateStr;
       return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -211,22 +201,22 @@ export const CreateProposalModal: React.FC<CreateProposalModalProps> = ({
 
     const newProposal: Proposal = {
       proposalId: proposalId.trim().toUpperCase(),
-      opportunityId: resolvedOpportunityId,
-      clientId: resolvedClientId,
-      clientName: clientNameMap[resolvedClientId] || 'Corporate Client',
-      proposalDate: formatDateDisplay(proposalDate, '16 Mar 2025'),
-      validUntil: formatDateDisplay(validUntil, '30 Apr 2025'),
+      opportunityId: opportunityId.trim(),
+      clientId: clientId.trim(),
+      clientName: resolvedClientName,
+      proposalDate: formatDateDisplay(proposalDate),
+      validUntil: formatDateDisplay(validUntil),
       version: resolvedVersion,
       title: title.trim(),
-      serviceId: resolvedServiceId,
-      serviceName: serviceNameMap[resolvedServiceId] || 'Consulting Service',
+      serviceId: serviceId.trim(),
+      serviceName: serviceId.trim(),
       serviceBeforeTax: numBeforeTax,
       taxAmount: numTax,
       totalAmount: numTotal,
-      ownerId: resolvedOwnerId,
-      ownerName: ownerNameMap[resolvedOwnerId] || 'Account Manager',
+      ownerId: ownerId.trim(),
+      ownerName: resolvedOwnerName,
       status: resolvedStatus,
-      expectedDecisionDate: formatDateDisplay(expectedDecisionDate, '28 Apr 2025'),
+      expectedDecisionDate: formatDateDisplay(expectedDecisionDate),
       description: notes.trim() || `Client proposal for ${title.trim()}`,
       createdAt: new Date().toISOString(),
     };
@@ -344,15 +334,11 @@ export const CreateProposalModal: React.FC<CreateProposalModalProps> = ({
                     }`}
                   >
                     <option value="" disabled>Select opportunity</option>
-                    <option value="O-2025-001">O-2025-001</option>
-                    <option value="O-2025-002">O-2025-002</option>
-                    <option value="O-2025-003">O-2025-003</option>
-                    <option value="O-2025-004">O-2025-004</option>
-                    <option value="O-2025-005">O-2025-005</option>
-                    <option value="O-2025-006">O-2025-006</option>
-                    <option value="O-2025-007">O-2025-007</option>
-                    <option value="O-2025-008">O-2025-008</option>
-                    <option value="O-2025-009">O-2025-009</option>
+                    {opportunityOptions.map((op) => (
+                      <option key={op.opportunityId} value={op.opportunityId}>
+                        {op.opportunityId} - {op.opportunityName}
+                      </option>
+                    ))}
                   </select>
                   <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                 </div>
@@ -371,15 +357,11 @@ export const CreateProposalModal: React.FC<CreateProposalModalProps> = ({
                     }`}
                   >
                     <option value="" disabled>Select client</option>
-                    <option value="C-001">C-001 (Tata Consultancy Enterprise)</option>
-                    <option value="C-002">C-002 (Reliance Digital Services)</option>
-                    <option value="C-003">C-003 (Infosys BPM Limited)</option>
-                    <option value="C-004">C-004 (Wipro Cloud Innovations)</option>
-                    <option value="C-005">C-005 (HCL Tech Solutions)</option>
-                    <option value="C-006">C-006 (Larsen & Toubro Infotech)</option>
-                    <option value="C-007">C-007 (Mahindra Digital)</option>
-                    <option value="C-008">C-008 (Bharti Airtel B2B)</option>
-                    <option value="C-009">C-009 (Adani Digital Labs)</option>
+                    {clientOptions.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.id} - {c.companyName || c.clientName || c.name || c.id}
+                      </option>
+                    ))}
                   </select>
                   <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                 </div>
@@ -387,7 +369,7 @@ export const CreateProposalModal: React.FC<CreateProposalModalProps> = ({
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1 leading-4">
-                  Service ID <span className="text-red-500">*</span>
+                  Service <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <select
@@ -398,13 +380,11 @@ export const CreateProposalModal: React.FC<CreateProposalModalProps> = ({
                     }`}
                   >
                     <option value="" disabled>Select service</option>
-                    <option value="S-001">S-001 (Web & UI Engineering)</option>
-                    <option value="S-002">S-002 (Mobile App Development)</option>
-                    <option value="S-003">S-003 (Digital Marketing Package)</option>
-                    <option value="S-004">S-004 (ERP Implementation)</option>
-                    <option value="S-005">S-005 (Cloud Infrastructure Setup)</option>
-                    <option value="S-006">S-006 (IT Support & Maintenance)</option>
-                    <option value="S-007">S-007 (Cybersecurity Audit)</option>
+                    {serviceOptions.map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
                   </select>
                   <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                 </div>
@@ -431,15 +411,11 @@ export const CreateProposalModal: React.FC<CreateProposalModalProps> = ({
                     <Calendar className="w-4 h-4" />
                   </div>
                   <input
-                    type="text"
+                    type="date"
                     value={proposalDate}
                     onChange={(e) => setProposalDate(e.target.value)}
-                    onFocus={(e) => (e.target.type = 'date')}
-                    onBlur={(e) => {
-                      if (!e.target.value) e.target.type = 'text';
-                    }}
-                    placeholder="Select proposal date"
-                    className="w-full bg-white border border-slate-200 rounded-lg pl-10 pr-3.5 py-2 text-xs leading-4 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-normal transition-colors"
+                    className="w-full bg-white border border-slate-200 rounded-lg pl-10 pr-3.5 py-2 text-xs leading-4 text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-normal transition-colors"
+                    required
                   />
                 </div>
               </div>
@@ -453,15 +429,11 @@ export const CreateProposalModal: React.FC<CreateProposalModalProps> = ({
                     <Calendar className="w-4 h-4" />
                   </div>
                   <input
-                    type="text"
+                    type="date"
                     value={validUntil}
                     onChange={(e) => setValidUntil(e.target.value)}
-                    onFocus={(e) => (e.target.type = 'date')}
-                    onBlur={(e) => {
-                      if (!e.target.value) e.target.type = 'text';
-                    }}
-                    placeholder="Select valid until date"
-                    className="w-full bg-white border border-slate-200 rounded-lg pl-10 pr-3.5 py-2 text-xs leading-4 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-normal transition-colors"
+                    className="w-full bg-white border border-slate-200 rounded-lg pl-10 pr-3.5 py-2 text-xs leading-4 text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-normal transition-colors"
+                    required
                   />
                 </div>
               </div>
@@ -475,15 +447,11 @@ export const CreateProposalModal: React.FC<CreateProposalModalProps> = ({
                     <Calendar className="w-4 h-4" />
                   </div>
                   <input
-                    type="text"
+                    type="date"
                     value={expectedDecisionDate}
                     onChange={(e) => setExpectedDecisionDate(e.target.value)}
-                    onFocus={(e) => (e.target.type = 'date')}
-                    onBlur={(e) => {
-                      if (!e.target.value) e.target.type = 'text';
-                    }}
-                    placeholder="Select expected decision date"
-                    className="w-full bg-white border border-slate-200 rounded-lg pl-10 pr-3.5 py-2 text-xs leading-4 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-normal transition-colors"
+                    className="w-full bg-white border border-slate-200 rounded-lg pl-10 pr-3.5 py-2 text-xs leading-4 text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-normal transition-colors"
+                    required
                   />
                 </div>
               </div>
@@ -502,35 +470,36 @@ export const CreateProposalModal: React.FC<CreateProposalModalProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1 leading-4">
-                  Amount Before Tax <span className="text-red-500">*</span>
+                  Amount Before Tax (₹) <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 text-xs font-normal">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 text-xs">
                     ₹
                   </div>
                   <input
                     type="text"
                     value={amountBeforeTax}
                     onChange={handleAmountChange}
-                    placeholder="Enter amount"
+                    placeholder="Enter amount before tax"
                     className="w-full bg-white border border-slate-200 rounded-lg pl-8 pr-3.5 py-2 text-xs leading-4 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-normal transition-colors"
+                    required
                   />
                 </div>
               </div>
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1 leading-4">
-                  Tax Amount <span className="text-red-500">*</span>
+                  Tax Amount (18% GST)
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 text-xs font-normal">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 text-xs">
                     ₹
                   </div>
                   <input
                     type="text"
                     value={taxAmount}
                     onChange={handleTaxChange}
-                    placeholder="Enter tax amount"
+                    placeholder="Calculated GST"
                     className="w-full bg-white border border-slate-200 rounded-lg pl-8 pr-3.5 py-2 text-xs leading-4 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-normal transition-colors"
                   />
                 </div>
@@ -538,10 +507,10 @@ export const CreateProposalModal: React.FC<CreateProposalModalProps> = ({
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1 leading-4">
-                  Total Amount <span className="text-red-500">*</span>
+                  Total Amount (₹)
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 text-xs font-normal">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 text-xs">
                     ₹
                   </div>
                   <input
@@ -579,11 +548,11 @@ export const CreateProposalModal: React.FC<CreateProposalModalProps> = ({
                     }`}
                   >
                     <option value="" disabled>Select owner</option>
-                    <option value="EMP-001">EMP-001 (Akshit Ujjain)</option>
-                    <option value="EMP-002">EMP-002 (Priya Sharma)</option>
-                    <option value="EMP-003">EMP-003 (Rahul Verma)</option>
-                    <option value="EMP-004">EMP-004 (Vikram Mehta)</option>
-                    <option value="EMP-005">EMP-005 (Ananya Roy)</option>
+                    {employeeOptions.map((emp) => (
+                      <option key={emp.employeeId} value={emp.employeeId}>
+                        {emp.employeeId} - {emp.fullName}
+                      </option>
+                    ))}
                   </select>
                   <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                 </div>
@@ -602,6 +571,7 @@ export const CreateProposalModal: React.FC<CreateProposalModalProps> = ({
                     }`}
                   >
                     <option value="" disabled>Select status</option>
+                    <option value="Draft">Draft</option>
                     <option value="Sent">Sent</option>
                     <option value="Pending">Pending</option>
                     <option value="Approved">Approved</option>

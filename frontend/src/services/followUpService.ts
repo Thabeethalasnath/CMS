@@ -1,5 +1,6 @@
 import { apiClient } from './api/apiClient';
 import { API_ENDPOINTS } from './api/apiEndpoints';
+import { triggerNotificationRefresh } from './notificationService';
 import {
   FollowUpItemData,
   FollowUpSummaryData,
@@ -36,6 +37,7 @@ export const followUpService = {
     const res = await apiClient.put<FollowUpItemData>(
       API_ENDPOINTS.FOLLOW_UP_QUEUE.TOGGLE_DONE(id)
     );
+    triggerNotificationRefresh();
     return res.data;
   },
 
@@ -47,6 +49,7 @@ export const followUpService = {
       API_ENDPOINTS.FOLLOW_UP_QUEUE.ACTION(id),
       payload
     );
+    triggerNotificationRefresh();
     return res.data;
   },
 
@@ -57,6 +60,7 @@ export const followUpService = {
       API_ENDPOINTS.FOLLOW_UP_QUEUE.BASE,
       data
     );
+    triggerNotificationRefresh();
     return res.data;
   },
 
@@ -68,11 +72,13 @@ export const followUpService = {
       API_ENDPOINTS.FOLLOW_UP_QUEUE.BY_ID(id),
       data
     );
+    triggerNotificationRefresh();
     return res.data;
   },
 
   deleteItem: async (id: string | number): Promise<void> => {
     await apiClient.delete<void>(API_ENDPOINTS.FOLLOW_UP_QUEUE.BY_ID(id));
+    triggerNotificationRefresh();
   },
 
   resetData: async (): Promise<string> => {

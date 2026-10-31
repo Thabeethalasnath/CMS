@@ -4,6 +4,8 @@ import com.company.project.collections.dto.*;
 import com.company.project.collections.entity.CollectionInvoiceEntity;
 import com.company.project.collections.entity.CollectionPaymentEntity;
 import com.company.project.collections.repository.CollectionInvoiceRepository;
+import com.company.project.collections.entity.CollectionCommunicationEntity;
+import com.company.project.collections.repository.CollectionCommunicationRepository;
 import com.company.project.collections.repository.CollectionPaymentRepository;
 import com.company.project.common.exception.BusinessValidationException;
 import com.company.project.common.exception.ResourceNotFoundException;
@@ -15,8 +17,10 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.company.project.notification.service.NotificationService;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -31,6 +35,10 @@ public class CollectionsService {
     private final CollectionPaymentRepository paymentRepository;
     private final CollectionsCalculationService calculationService;
     private final InvoiceIdGeneratorService invoiceIdGeneratorService;
+    private final CollectionCommunicationRepository communicationRepository;
+
+    @Autowired(required = false)
+    private NotificationService notificationService;
 
     @Transactional(readOnly = true)
     public PageResponse<InvoiceResponse> getInvoices(
@@ -257,6 +265,14 @@ public class CollectionsService {
         }
 
         CollectionInvoiceEntity updated = invoiceRepository.save(invoice);
+        if (notificationService != null) {
+            notificationService.createNotification(
+                    "Invoice Status: " + trimmedStatus,
+                    invoice.getId() + " (" + invoice.getClientName() + ") status set to " + trimmedStatus + ".",
+                    "INVOICE",
+                    "/management/collections"
+            );
+        }
         return mapToResponse(updated);
     }
 
@@ -319,6 +335,15 @@ public class CollectionsService {
 
         invoiceRepository.save(invoice);
         CollectionPaymentEntity savedPayment = paymentRepository.save(payment);
+
+        if (notificationService != null) {
+            notificationService.createNotification(
+                    "Payment Recorded",
+                    "Payment of ₹" + paymentAmount + " received for " + invoice.getId() + " (" + invoice.getClientName() + ").",
+                    "INVOICE",
+                    "/management/collections"
+            );
+        }
 
         return mapToPaymentResponse(savedPayment);
     }
@@ -474,4 +499,40 @@ public class CollectionsService {
                 .notes(entity.getNotes())
                 .build();
     }
+
+    @Transactional
+    public CollectionCommunicationEntity sendReminder(String invoiceId, SendReminderRequest request) {
+        CollectionInvoiceEntity invoice = invoiceRepository.findById(invoiceId)
+                .orElseThrow(() -> new ResourceNotFoundException("Invoice not found with ID: " + invoiceId));
+
+        String channelsStr = request.getChannels() != null ? request.getChannels().toString() : "Email";
+        CollectionCommunicationEntity comm = CollectionCommunicationEntity.builder()
+                .invoiceId(invoice.getId())
+                .communicationType("REMINDER")
+                .recipient(request.getRecipient() != null ? request.getRecipient() : invoice.getClientName())
+                .subject("Payment Reminder - " + invoice.getId())
+                .message(request.getTemplate() != null ? request.getTemplate() : "Overdue notice via " + channelsStr)
+                .loggedBy("System")
+                .build();
+
+        return communicationRepository.save(comm);
+    }
+
+    @Transactional
+    public CollectionCommunicationEntity logCommunication(String invoiceId, LogCommunicationRequest request) {
+        CollectionInvoiceEntity invoice = invoiceRepository.findById(invoiceId)
+                .orElseThrow(() -> new ResourceNotFoundException("Invoice not found with ID: " + invoiceId));
+
+        CollectionCommunicationEntity comm = CollectionCommunicationEntity.builder()
+                .invoiceId(invoice.getId())
+                .communicationType(request.getCommunicationType())
+                .recipient(request.getRecipient() != null ? request.getRecipient() : invoice.getClientName())
+                .subject(request.getSubject())
+                .message(request.getMessage())
+                .loggedBy(request.getLoggedBy() != null ? request.getLoggedBy() : "Current User")
+                .build();
+
+        return communicationRepository.save(comm);
+    }
+
 }

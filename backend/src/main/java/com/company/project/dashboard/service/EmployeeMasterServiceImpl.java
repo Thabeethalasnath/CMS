@@ -124,6 +124,11 @@ public class EmployeeMasterServiceImpl implements EmployeeMasterService {
             annual = request.getMonthlyCtc().multiply(BigDecimal.valueOf(12));
         }
 
+        BigDecimal mCost = request.getMonthlyCost();
+        if (mCost == null && request.getMonthlyCtc() != null) {
+            mCost = request.getMonthlyCtc().multiply(BigDecimal.valueOf(1.1));
+        }
+
         EmployeeMaster entity = EmployeeMaster.builder()
                 .employeeId(empId)
                 .employeeCode(empCode)
@@ -143,6 +148,16 @@ public class EmployeeMasterServiceImpl implements EmployeeMasterService {
                 .tenureStatus(request.getTenureStatus() != null ? request.getTenureStatus() : "1-3 Years")
                 .monthlyCtc(request.getMonthlyCtc())
                 .annualCtc(annual)
+                .monthlyCost(mCost)
+                .yearsOfService(request.getYearsOfService() != null ? request.getYearsOfService() : "1.0")
+                .basicPercentage(request.getBasicPercentage() != null ? request.getBasicPercentage() : BigDecimal.valueOf(40.0))
+                .hraPercentage(request.getHraPercentage() != null ? request.getHraPercentage() : BigDecimal.valueOf(20.0))
+                .otherAllowance(request.getOtherAllowance() != null ? request.getOtherAllowance() : BigDecimal.valueOf(10000.0))
+                .employeePfPercentage(request.getEmployeePfPercentage() != null ? request.getEmployeePfPercentage() : BigDecimal.valueOf(12.0))
+                .employeeEsiPercentage(request.getEmployeeEsiPercentage() != null ? request.getEmployeeEsiPercentage() : BigDecimal.ZERO)
+                .ptMonthly(request.getPtMonthly() != null ? request.getPtMonthly() : BigDecimal.valueOf(200.0))
+                .tdsMonthly(request.getTdsMonthly() != null ? request.getTdsMonthly() : BigDecimal.ZERO)
+                .notes(request.getNotes() != null ? request.getNotes() : "-")
                 .gender(request.getGender() != null ? request.getGender() : "Male")
                 .orderIndex((int) (employeeRepository.count() + 1))
                 .build();
@@ -172,6 +187,16 @@ public class EmployeeMasterServiceImpl implements EmployeeMasterService {
             employee.setMonthlyCtc(request.getMonthlyCtc());
             employee.setAnnualCtc(request.getMonthlyCtc().multiply(BigDecimal.valueOf(12)));
         }
+        if (request.getMonthlyCost() != null) employee.setMonthlyCost(request.getMonthlyCost());
+        if (request.getYearsOfService() != null) employee.setYearsOfService(request.getYearsOfService());
+        if (request.getBasicPercentage() != null) employee.setBasicPercentage(request.getBasicPercentage());
+        if (request.getHraPercentage() != null) employee.setHraPercentage(request.getHraPercentage());
+        if (request.getOtherAllowance() != null) employee.setOtherAllowance(request.getOtherAllowance());
+        if (request.getEmployeePfPercentage() != null) employee.setEmployeePfPercentage(request.getEmployeePfPercentage());
+        if (request.getEmployeeEsiPercentage() != null) employee.setEmployeeEsiPercentage(request.getEmployeeEsiPercentage());
+        if (request.getPtMonthly() != null) employee.setPtMonthly(request.getPtMonthly());
+        if (request.getTdsMonthly() != null) employee.setTdsMonthly(request.getTdsMonthly());
+        if (request.getNotes() != null) employee.setNotes(request.getNotes());
 
         EmployeeMaster updated = employeeRepository.save(employee);
         return mapToDto(updated);
@@ -209,6 +234,20 @@ public class EmployeeMasterServiceImpl implements EmployeeMasterService {
                 .monthlyCtcFormatted(formatIndianCurrency(e.getMonthlyCtc()))
                 .annualCtc(e.getAnnualCtc())
                 .annualCtcFormatted(formatIndianCurrency(e.getAnnualCtc()))
+                .yearsOfService(e.getYearsOfService() != null ? e.getYearsOfService() : "1.0")
+                .monthlyCost(e.getMonthlyCost())
+                .monthlyCostFormatted(formatIndianCurrency(e.getMonthlyCost()))
+                .basicPercentage(e.getBasicPercentage())
+                .hraPercentage(e.getHraPercentage())
+                .otherAllowance(e.getOtherAllowance())
+                .otherAllowanceFormatted(formatIndianCurrency(e.getOtherAllowance()))
+                .employeePfPercentage(e.getEmployeePfPercentage())
+                .employeeEsiPercentage(e.getEmployeeEsiPercentage())
+                .ptMonthly(e.getPtMonthly())
+                .ptMonthlyFormatted(formatIndianCurrency(e.getPtMonthly()))
+                .tdsMonthly(e.getTdsMonthly())
+                .tdsMonthlyFormatted(formatIndianCurrency(e.getTdsMonthly()))
+                .notes(e.getNotes() != null ? e.getNotes() : "-")
                 .gender(e.getGender())
                 .orderIndex(e.getOrderIndex())
                 .createdAt(e.getCreatedAt())

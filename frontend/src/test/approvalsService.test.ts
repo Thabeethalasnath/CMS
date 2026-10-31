@@ -8,7 +8,7 @@ describe('approvalsService', () => {
     localStorage.clear();
   });
 
-  it('fetchApprovalsData loads from API and caches locally', async () => {
+  it('fetchApprovalsData loads from API without local caching', async () => {
     const mockApprovals = {
       employees: [{ id: 1, employee_name: 'Arun', status: 'Pending' }],
       clients: [{ id: 1, client_name: 'Acme', status: 'Pending' }],
@@ -27,7 +27,7 @@ describe('approvalsService', () => {
     expect(result.employees.length).toBe(1);
     expect(result.clients.length).toBe(1);
     expect(result.summary.total).toBe(2);
-    expect(localStorage.getItem('kalpanaaa_cms_employee_approvals')).toBeTruthy();
+    expect(localStorage.getItem('kalpanaaa_cms_employee_approvals')).toBeNull();
   });
 
   it('updateEmployeeStatus sends PUT request to backend endpoint', async () => {

@@ -73,6 +73,36 @@ public class EmployeeMaster {
     @Column(name = "annual_ctc", precision = 15, scale = 2)
     private BigDecimal annualCtc;
 
+    @Column(name = "years_of_service", length = 50)
+    private String yearsOfService;
+
+    @Column(name = "monthly_cost", precision = 15, scale = 2)
+    private BigDecimal monthlyCost;
+
+    @Column(name = "basic_percentage", precision = 5, scale = 2)
+    private BigDecimal basicPercentage;
+
+    @Column(name = "hra_percentage", precision = 5, scale = 2)
+    private BigDecimal hraPercentage;
+
+    @Column(name = "other_allowance", precision = 15, scale = 2)
+    private BigDecimal otherAllowance;
+
+    @Column(name = "employee_pf_percentage", precision = 5, scale = 2)
+    private BigDecimal employeePfPercentage;
+
+    @Column(name = "employee_esi_percentage", precision = 5, scale = 2)
+    private BigDecimal employeeEsiPercentage;
+
+    @Column(name = "pt_monthly", precision = 15, scale = 2)
+    private BigDecimal ptMonthly;
+
+    @Column(name = "tds_monthly", precision = 15, scale = 2)
+    private BigDecimal tdsMonthly;
+
+    @Column(columnDefinition = "TEXT")
+    private String notes;
+
     @Column(length = 20)
     private String gender;
 

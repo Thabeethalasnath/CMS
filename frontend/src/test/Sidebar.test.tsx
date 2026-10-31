@@ -213,22 +213,29 @@ describe('Sidebar Component - Search & Rail interaction', () => {
     const stored = JSON.parse(localStorage.getItem('cms_recent_modules') || '[]');
     expect(stored).toContain('/management/ceo-dashboard');
   });
-  it('does not render protruding rail button on sidebar edge', () => {
+  it('renders Option 19 Half Circle toggle button on sidebar rail edge and toggles collapse', () => {
+    const handleToggleCollapse = vi.fn();
     const { unmount } = render(
       <MemoryRouter initialEntries={['/']}>
-        <Sidebar isCollapsed={true} />
+        <Sidebar isCollapsed={true} onToggleCollapse={handleToggleCollapse} />
       </MemoryRouter>
     );
 
-    expect(screen.queryByRole('button', { name: /expand sidebar/i })).not.toBeInTheDocument();
+    const expandBtn = screen.getByRole('button', { name: /expand sidebar/i });
+    expect(expandBtn).toBeInTheDocument();
+    fireEvent.click(expandBtn);
+    expect(handleToggleCollapse).toHaveBeenCalledTimes(1);
     unmount();
 
     render(
       <MemoryRouter initialEntries={['/']}>
-        <Sidebar isCollapsed={false} />
+        <Sidebar isCollapsed={false} onToggleCollapse={handleToggleCollapse} />
       </MemoryRouter>
     );
 
-    expect(screen.queryByRole('button', { name: /collapse sidebar/i })).not.toBeInTheDocument();
+    const collapseBtn = screen.getByRole('button', { name: /collapse sidebar/i });
+    expect(collapseBtn).toBeInTheDocument();
+    fireEvent.click(collapseBtn);
+    expect(handleToggleCollapse).toHaveBeenCalledTimes(2);
   });
 });

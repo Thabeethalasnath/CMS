@@ -174,14 +174,18 @@ describe('EmployeeMasterPage Component', () => {
       fireEvent.click(addBtn);
     });
 
-    expect(screen.getByText('Add New Employee')).toBeDefined();
+    expect(
+      screen.getByText('Enter complete employee details to create a new record.')
+    ).toBeDefined();
 
     const cancelBtn = screen.getByRole('button', { name: /Cancel/i });
     await act(async () => {
       fireEvent.click(cancelBtn);
     });
 
-    expect(screen.queryByText('Add New Employee')).toBeNull();
+    expect(
+      screen.queryByText('Enter complete employee details to create a new record.')
+    ).toBeNull();
   });
 });
 

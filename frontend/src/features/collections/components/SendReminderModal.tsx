@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { X, Mail, CheckCircle2 } from 'lucide-react';
+import { X, Mail, CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
+import { collectionsApiService } from '../services/collectionsApiService';
 import { Invoice } from '../types';
 import { formatRupee } from '../utils';
 
@@ -16,8 +17,6 @@ export const SendReminderModal: React.FC<SendReminderModalProps> = ({
   onClose,
   onConfirm,
 }) => {
-  if (!isOpen || !invoice) return null;
-
   const [channels, setChannels] = useState({
     email: true,
     whatsapp: true,
@@ -25,14 +24,31 @@ export const SendReminderModal: React.FC<SendReminderModalProps> = ({
   });
   const [template, setTemplate] = useState('Standard Overdue Notice (Gentle)');
   const [sentSuccess, setSentSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const handleSend = () => {
-    setSentSuccess(true);
-    setTimeout(() => {
-      setSentSuccess(false);
-      onConfirm();
-      onClose();
-    }, 1200);
+  if (!isOpen || !invoice) return null;
+
+  const handleSend = async () => {
+    if (!invoice) return;
+    setIsSubmitting(true);
+    setErrorMessage(null);
+    try {
+      await collectionsApiService.sendReminder(invoice.id, {
+        channels,
+        template,
+      });
+      setSentSuccess(true);
+      setTimeout(() => {
+        setSentSuccess(false);
+        setIsSubmitting(false);
+        onConfirm();
+        onClose();
+      }, 1000);
+    } catch (err: any) {
+      setErrorMessage(err?.message || 'Failed to send reminder');
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -217,6 +233,12 @@ export const SendReminderModal: React.FC<SendReminderModalProps> = ({
               </div>
 
               {/* Actions */}
+              {errorMessage && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#DC2626', fontSize: '12px', marginBottom: '12px', padding: '8px 12px', backgroundColor: '#FEF2F2', borderRadius: '6px' }}>
+                  <AlertCircle size={14} />
+                  <span>{errorMessage}</span>
+                </div>
+              )}
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
                 <button
                   type="button"
@@ -239,6 +261,7 @@ export const SendReminderModal: React.FC<SendReminderModalProps> = ({
                 </button>
                 <button
                   type="button"
+                  disabled={isSubmitting}
                   onClick={handleSend}
                   style={{
                     height: '38px',

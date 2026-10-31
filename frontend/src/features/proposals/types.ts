@@ -1,4 +1,4 @@
-export type ProposalStatus = 'Sent' | 'Pending' | 'Approved' | 'In Review' | 'Rejected';
+export type ProposalStatus = 'Draft' | 'Sent' | 'Pending' | 'Approved' | 'In Review' | 'Rejected';
 
 export interface Proposal {
   proposalId: string;
@@ -43,13 +43,13 @@ export type ProposalSortOption =
 
 export interface ProposalKpiSummary {
   totalProposals: number;
-  totalProposalsTrend: number;
+  totalProposalsTrend: number | null;
   pendingDecisions: number;
-  pendingDecisionsTrend: number;
+  pendingDecisionsTrend: number | null;
   approvedProposals: number;
-  approvedProposalsTrend: number;
+  approvedProposalsTrend: number | null;
   totalProposalValue: number;
-  totalProposalValueTrend: number;
+  totalProposalValueTrend: number | null;
 }
 
 export interface PageResponse<T> {
@@ -58,8 +58,8 @@ export interface PageResponse<T> {
   pageSize: number;
   totalElements: number;
   totalPages: number;
-  first: boolean;
-  last: boolean;
+  first?: boolean;
+  last?: boolean;
 }
 
 export interface ProposalQueryParams {

@@ -101,7 +101,7 @@ export const ManagementAlertsSection: React.FC<ManagementAlertsSectionProps> = (
 
         {/* Table Rows */}
         <div className="divide-y divide-slate-100 bg-white">
-          {(alerts || []).map((alert) => (
+          {(alerts || []).map((alert: any) => (
             <div
               key={alert.id}
               onClick={() => onAlertClick(alert)}

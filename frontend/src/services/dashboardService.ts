@@ -1,34 +1,56 @@
 import { FullDashboardData } from '../types/dashboard';
-import { initialDashboardData } from '../constants/initialDashboardData';
 import { apiClient } from './api/apiClient';
-
-const STORAGE_KEY = 'kalpanaaa_cms_dashboard_data';
+import { triggerNotificationRefresh } from './notificationService';
 
 export function normalizeDashboardData(raw: any): FullDashboardData {
   if (!raw || typeof raw !== 'object') {
-    return initialDashboardData;
+    return {
+      settings: {
+        company_name: '—',
+        dashboard_title: 'CEO Dashboard',
+        dashboard_subtitle: '—',
+        active_date_range: '—',
+        last_updated: '—',
+        user_name: '—',
+        user_role: '—',
+      },
+      kpis: [],
+      finance_monthly: [],
+      expense_breakdown: [],
+      sales_pipeline: [],
+      project_status: [],
+      people_monthly: [],
+      people_summary: {
+        id: 0,
+        active_employees: 0,
+        new_joiners_ytd: 0,
+        exits_ytd: 0,
+        net_growth: 0,
+      },
+      alerts: [],
+    };
   }
 
   const payload = (raw.data && typeof raw.data === 'object' && !Array.isArray(raw.data)) ? raw.data : raw;
 
   const rawSettings = payload.settings || {};
   const settings = {
-    company_name: rawSettings.company_name || rawSettings.companyName || initialDashboardData.settings.company_name,
-    dashboard_title: rawSettings.dashboard_title || rawSettings.dashboardTitle || initialDashboardData.settings.dashboard_title,
-    dashboard_subtitle: rawSettings.dashboard_subtitle || rawSettings.dashboardSubtitle || initialDashboardData.settings.dashboard_subtitle,
-    active_date_range: rawSettings.active_date_range || rawSettings.activeDateRange || initialDashboardData.settings.active_date_range,
-    last_updated: rawSettings.last_updated || rawSettings.lastUpdated || initialDashboardData.settings.last_updated,
-    user_name: rawSettings.user_name || rawSettings.userName || initialDashboardData.settings.user_name,
-    user_role: rawSettings.user_role || rawSettings.userRole || initialDashboardData.settings.user_role,
+    company_name: rawSettings.company_name || rawSettings.companyName || '—',
+    dashboard_title: rawSettings.dashboard_title || rawSettings.dashboardTitle || 'CEO Dashboard',
+    dashboard_subtitle: rawSettings.dashboard_subtitle || rawSettings.dashboardSubtitle || '—',
+    active_date_range: rawSettings.active_date_range || rawSettings.activeDateRange || '—',
+    last_updated: rawSettings.last_updated || rawSettings.lastUpdated || payload.lastUpdated || payload.serverTime || '—',
+    user_name: rawSettings.user_name || rawSettings.userName || '—',
+    user_role: rawSettings.user_role || rawSettings.userRole || '—',
   };
 
-  const rawKpis = Array.isArray(payload.kpis) ? payload.kpis : initialDashboardData.kpis;
+  const rawKpis = Array.isArray(payload.kpis) ? payload.kpis : [];
   const kpis = rawKpis.map((k: any, idx: number) => ({
     id: k.id ?? idx + 1,
     card_key: k.card_key || k.cardKey || `kpi_${idx}`,
     title: k.title || '',
     raw_value: Number(k.raw_value ?? k.rawValue ?? 0),
-    formatted_value: k.formatted_value || k.formattedValue || '',
+    formatted_value: k.formatted_value || k.formattedValue || (k.raw_value != null ? String(k.raw_value) : '—'),
     change_percentage: Number(k.change_percentage ?? k.changePercentage ?? 0),
     change_type: (k.change_type || k.changeType || 'neutral') as 'positive' | 'negative' | 'neutral',
     comparison_text: k.comparison_text || k.comparisonText || '',
@@ -41,7 +63,7 @@ export function normalizeDashboardData(raw: any): FullDashboardData {
     ? payload.finance_monthly
     : Array.isArray(payload.financeMonthly)
     ? payload.financeMonthly
-    : initialDashboardData.finance_monthly;
+    : [];
 
   const finance_monthly = rawFinance.map((f: any, idx: number) => ({
     id: f.id ?? idx + 1,
@@ -57,7 +79,7 @@ export function normalizeDashboardData(raw: any): FullDashboardData {
     ? payload.expense_breakdown
     : Array.isArray(payload.expenseBreakdown)
     ? payload.expenseBreakdown
-    : initialDashboardData.expense_breakdown;
+    : [];
 
   const expense_breakdown = rawExpense.map((e: any, idx: number) => ({
     id: e.id ?? idx + 1,
@@ -72,7 +94,7 @@ export function normalizeDashboardData(raw: any): FullDashboardData {
     ? payload.sales_pipeline
     : Array.isArray(payload.salesPipeline)
     ? payload.salesPipeline
-    : initialDashboardData.sales_pipeline;
+    : [];
 
   const sales_pipeline = rawPipeline.map((s: any, idx: number) => ({
     id: s.id ?? idx + 1,
@@ -87,7 +109,7 @@ export function normalizeDashboardData(raw: any): FullDashboardData {
     ? payload.project_status
     : Array.isArray(payload.projectStatus)
     ? payload.projectStatus
-    : initialDashboardData.project_status;
+    : [];
 
   const project_status = rawStatus.map((p: any, idx: number) => ({
     id: p.id ?? idx + 1,
@@ -102,7 +124,7 @@ export function normalizeDashboardData(raw: any): FullDashboardData {
     ? payload.people_monthly
     : Array.isArray(payload.peopleMonthly)
     ? payload.peopleMonthly
-    : initialDashboardData.people_monthly;
+    : [];
 
   const people_monthly = rawPeople.map((pm: any, idx: number) => ({
     id: pm.id ?? idx + 1,
@@ -115,14 +137,14 @@ export function normalizeDashboardData(raw: any): FullDashboardData {
 
   const rawPeopleSummary = payload.people_summary || payload.peopleSummary || {};
   const people_summary = {
-    id: Number(rawPeopleSummary.id ?? initialDashboardData.people_summary.id ?? 1),
-    active_employees: Number(rawPeopleSummary.active_employees ?? rawPeopleSummary.activeEmployees ?? initialDashboardData.people_summary.active_employees),
-    new_joiners_ytd: Number(rawPeopleSummary.new_joiners_ytd ?? rawPeopleSummary.newJoinersYtd ?? initialDashboardData.people_summary.new_joiners_ytd),
-    exits_ytd: Number(rawPeopleSummary.exits_ytd ?? rawPeopleSummary.exitsYtd ?? initialDashboardData.people_summary.exits_ytd),
-    net_growth: Number(rawPeopleSummary.net_growth ?? rawPeopleSummary.netGrowth ?? initialDashboardData.people_summary.net_growth),
+    id: Number(rawPeopleSummary.id ?? 0),
+    active_employees: Number(rawPeopleSummary.active_employees ?? rawPeopleSummary.activeEmployees ?? 0),
+    new_joiners_ytd: Number(rawPeopleSummary.new_joiners_ytd ?? rawPeopleSummary.newJoinersYtd ?? 0),
+    exits_ytd: Number(rawPeopleSummary.exits_ytd ?? rawPeopleSummary.exitsYtd ?? 0),
+    net_growth: Number(rawPeopleSummary.net_growth ?? rawPeopleSummary.netGrowth ?? 0),
   };
 
-  const rawAlerts = Array.isArray(payload.alerts) ? payload.alerts : initialDashboardData.alerts;
+  const rawAlerts = Array.isArray(payload.alerts) ? payload.alerts : [];
   const alerts = rawAlerts.map((a: any, idx: number) => ({
     id: a.id ?? idx + 1,
     alert_key: a.alert_key || a.alertKey || `alert_${idx}`,
@@ -147,75 +169,36 @@ export function normalizeDashboardData(raw: any): FullDashboardData {
 }
 
 export const dashboardService = {
-  // Fetch dashboard data
+  // Fetch dashboard data directly from the API; no fallbacks, errors propagate
   async getDashboardData(): Promise<FullDashboardData> {
-    try {
-      const response = await apiClient.get<any>('/dashboard/ceo');
-      if (response && (response.data || response)) {
-        const normalized = normalizeDashboardData(response.data || response);
-        try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
-        } catch {}
-        return normalized;
-      }
-    } catch {
-      // Fallback to cache/local
-    }
-
-    const cached = localStorage.getItem(STORAGE_KEY);
-    if (cached) {
-      try {
-        const parsed = JSON.parse(cached);
-        return normalizeDashboardData(parsed);
-      } catch {}
-    }
-
-    return initialDashboardData;
+    const response = await apiClient.get<any>('/dashboard/ceo');
+    return normalizeDashboardData(response.data || response);
   },
 
-  // Save/Update full dashboard data
+  // Save/Update full dashboard data directly via API
   async saveDashboardData(data: FullDashboardData): Promise<void> {
-    const normalized = normalizeDashboardData(data);
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
-    } catch {}
-
-    try {
-      await apiClient.put('/dashboard/ceo', normalized);
-    } catch {
-      // Local copy saved
-    }
+    await apiClient.put('/dashboard/ceo', data);
+    triggerNotificationRefresh();
   },
 
-  // Update specific alert count
+  async updateDashboardData(data: FullDashboardData): Promise<void> {
+    await this.saveDashboardData(data);
+  },
+
+  // Update specific alert count via API
   async updateAlertCount(alertId: number, delta: number): Promise<FullDashboardData> {
-    try {
-      const response = await apiClient.put<any>(`/dashboard/ceo/alerts/${alertId}?delta=${delta}`);
-      if (response && (response.data || response)) {
-        const normalized = normalizeDashboardData(response.data || response);
-        try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
-        } catch {}
-        return normalized;
-      }
-    } catch {
-      // Fallback
-    }
+    const response = await apiClient.put<any>(`/dashboard/ceo/alerts/${alertId}?delta=${delta}`);
+    triggerNotificationRefresh();
+    return normalizeDashboardData(response.data || response);
+  },
 
-    const current = await this.getDashboardData();
-    const updatedAlerts = current.alerts.map((a) => {
-      if (a.id === alertId) {
-        return { ...a, alert_count: Math.max(0, a.alert_count + delta) };
-      }
-      return a;
-    });
-
-    const updatedData: FullDashboardData = {
-      ...current,
-      alerts: updatedAlerts
+  // Fetch sidebar live counts
+  async getSidebarCounts(): Promise<{ pendingApprovals: number; overdueFollowUps: number }> {
+    const response = await apiClient.get<any>('/dashboard/sidebar/counts');
+    const data = response.data || response;
+    return {
+      pendingApprovals: Number(data.pendingApprovals ?? 0),
+      overdueFollowUps: Number(data.overdueFollowUps ?? 0),
     };
-
-    await this.saveDashboardData(updatedData);
-    return updatedData;
   }
 };

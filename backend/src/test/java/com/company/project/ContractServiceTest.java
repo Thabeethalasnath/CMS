@@ -126,8 +126,9 @@ class ContractServiceTest {
 
         ContractDto created = contractService.createContract(req);
 
+        int year = java.time.LocalDate.now().getYear();
         assertThat(created.getId()).isEqualTo(2L);
-        assertThat(created.getContractId()).isEqualTo("C-2025-002");
+        assertThat(created.getContractId()).isEqualTo("C-" + year + "-002");
         assertThat(created.getClientId()).isEqualTo("C-002");
     }
 

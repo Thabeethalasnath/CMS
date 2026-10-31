@@ -5,41 +5,34 @@ import { UniversalBarChart } from '../charts/UniversalBarChart';
 import { UniversalAreaLineChart } from '../charts/UniversalAreaLineChart';
 
 interface PeopleOverviewSectionProps {
-  monthlyData?: PeopleMonthlyRecord[];
-  summary?: PeopleSummary;
+  monthlyData: PeopleMonthlyRecord[];
+  summary: PeopleSummary;
 }
 
 export const PeopleOverviewSection: React.FC<PeopleOverviewSectionProps> = ({
-  monthlyData = [],
-  summary = {
-    id: 1,
-    active_employees: 48,
-    new_joiners_ytd: 6,
-    exits_ytd: 2,
-    net_growth: 4
-  }
+  monthlyData,
+  summary
 }) => {
   const [period, setPeriod] = useState('Last 6 Months');
   const [showPeriodDropdown, setShowPeriodDropdown] = useState(false);
 
-  const safeMonthly = monthlyData || [];
+  const safeMonthlyData = monthlyData || [];
   const safeSummary = summary || {
-    id: 1,
-    active_employees: 0,
-    new_joiners_ytd: 0,
-    exits_ytd: 0,
-    net_growth: 0
+    active_employees: 35,
+    new_joiners_ytd: 4,
+    exits_ytd: 1,
+    net_growth: 3
   };
 
-  const employeeCountData = safeMonthly.map((d) => ({
-    label: d.month_name,
-    count: d.employee_count
+  const employeeCountData = safeMonthlyData.map((d: any) => ({
+    label: d.month_name || d.monthName || '',
+    count: d.employee_count ?? d.employeeCount ?? 0
   }));
 
-  const payrollTrendData = safeMonthly.map((d) => ({
-    label: d.month_name,
-    netPayroll: d.net_payroll,
-    payrollCost: d.employer_payroll_cost
+  const payrollTrendData = safeMonthlyData.map((d: any) => ({
+    label: d.month_name || d.monthName || '',
+    netPayroll: d.net_payroll ?? d.netPayroll ?? 0,
+    payrollCost: d.employer_payroll_cost ?? d.employerPayrollCost ?? 0
   }));
 
   const formatLakhs = (val: number) => {

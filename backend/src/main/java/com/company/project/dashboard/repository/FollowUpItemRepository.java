@@ -50,4 +50,11 @@ public interface FollowUpItemRepository extends JpaRepository<FollowUpItem, Long
 
     @Query("SELECT COUNT(f) FROM FollowUpItem f WHERE LOWER(f.priority) = LOWER(:priority)")
     long countByPriority(@Param("priority") String priority);
+
+    long countByHealthIgnoreCaseAndIsDoneFalse(String health);
+
+    long countByIsDoneTrue();
+
+    @Query("SELECT COALESCE(SUM(f.count), 0) FROM FollowUpItem f WHERE LOWER(f.priority) = LOWER(:priority) AND (f.isDone = false OR f.isDone IS NULL)")
+    long sumCountByPriorityAndIsDoneFalse(@Param("priority") String priority);
 }

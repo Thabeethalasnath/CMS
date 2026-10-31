@@ -11,9 +11,14 @@ import com.company.project.dashboard.repository.EmployeeApprovalRepository;
 import com.company.project.dashboard.repository.TicketAssetApprovalRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.company.project.notification.service.NotificationService;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,6 +31,9 @@ public class ApprovalServiceImpl implements ApprovalService {
     private final ClientApprovalRepository clientRepo;
     private final TicketAssetApprovalRepository ticketAssetRepo;
 
+    @Autowired(required = false)
+    private NotificationService notificationService;
+
     @Override
     @Transactional(readOnly = true)
     public ApprovalsResponse getAllApprovals() {
@@ -33,27 +41,17 @@ public class ApprovalServiceImpl implements ApprovalService {
         List<ClientApproval> clients = clientRepo.findAllByOrderBySortOrderAscIdAsc();
         List<TicketAssetApproval> ticketsAssets = ticketAssetRepo.findAllByOrderBySortOrderAscIdAsc();
 
-        long pending = 0;
-        long approved = 0;
-        long rejected = 0;
+        long pending = employeeRepo.countByStatusIgnoreCase("Pending")
+                + clientRepo.countByStatusIgnoreCase("Pending")
+                + ticketAssetRepo.countByStatusIgnoreCase("Pending");
 
-        for (EmployeeApproval e : employees) {
-            if ("Pending".equalsIgnoreCase(e.getStatus())) pending++;
-            else if ("Approved".equalsIgnoreCase(e.getStatus())) approved++;
-            else if ("Rejected".equalsIgnoreCase(e.getStatus())) rejected++;
-        }
+        long approved = employeeRepo.countByStatusIgnoreCase("Approved")
+                + clientRepo.countByStatusIgnoreCase("Approved")
+                + ticketAssetRepo.countByStatusIgnoreCase("Approved");
 
-        for (ClientApproval c : clients) {
-            if ("Pending".equalsIgnoreCase(c.getStatus())) pending++;
-            else if ("Approved".equalsIgnoreCase(c.getStatus())) approved++;
-            else if ("Rejected".equalsIgnoreCase(c.getStatus())) rejected++;
-        }
-
-        for (TicketAssetApproval t : ticketsAssets) {
-            if ("Pending".equalsIgnoreCase(t.getStatus())) pending++;
-            else if ("Approved".equalsIgnoreCase(t.getStatus())) approved++;
-            else if ("Rejected".equalsIgnoreCase(t.getStatus())) rejected++;
-        }
+        long rejected = employeeRepo.countByStatusIgnoreCase("Rejected")
+                + clientRepo.countByStatusIgnoreCase("Rejected")
+                + ticketAssetRepo.countByStatusIgnoreCase("Rejected");
 
         long total = pending + approved + rejected;
 
@@ -76,7 +74,18 @@ public class ApprovalServiceImpl implements ApprovalService {
         EmployeeApproval item = employeeRepo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Employee approval not found with ID: " + id));
         item.setStatus(status);
-        return employeeRepo.save(item);
+        item.setApprovedBy("Akshit Ujjain (CEO)");
+        item.setDecidedAt(LocalDateTime.now());
+        EmployeeApproval saved = employeeRepo.save(item);
+        if (notificationService != null) {
+            notificationService.createNotification(
+                    "Employee Request " + status,
+                    saved.getEmployeeName() + " (" + (saved.getRequestType() != null ? saved.getRequestType() : "Request") + ") updated to " + status + ".",
+                    "APPROVAL",
+                    "/management/approval-inbox"
+            );
+        }
+        return saved;
     }
 
     @Override
@@ -84,6 +93,9 @@ public class ApprovalServiceImpl implements ApprovalService {
     public EmployeeApproval createEmployeeApproval(EmployeeApproval request) {
         if (request.getStatus() == null || request.getStatus().isBlank()) {
             request.setStatus("Pending");
+        }
+        if (request.getAppliedDate() == null || request.getAppliedDate().isBlank()) {
+            request.setAppliedDate(LocalDate.now().format(DateTimeFormatter.ofPattern("dd MMM yyyy")));
         }
         if (request.getSortOrder() == null) {
             request.setSortOrder((int) employeeRepo.count() + 1);
@@ -97,7 +109,18 @@ public class ApprovalServiceImpl implements ApprovalService {
         ClientApproval item = clientRepo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Client approval not found with ID: " + id));
         item.setStatus(status);
-        return clientRepo.save(item);
+        item.setApprovedBy("Akshit Ujjain (CEO)");
+        item.setDecidedAt(LocalDateTime.now());
+        ClientApproval saved = clientRepo.save(item);
+        if (notificationService != null) {
+            notificationService.createNotification(
+                    "Client Request " + status,
+                    saved.getClientName() + " (" + (saved.getRequestType() != null ? saved.getRequestType() : "Request") + ") updated to " + status + ".",
+                    "APPROVAL",
+                    "/management/approval-inbox"
+            );
+        }
+        return saved;
     }
 
     @Override
@@ -108,7 +131,10 @@ public class ApprovalServiceImpl implements ApprovalService {
         }
         if (request.getApprovalId() == null || request.getApprovalId().isBlank()) {
             long count = clientRepo.count() + 1;
-            request.setApprovalId(String.format("APP-CL-%03d", count));
+            request.setApprovalId(String.format("APP-%d-%03d", LocalDate.now().getYear(), count));
+        }
+        if (request.getRequestDate() == null || request.getRequestDate().isBlank()) {
+            request.setRequestDate(LocalDate.now().format(DateTimeFormatter.ofPattern("dd MMM yyyy")));
         }
         if (request.getSortOrder() == null) {
             request.setSortOrder((int) clientRepo.count() + 1);
@@ -122,7 +148,18 @@ public class ApprovalServiceImpl implements ApprovalService {
         TicketAssetApproval item = ticketAssetRepo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Ticket/Asset approval not found with ID: " + id));
         item.setStatus(status);
-        return ticketAssetRepo.save(item);
+        item.setApprovedBy("Akshit Ujjain (CEO)");
+        item.setDecidedAt(LocalDateTime.now());
+        TicketAssetApproval saved = ticketAssetRepo.save(item);
+        if (notificationService != null) {
+            notificationService.createNotification(
+                    "Ticket/Asset " + status,
+                    saved.getClientRequester() + " (" + (saved.getTitle() != null ? saved.getTitle() : "Asset") + ") updated to " + status + ".",
+                    "APPROVAL",
+                    "/management/approval-inbox"
+            );
+        }
+        return saved;
     }
 
     @Override
@@ -133,7 +170,10 @@ public class ApprovalServiceImpl implements ApprovalService {
         }
         if (request.getApprovalId() == null || request.getApprovalId().isBlank()) {
             long count = ticketAssetRepo.count() + 1;
-            request.setApprovalId(String.format("APP-TK-%03d", count));
+            request.setApprovalId(String.format("APP-%d-%03d", LocalDate.now().getYear(), count));
+        }
+        if (request.getRequestDate() == null || request.getRequestDate().isBlank()) {
+            request.setRequestDate(LocalDate.now().format(DateTimeFormatter.ofPattern("dd MMM yyyy")));
         }
         if (request.getSortOrder() == null) {
             request.setSortOrder((int) ticketAssetRepo.count() + 1);

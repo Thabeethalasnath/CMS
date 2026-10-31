@@ -1,24 +1,130 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Check, Clock, UserCheck, Shield } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Check, Clock, UserCheck, Shield, FileText, TrendingUp, Bell } from 'lucide-react';
+import {
+  notificationService,
+  PortalNotification,
+  NOTIFICATION_REFRESH_EVENT,
+} from '../../services/notificationService';
+
+function formatTimeAgo(isoString?: string): string {
+  if (!isoString) return '';
+  try {
+    const date = new Date(isoString);
+    const now = new Date();
+    const diffSec = Math.floor((now.getTime() - date.getTime()) / 1000);
+    if (diffSec < 60) return 'Just now';
+    const diffMin = Math.floor(diffSec / 60);
+    if (diffMin < 60) return `${diffMin}m ago`;
+    const diffHours = Math.floor(diffMin / 60);
+    if (diffHours < 24) return `${diffHours}h ago`;
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+  } catch {
+    return '';
+  }
+}
+
+function getNotifIcon(type?: string) {
+  switch (type?.toUpperCase()) {
+    case 'APPROVAL':
+      return (
+        <div className="w-7 h-7 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 shrink-0 mt-0.5">
+          <UserCheck className="w-3.5 h-3.5" />
+        </div>
+      );
+    case 'INVOICE':
+      return (
+        <div className="w-7 h-7 rounded-full bg-rose-100 flex items-center justify-center text-rose-600 shrink-0 mt-0.5">
+          <Clock className="w-3.5 h-3.5" />
+        </div>
+      );
+    case 'FOLLOW_UP':
+      return (
+        <div className="w-7 h-7 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 shrink-0 mt-0.5">
+          <Clock className="w-3.5 h-3.5" />
+        </div>
+      );
+    case 'PROPOSAL':
+      return (
+        <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 shrink-0 mt-0.5">
+          <FileText className="w-3.5 h-3.5" />
+        </div>
+      );
+    case 'LEAD':
+    case 'OPPORTUNITY':
+      return (
+        <div className="w-7 h-7 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0 mt-0.5">
+          <TrendingUp className="w-3.5 h-3.5" />
+        </div>
+      );
+    case 'CONTRACT':
+      return (
+        <div className="w-7 h-7 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 shrink-0 mt-0.5">
+          <Shield className="w-3.5 h-3.5" />
+        </div>
+      );
+    default:
+      return (
+        <div className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 shrink-0 mt-0.5">
+          <Bell className="w-3.5 h-3.5" />
+        </div>
+      );
+  }
+}
 
 interface TopNavProps {
-  onMenuClick?: () => void;
-  isSidebarCollapsed?: boolean;
   searchQuery?: string;
   onSearchChange?: (val: string) => void;
   selectedDateRange?: string;
   onDateRangeChange?: (range: string) => void;
+  userName?: string;
+  userRole?: string;
 }
 
 export const TopNav: React.FC<TopNavProps> = ({
-  onMenuClick,
-  isSidebarCollapsed = false,
   searchQuery = '',
   onSearchChange,
   selectedDateRange = 'Apr 2024 - Mar 2025',
   onDateRangeChange,
+  userName = '—',
+  userRole = '—',
 }) => {
+  const navigate = useNavigate();
   const [isDateOpen, setIsDateOpen] = useState(false);
+  const [notifications, setNotifications] = useState<PortalNotification[]>([]);
+  const [unreadCount, setUnreadCount] = useState<number>(0);
+  const [isLoadingNotifs, setIsLoadingNotifs] = useState<boolean>(false);
+
+  const fetchLiveNotifications = async () => {
+    try {
+      setIsLoadingNotifs(true);
+      const data = await notificationService.getNotifications(15);
+      setNotifications(data.notifications || []);
+      setUnreadCount(data.unreadCount ?? 0);
+    } catch {
+      // non-blocking
+    } finally {
+      setIsLoadingNotifs(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLiveNotifications();
+
+    const handleRefresh = () => {
+      fetchLiveNotifications();
+    };
+
+    window.addEventListener(NOTIFICATION_REFRESH_EVENT, handleRefresh);
+    const interval = setInterval(fetchLiveNotifications, 15000);
+
+    return () => {
+      window.removeEventListener(NOTIFICATION_REFRESH_EVENT, handleRefresh);
+      clearInterval(interval);
+    };
+  }, []);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
@@ -71,7 +177,7 @@ export const TopNav: React.FC<TopNavProps> = ({
         fontFamily: "'Inter', sans-serif",
       }}
     >
-      {/* Left: Hamburger & Search Bar */}
+      {/* Left: Search Bar */}
       <div
         style={{
           display: 'flex',
@@ -85,33 +191,6 @@ export const TopNav: React.FC<TopNavProps> = ({
           minWidth: 0,
         }}
       >
-        {/* Button - Sidebar Collapse Toggle (matching Search Bar theme) */}
-        <button
-          type="button"
-          onClick={onMenuClick}
-          aria-label="Toggle sidebar"
-          title={isSidebarCollapsed ? "Expand sidebar (Ctrl+B)" : "Collapse sidebar (Ctrl+B)"}
-          className="sidebar-collapse-btn"
-        >
-          <svg
-            style={{
-              width: '16px',
-              height: '16px',
-              transition: 'transform 0.28s cubic-bezier(0.2, 0, 0, 1), stroke 0.2s ease',
-              transform: isSidebarCollapsed ? 'rotate(180deg)' : 'rotate(0deg)',
-              display: 'block',
-            }}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <polyline points="14.5 17 9.5 12 14.5 7" />
-          </svg>
-        </button>
-
         {/* Container - Search Bar */}
         <div
           style={{
@@ -394,13 +473,13 @@ export const TopNav: React.FC<TopNavProps> = ({
             <div
               style={{
                 boxSizing: 'border-box',
-                display: 'flex',
+                display: unreadCount > 0 ? 'flex' : 'none',
                 flexDirection: 'row',
                 justifyContent: 'center',
                 alignItems: 'center',
-                padding: '0px',
+                padding: '0px 2px',
                 position: 'absolute',
-                width: '14px',
+                minWidth: '14px',
                 height: '14px',
                 right: '6px',
                 top: '4.5px',
@@ -416,7 +495,7 @@ export const TopNav: React.FC<TopNavProps> = ({
             >
               <span
                 style={{
-                  width: '5.81px',
+                  minWidth: '5.81px',
                   height: '14px',
                   fontFamily: "'Inter', sans-serif",
                   fontStyle: 'normal',
@@ -430,47 +509,89 @@ export const TopNav: React.FC<TopNavProps> = ({
                   color: '#FFFFFF',
                 }}
               >
-                3
+                {unreadCount > 99 ? '99+' : unreadCount}
               </span>
             </div>
           </button>
 
           {isNotifOpen && (
-            <div className="absolute right-0 mt-1.5 w-80 bg-white border border-[#E2E8F0] rounded-xl shadow-xl py-2 z-50">
+            <div className="absolute right-0 mt-1.5 w-84 bg-white border border-[#E2E8F0] rounded-xl shadow-xl py-2 z-50">
               <div className="px-4 py-2 border-b border-slate-100 flex items-center justify-between">
                 <span className="font-semibold text-xs text-slate-800">Notifications</span>
-                <span className="text-[10px] font-bold px-1.5 py-0.5 bg-rose-100 text-rose-600 rounded-full">
-                  3 New
-                </span>
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                      unreadCount > 0 ? 'bg-rose-100 text-rose-600' : 'bg-slate-100 text-slate-500'
+                    }`}
+                  >
+                    {unreadCount > 0 ? `${unreadCount} New` : 'All read'}
+                  </span>
+                  {unreadCount > 0 && (
+                    <button
+                      type="button"
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        await notificationService.markAllAsRead();
+                        setUnreadCount(0);
+                        setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+                      }}
+                      className="text-[10px] text-blue-600 hover:text-blue-700 font-semibold cursor-pointer"
+                    >
+                      Mark all read
+                    </button>
+                  )}
+                </div>
               </div>
-              <div className="divide-y divide-slate-50 max-h-64 overflow-y-auto">
-                <div className="p-3 hover:bg-slate-50 flex gap-2.5 cursor-pointer">
-                  <div className="w-7 h-7 rounded-full bg-red-100 flex items-center justify-center text-red-600 shrink-0 mt-0.5">
-                    <Clock className="w-3.5 h-3.5" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-semibold text-slate-800">Invoices overdue</p>
-                    <p className="text-[11px] text-slate-500">₹ 4,28,000 pending past 45 days.</p>
-                  </div>
-                </div>
-                <div className="p-3 hover:bg-slate-50 flex gap-2.5 cursor-pointer">
-                  <div className="w-7 h-7 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0 mt-0.5">
-                    <Shield className="w-3.5 h-3.5" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-semibold text-slate-800">Compliance License</p>
-                    <p className="text-[11px] text-slate-500">Annual license renewal 32 days overdue.</p>
-                  </div>
-                </div>
-                <div className="p-3 hover:bg-slate-50 flex gap-2.5 cursor-pointer">
-                  <div className="w-7 h-7 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 shrink-0 mt-0.5">
-                    <UserCheck className="w-3.5 h-3.5" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-semibold text-slate-800">PO Approval Needed</p>
-                    <p className="text-[11px] text-slate-500">ACME Pvt Ltd SLA overdue by 5 days.</p>
-                  </div>
-                </div>
+              <div className="divide-y divide-slate-50 max-h-72 overflow-y-auto">
+                {isLoadingNotifs && notifications.length === 0 ? (
+                  <div className="p-4 text-center text-xs text-slate-400">Loading notifications...</div>
+                ) : notifications.length === 0 ? (
+                  <div className="p-6 text-center text-xs text-slate-400">No notifications right now</div>
+                ) : (
+                  notifications.map((notif) => (
+                    <div
+                      key={notif.id}
+                      onClick={async () => {
+                        if (!notif.isRead) {
+                          await notificationService.markAsRead(notif.id);
+                          setNotifications((prev) =>
+                            prev.map((n) => (n.id === notif.id ? { ...n, isRead: true } : n))
+                          );
+                          setUnreadCount((prev) => Math.max(0, prev - 1));
+                        }
+                        if (notif.link) {
+                          navigate(notif.link);
+                        }
+                        setIsNotifOpen(false);
+                      }}
+                      className={`p-3 hover:bg-slate-50 flex gap-2.5 cursor-pointer transition-colors ${
+                        !notif.isRead ? 'bg-blue-50/40' : ''
+                      }`}
+                    >
+                      {getNotifIcon(notif.type)}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-1">
+                          <p
+                            className={`text-xs truncate ${
+                              !notif.isRead ? 'font-semibold text-slate-900' : 'font-medium text-slate-700'
+                            }`}
+                          >
+                            {notif.title}
+                          </p>
+                          <span className="text-[10px] text-slate-400 shrink-0">
+                            {formatTimeAgo(notif.createdAt)}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 line-clamp-2 mt-0.5">
+                          {notif.detail}
+                        </p>
+                      </div>
+                      {!notif.isRead && (
+                        <div className="w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0 self-center" />
+                      )}
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           )}
@@ -600,7 +721,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                     textOverflow: 'ellipsis',
                   }}
                 >
-                  Akshit Ujjain
+                  {userName && userName !== '—' ? userName : 'Akshit Ujjain'}
                 </span>
               </div>
 
@@ -634,7 +755,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                     color: '#64748B',
                   }}
                 >
-                  CEO
+                  {userRole && userRole !== '—' ? userRole : 'CEO'}
                 </span>
               </div>
             </div>
@@ -662,35 +783,33 @@ export const TopNav: React.FC<TopNavProps> = ({
           </div>
 
           {isProfileOpen && (
-            <div className="absolute right-0 mt-1.5 w-48 bg-white border border-[#E2E8F0] rounded-xl shadow-lg py-1.5 z-50">
-              <div className="px-3.5 py-2 border-b border-slate-100">
-                <p className="text-xs font-bold text-slate-800">Akshit Ujjain</p>
-                <p className="text-[11px] text-slate-500">akshit@cms.internal</p>
-              </div>
-              <div className="py-1">
+            <div className="absolute right-0 mt-1.5 w-40 bg-white border border-[#E2E8F0] rounded-xl shadow-lg py-1 z-50">
+              <div>
                 <button
                   type="button"
-                  className="w-full text-left px-3.5 py-1.5 text-xs text-slate-700 hover:bg-slate-50"
+                  onClick={() => {
+                    setIsProfileOpen(false);
+                    navigate('/settings');
+                  }}
+                  className="w-full text-left px-3.5 py-2 text-xs text-slate-700 hover:bg-slate-50 cursor-pointer"
                 >
-                  Workspace Settings
-                </button>
-                <button
-                  type="button"
-                  className="w-full text-left px-3.5 py-1.5 text-xs text-slate-700 hover:bg-slate-50"
-                >
-                  Company Directory
-                </button>
-                <button
-                  type="button"
-                  className="w-full text-left px-3.5 py-1.5 text-xs text-slate-700 hover:bg-slate-50"
-                >
-                  Activity Logs
+                  Settings
                 </button>
               </div>
-              <div className="border-t border-slate-100 pt-1">
+              <div className="border-t border-slate-100">
                 <button
                   type="button"
-                  className="w-full text-left px-3.5 py-1.5 text-xs text-rose-600 hover:bg-rose-50 font-medium"
+                  onClick={() => {
+                    localStorage.removeItem('auth_token');
+                    localStorage.removeItem('auth_user_name');
+                    localStorage.removeItem('auth_user_role');
+                    sessionStorage.removeItem('auth_token');
+                    sessionStorage.removeItem('auth_user_name');
+                    sessionStorage.removeItem('auth_user_role');
+                    setIsProfileOpen(false);
+                    navigate('/');
+                  }}
+                  className="w-full text-left px-3.5 py-2 text-xs text-rose-600 hover:bg-rose-50 font-medium cursor-pointer"
                 >
                   Log out
                 </button>

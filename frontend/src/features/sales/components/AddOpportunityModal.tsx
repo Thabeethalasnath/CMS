@@ -1,32 +1,47 @@
 import React, { useState, useEffect } from 'react';
 import { X, Plus, Target, DollarSign, Calendar, User, Briefcase } from 'lucide-react';
 import { CreateOpportunityPayload } from '@/types/opportunity';
+import { masterDataService } from '@/services/masterDataService';
 
 interface AddOpportunityModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: CreateOpportunityPayload) => Promise<void>;
+  onSubmit?: (data: CreateOpportunityPayload) => Promise<void>;
+  onAdd?: (data: CreateOpportunityPayload) => Promise<void>;
 }
 
 export const AddOpportunityModal: React.FC<AddOpportunityModalProps> = ({
   isOpen,
   onClose,
   onSubmit,
+  onAdd,
 }) => {
   const [opportunityName, setOpportunityName] = useState('');
-  const [clientId, setClientId] = useState('C-001');
-  const [ownerId, setOwnerId] = useState('EMP-001');
-  const [serviceId, setServiceId] = useState('S-001');
+  const [clientId, setClientId] = useState('');
+  const [ownerId, setOwnerId] = useState('');
+  const [serviceId, setServiceId] = useState('');
   const [stage, setStage] = useState('New');
   const [probability, setProbability] = useState<number>(20);
-  const [estimatedValue, setEstimatedValue] = useState<string>('500000');
-  const [expectedCloseDate, setExpectedCloseDate] = useState('20 May 2025');
-  const [lastContact, setLastContact] = useState('15 Mar 2025');
-  const [nextFollowUp, setNextFollowUp] = useState('22 Mar 2025');
+  const [estimatedValue, setEstimatedValue] = useState<string>('');
+  const [expectedCloseDate, setExpectedCloseDate] = useState('');
+  const [lastContact, setLastContact] = useState('');
+  const [nextFollowUp, setNextFollowUp] = useState('');
   const [status, setStatus] = useState('Open');
-  const [lostReason, setLostReason] = useState('-');
+  const [lostReason, setLostReason] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [clientOptions, setClientOptions] = useState<{ id: string; label: string }[]>([]);
+  const [employeeOptions, setEmployeeOptions] = useState<{ id: string; label: string }[]>([]);
+  const [serviceOptions, setServiceOptions] = useState<{ id: string; label: string }[]>([]);
+
+  useEffect(() => {
+    if (isOpen) {
+      masterDataService.getClients().then(cls => setClientOptions(cls.map(c => ({ id: c.id, label: `${c.id} - ${c.companyName || c.clientName || c.name || c.id}` })))).catch(() => {});
+      masterDataService.getEmployees().then(emps => setEmployeeOptions(emps.map(e => ({ id: e.employeeId, label: `${e.employeeId} - ${e.fullName}` })))).catch(() => {});
+      masterDataService.getServices().then(srvs => setServiceOptions(srvs.map(s => ({ id: s, label: s })))).catch(() => {});
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -78,24 +93,46 @@ export const AddOpportunityModal: React.FC<AddOpportunityModalProps> = ({
       setError('Opportunity Name is required.');
       return;
     }
+    if (!clientId.trim()) {
+      setError('Client ID is required.');
+      return;
+    }
+    if (!ownerId.trim()) {
+      setError('Owner ID is required.');
+      return;
+    }
+    if (!serviceId.trim()) {
+      setError('Service ID is required.');
+      return;
+    }
 
     const numValue = parseFloat(estimatedValue.replace(/[^0-9.]/g, '')) || 0;
+    if (numValue <= 0) {
+      setError('Estimated Value must be greater than zero.');
+      return;
+    }
 
     setIsSubmitting(true);
     setError(null);
 
+    const submitFn = onAdd || onSubmit;
+    if (!submitFn) {
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
-      await onSubmit({
-        clientId: clientId.trim() || 'C-001',
+      await submitFn({
+        clientId: clientId.trim(),
         opportunityName: opportunityName.trim(),
-        ownerId: ownerId.trim() || 'EMP-001',
-        serviceId: serviceId.trim() || 'S-001',
+        ownerId: ownerId.trim(),
+        serviceId: serviceId.trim(),
         stage,
         probability: Number(probability),
         estimatedValue: numValue,
-        expectedCloseDate: stage === 'Lost' ? '-' : expectedCloseDate.trim(),
-        lastContact: lastContact.trim() || '15 Mar 2025',
-        nextFollowUp: stage === 'Lost' ? '-' : nextFollowUp.trim(),
+        expectedCloseDate: stage === 'Lost' ? '-' : (expectedCloseDate.trim() || '-'),
+        lastContact: lastContact.trim() || '-',
+        nextFollowUp: stage === 'Lost' ? '-' : (nextFollowUp.trim() || '-'),
         status,
         lostReason: stage === 'Lost' ? (lostReason.trim() || 'Budget issue') : '-',
       });
@@ -291,8 +328,9 @@ export const AddOpportunityModal: React.FC<AddOpportunityModalProps> = ({
                   backgroundColor: '#FFFFFF',
                 }}
               >
-                {['C-001', 'C-002', 'C-003', 'C-004', 'C-005', 'C-006', 'C-007', 'C-008'].map((c) => (
-                  <option key={c} value={c}>{c}</option>
+                <option value="">Select Client</option>
+                {clientOptions.map((c) => (
+                  <option key={c.id} value={c.id}>{c.label}</option>
                 ))}
               </select>
             </div>
@@ -324,8 +362,9 @@ export const AddOpportunityModal: React.FC<AddOpportunityModalProps> = ({
                   backgroundColor: '#FFFFFF',
                 }}
               >
-                {['EMP-001', 'EMP-002', 'EMP-003', 'EMP-004', 'EMP-005'].map((e) => (
-                  <option key={e} value={e}>{e}</option>
+                <option value="">Select Owner</option>
+                {employeeOptions.map((e) => (
+                  <option key={e.id} value={e.id}>{e.label}</option>
                 ))}
               </select>
             </div>
@@ -357,8 +396,9 @@ export const AddOpportunityModal: React.FC<AddOpportunityModalProps> = ({
                   backgroundColor: '#FFFFFF',
                 }}
               >
-                {['S-001', 'S-002', 'S-003', 'S-004', 'S-005', 'S-006', 'S-007'].map((s) => (
-                  <option key={s} value={s}>{s}</option>
+                <option value="">Select Service</option>
+                {serviceOptions.map((s) => (
+                  <option key={s.id} value={s.id}>{s.label}</option>
                 ))}
               </select>
             </div>
@@ -516,8 +556,8 @@ export const AddOpportunityModal: React.FC<AddOpportunityModalProps> = ({
                 <Calendar size={14} color="#64748B" /> Last Contact
               </label>
               <input
-                type="text"
-                placeholder="e.g. 15 Mar 2025"
+                type="date"
+                placeholder="YYYY-MM-DD"
                 value={lastContact}
                 onChange={(e) => setLastContact(e.target.value)}
                 style={{
@@ -546,8 +586,8 @@ export const AddOpportunityModal: React.FC<AddOpportunityModalProps> = ({
                 <Calendar size={14} color="#EF4444" /> Next Follow-up
               </label>
               <input
-                type="text"
-                placeholder="e.g. 18 Mar 2025"
+                type="date"
+                placeholder="YYYY-MM-DD"
                 value={nextFollowUp}
                 onChange={(e) => setNextFollowUp(e.target.value)}
                 style={{

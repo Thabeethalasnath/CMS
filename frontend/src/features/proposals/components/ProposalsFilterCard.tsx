@@ -229,7 +229,7 @@ export const ProposalsFilterCard: React.FC<ProposalsFilterCardProps> = ({
                   </button>
                 </div>
                 <div className="space-y-1">
-                  {['Mar 2025', '11 Mar - 15 Mar 2025', 'Feb 2025', 'Last 30 Days', 'All Dates'].map((item) => (
+                  {['Today', 'This Week', 'This Month', 'Last Month', 'Last 30 Days', 'All Dates'].map((item) => (
                     <button
                       key={item}
                       onClick={() => handleDateSelect('proposalDateRange', item === 'All Dates' ? '' : item)}
@@ -282,7 +282,7 @@ export const ProposalsFilterCard: React.FC<ProposalsFilterCardProps> = ({
                   </button>
                 </div>
                 <div className="space-y-1">
-                  {['Apr 2025', '25 Mar - 30 Apr 2025', 'Next 30 Days', 'Next 60 Days', 'All Dates'].map((item) => (
+                  {['Next 7 Days', 'Next 14 Days', 'Next 30 Days', 'Next 60 Days', 'All Dates'].map((item) => (
                     <button
                       key={item}
                       onClick={() => handleDateSelect('validUntilRange', item === 'All Dates' ? '' : item)}
@@ -335,7 +335,7 @@ export const ProposalsFilterCard: React.FC<ProposalsFilterCardProps> = ({
                   </button>
                 </div>
                 <div className="space-y-1">
-                  {['Mar 2025', 'Apr 2025', 'This Month', 'Next Month', 'All Dates'].map((item) => (
+                  {['This Week', 'This Month', 'Next Month', 'Next 30 Days', 'All Dates'].map((item) => (
                     <button
                       key={item}
                       onClick={() => handleDateSelect('expectedDecisionDateRange', item === 'All Dates' ? '' : item)}

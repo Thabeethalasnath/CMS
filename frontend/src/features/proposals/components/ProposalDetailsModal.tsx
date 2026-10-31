@@ -8,7 +8,7 @@ import {
   ChevronDown,
 } from 'lucide-react';
 import { Proposal, ProposalStatus } from '../types';
-import { formatRupee } from '../mockData';
+import { formatRupee } from '@/features/collections/utils';
 import { SemanticStatusBadge } from '../../../components/ui/SemanticStatusBadge';
 
 interface ProposalDetailsModalProps {
@@ -16,6 +16,7 @@ interface ProposalDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
   onUpdateStatus?: (proposalId: string, newStatus: ProposalStatus) => void;
+  onDelete?: (proposalId: string) => void;
 }
 
 export const ProposalDetailsModal: React.FC<ProposalDetailsModalProps> = ({
@@ -23,6 +24,7 @@ export const ProposalDetailsModal: React.FC<ProposalDetailsModalProps> = ({
   isOpen,
   onClose,
   onUpdateStatus,
+  onDelete,
 }) => {
   const [currentStatus, setCurrentStatus] = useState<ProposalStatus>(proposal?.status || 'Pending');
 
@@ -39,7 +41,7 @@ export const ProposalDetailsModal: React.FC<ProposalDetailsModalProps> = ({
     onUpdateStatus?.(proposal.proposalId, newStatus);
   };
 
-  const allowedStatuses: ProposalStatus[] = ['Sent', 'Pending', 'Approved', 'In Review', 'Rejected'];
+  const allowedStatuses: ProposalStatus[] = ['Draft', 'Sent', 'Pending', 'Approved', 'In Review', 'Rejected'];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-200" style={{ fontFamily: "'Inter', sans-serif" }}>
@@ -202,6 +204,15 @@ export const ProposalDetailsModal: React.FC<ProposalDetailsModalProps> = ({
             KALPANAAA CMS · Proposals Management
           </div>
           <div className="flex items-center gap-2.5">
+            {proposal.status === 'Draft' && onDelete && (
+              <button
+                type="button"
+                onClick={() => onDelete(proposal.proposalId)}
+                className="px-3.5 py-2 bg-slate-100 hover:bg-rose-100 border border-slate-200 hover:border-rose-300 text-slate-700 hover:text-rose-700 rounded-lg text-xs font-semibold leading-4 transition-colors cursor-pointer"
+              >
+                Delete draft
+              </button>
+            )}
             <button
               type="button"
               onClick={() => {

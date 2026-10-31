@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { ChevronDown, ChevronUp, Search, X, ChevronsDownUp, ChevronsUpDown } from 'lucide-react';
+import { ChevronDown, ChevronUp, Search, X, ChevronsDownUp, ChevronsUpDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { navigationSections, footerNavigationItems } from '../../config/navigation';
 import { NavSection, NavItem } from '../../types/navigation';
 import { colors } from '../../constants/theme';
+import { dashboardService } from '../../services/dashboardService';
 import { FlyoutPortal, SearchFlyoutPortal } from './FlyoutPortal';
 
 interface SidebarProps {
@@ -17,12 +18,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const location = useLocation();
 
-  // Internal state if not controlled externally
-  const [internalCollapsed, setInternalCollapsed] = useState(() => {
-    return localStorage.getItem('cms_sidebar_collapsed') === 'true';
-  });
+  // Internal state if not controlled externally (starts collapsed by default)
+  const [internalCollapsed, setInternalCollapsed] = useState(false);
 
   const isCollapsed = controlledCollapsed !== undefined ? controlledCollapsed : internalCollapsed;
+
+  const [sidebarCounts, setSidebarCounts] = useState<{ pendingApprovals: number; overdueFollowUps: number }>({
+    pendingApprovals: 0,
+    overdueFollowUps: 0,
+  });
+
+  useEffect(() => {
+    dashboardService.getSidebarCounts()
+      .then(setSidebarCounts)
+      .catch(() => {});
+  }, [location.pathname]);
 
   const [menuSearch, setMenuSearch] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -120,11 +130,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     if (onToggleCollapse) {
       onToggleCollapse();
     } else {
-      setInternalCollapsed((prev) => {
-        const next = !prev;
-        localStorage.setItem('cms_sidebar_collapsed', String(next));
-        return next;
-      });
+      setInternalCollapsed((prev) => !prev);
     }
   };
 
@@ -197,6 +203,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
     ) {
       return true;
     }
+    if (path === '/hr/attendance' && (location.pathname === '/attendance' || location.pathname === '/hr/attendance')) {
+      return true;
+    }
+    if (path === '/clients/list' && (location.pathname === '/clients' || location.pathname === '/clients/list')) {
+      return true;
+    }
     return location.pathname === path;
   };
 
@@ -205,7 +217,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
       (item) =>
         item.path === location.pathname ||
         (item.path === '/management/ceo-dashboard' &&
-          (location.pathname === '/' || location.pathname === ''))
+          (location.pathname === '/' || location.pathname === '')) ||
+        (item.path === '/hr/attendance' &&
+          (location.pathname === '/attendance' || location.pathname.startsWith('/hr/attendance'))) ||
+        (item.path === '/clients/list' &&
+          (location.pathname === '/clients' || location.pathname.startsWith('/clients')))
     );
   };
 
@@ -744,16 +760,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
                           alignItems: 'center',
                           justifyContent: 'space-between',
                           width: '100%',
-                          height: '40px',
+                          height: '44px',
                           padding: '0 14px',
-                          borderRadius: '8px',
+                          borderRadius: '12px',
                           backgroundColor: colors.secondaryBrand,
                           border: 'none',
                           color: '#FFFFFF',
                           cursor: 'pointer',
                           boxSizing: 'border-box',
-                          transition: 'background-color 0.15s ease',
-                          marginBottom: isExpanded ? '6px' : '0px',
+                          transition: 'background-color 0.12s ease',
+                          marginBottom: isExpanded ? '8px' : '0px',
                           fontFamily: "'Inter', sans-serif",
                         }}
                         onMouseEnter={(e) => {
@@ -764,17 +780,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         }}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', gap: '11px' }}>
-                          <SectionIcon size={17} strokeWidth={2.2} color="#FFFFFF" />
+                          <SectionIcon size={18} strokeWidth={2.2} color="#FFFFFF" />
                           <span
-                            style={{ fontSize: '14px', fontWeight: 600, letterSpacing: '0.2px' }}
+                            style={{ fontSize: '14.5px', fontWeight: 600, letterSpacing: '0.1px' }}
                           >
                             {section.title}
                           </span>
                         </div>
                         {isExpanded ? (
-                          <ChevronUp size={16} strokeWidth={2.4} color="#FFFFFF" />
+                          <ChevronUp size={17} strokeWidth={2.2} color="#FFFFFF" />
                         ) : (
-                          <ChevronDown size={16} strokeWidth={2.4} color="#FFFFFF" />
+                          <ChevronDown size={17} strokeWidth={2.2} color="#FFFFFF" />
                         )}
                       </button>
                     ) : (
@@ -787,121 +803,86 @@ export const Sidebar: React.FC<SidebarProps> = ({
                           alignItems: 'center',
                           justifyContent: 'space-between',
                           width: '100%',
-                          height: '38px',
+                          height: '44px',
                           padding: '0 14px',
-                          borderRadius: '6px',
+                          borderRadius: '12px',
                           backgroundColor: 'transparent',
                           border: 'none',
                           color: '#CAD5E8',
                           cursor: 'pointer',
                           boxSizing: 'border-box',
-                          transition: 'color 0.15s ease',
-                          marginBottom: isExpanded ? '4px' : '0px',
+                          transition: 'background-color 0.12s ease, color 0.12s ease',
+                          marginBottom: isExpanded ? '6px' : '0px',
                           fontFamily: "'Inter', sans-serif",
                         }}
                         onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
                           e.currentTarget.style.color = '#FFFFFF';
                         }}
                         onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = 'transparent';
                           e.currentTarget.style.color = '#CAD5E8';
                         }}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', gap: '11px' }}>
-                          <SectionIcon size={16} strokeWidth={1.9} color="#8A99B5" />
+                          <SectionIcon size={18} strokeWidth={1.9} color="#8A99B5" />
                           <span
                             style={{
-                              fontSize: '13.5px',
+                              fontSize: '14px',
                               fontWeight: 600,
-                              letterSpacing: '0.2px',
+                              letterSpacing: '0.1px',
                             }}
                           >
                             {section.title}
                           </span>
                         </div>
                         {isExpanded ? (
-                          <ChevronUp size={15} strokeWidth={2.2} style={{ color: '#8A99B5' }} />
+                          <ChevronUp size={16} strokeWidth={2} style={{ color: '#8A99B5' }} />
                         ) : (
-                          <ChevronDown size={15} strokeWidth={2.2} style={{ color: '#8A99B5' }} />
+                          <ChevronDown size={16} strokeWidth={2} style={{ color: '#8A99B5' }} />
                         )}
                       </button>
                     )}
 
                     {/* Submenu Items */}
-                    {isExpanded && (
-                      <div
-                        style={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: '3px',
-                          width: '100%',
-                          boxSizing: 'border-box',
-                        }}
-                      >
+                    <div className={`sidebar-accordion-wrapper ${isExpanded ? 'expanded' : 'collapsed'}`}>
+                      <div className="sidebar-accordion-content" style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '100%', boxSizing: 'border-box' }}>
                         {section.items.map((item: NavItem) => {
                           const active = isCurrentActive(item.path);
                           const ItemIcon = item.icon;
+                          const isFollowUp = item.path === '/management/follow-up-queue';
+                          const isApproval = item.path === '/management/approval-inbox';
 
                           return (
                             <NavLink
                               key={item.id}
                               to={item.path}
                               tabIndex={isCollapsed ? -1 : 0}
-                              style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '12px',
-                                height: '40px',
-                                width: '100%',
-                                padding: '0 14px',
-                                borderRadius: '8px',
-                                textDecoration: 'none',
-                                fontSize: '13.5px',
-                                fontFamily: "'Inter', sans-serif",
-                                boxSizing: 'border-box',
-                                transition: 'all 0.15s ease',
-                                backgroundColor: active ? colors.sidebarActivePill : 'transparent',
-                                backgroundImage: active
-                                  ? 'linear-gradient(90deg, #182C62 0%, #122146 100%)'
-                                  : 'none',
-                                border: 'none',
-                                outline: 'none',
-                                boxShadow: active ? 'inset 3.5px 0 0 0 #5845E8' : 'none',
-                                color: active ? '#FFFFFF' : '#8A99B5',
-                                fontWeight: active ? 600 : 400,
-                              }}
-                              onMouseEnter={(e) => {
-                                if (!active) {
-                                  e.currentTarget.style.backgroundColor =
-                                    'rgba(255, 255, 255, 0.04)';
-                                  e.currentTarget.style.color = '#FFFFFF';
-                                }
-                              }}
-                              onMouseLeave={(e) => {
-                                if (!active) {
-                                  e.currentTarget.style.backgroundColor = 'transparent';
-                                  e.currentTarget.style.color = '#8A99B5';
-                                }
-                              }}
+                              className={`sidebar-nav-item ${active ? 'active' : ''}`}
                             >
-                              <ItemIcon
-                                size={17}
-                                strokeWidth={active ? 2.2 : 1.8}
-                                color={active ? '#60A5FA' : '#7E8DA6'}
-                              />
-                              <span
-                                style={{
-                                  whiteSpace: 'nowrap',
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis',
-                                }}
-                              >
-                                {item.label}
+                              <span className="sidebar-item-icon">
+                                <ItemIcon
+                                  size={18}
+                                  strokeWidth={active ? 2.1 : 1.8}
+                                  color={active ? '#93C5FD' : '#8A99B5'}
+                                />
                               </span>
+                              <span className="sidebar-item-label">{item.label}</span>
+                              {isApproval && sidebarCounts.pendingApprovals > 0 && (
+                                <span className="sidebar-badge sidebar-badge-amber" title="Pending Approvals">
+                                  {sidebarCounts.pendingApprovals}
+                                </span>
+                              )}
+                              {isFollowUp && sidebarCounts.overdueFollowUps > 0 && (
+                                <span className="sidebar-badge sidebar-badge-red" title="Overdue Follow-ups">
+                                  {sidebarCounts.overdueFollowUps}
+                                </span>
+                              )}
                             </NavLink>
                           );
                         })}
                       </div>
-                    )}
+                    </div>
                   </div>
                 );
               })
@@ -1070,6 +1051,62 @@ export const Sidebar: React.FC<SidebarProps> = ({
             })}
           </div>
         </div>
+
+        {/* Option 19: Half Circle Sidebar Rail Toggle */}
+        <button
+          type="button"
+          onClick={handleToggleCollapse}
+          aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          title={isCollapsed ? 'Expand sidebar (Ctrl+B)' : 'Collapse sidebar (Ctrl+B)'}
+          style={{
+            position: 'absolute',
+            top: '16px',
+            right: isCollapsed ? '0px' : '-14px',
+            width: '14px',
+            height: '32px',
+            backgroundColor: '#0F172A',
+            border: '1px solid #1E293B',
+            borderRight: isCollapsed ? 'none' : '1px solid #1E293B',
+            borderLeft: isCollapsed ? '1px solid #1E293B' : 'none',
+            borderTopLeftRadius: isCollapsed ? '9999px' : '0px',
+            borderBottomLeftRadius: isCollapsed ? '9999px' : '0px',
+            borderTopRightRadius: isCollapsed ? '0px' : '9999px',
+            borderBottomRightRadius: isCollapsed ? '0px' : '9999px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 0,
+            cursor: 'pointer',
+            zIndex: 50,
+            boxShadow: isCollapsed ? '-2px 0 6px rgba(0, 0, 0, 0.25)' : '2px 0 6px rgba(0, 0, 0, 0.25)',
+            transition: 'all 0.22s cubic-bezier(0.2, 0, 0, 1)',
+            outline: 'none',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = '#1E293B';
+            e.currentTarget.style.borderColor = '#4F46E5';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = '#0F172A';
+            e.currentTarget.style.borderColor = '#1E293B';
+          }}
+        >
+          {isCollapsed ? (
+            <ChevronLeft
+              size={11}
+              strokeWidth={2.8}
+              color="#FFFFFF"
+              style={{ marginLeft: '1px' }}
+            />
+          ) : (
+            <ChevronRight
+              size={11}
+              strokeWidth={2.8}
+              color="#FFFFFF"
+              style={{ marginRight: '1px' }}
+            />
+          )}
+        </button>
       </aside>
 
       {/* Floating Submenu Flyout Portal for Collapsed Rail Mode */}

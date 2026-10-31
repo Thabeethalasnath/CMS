@@ -1,20 +1,34 @@
 import React from 'react';
-import { FileText, Clock, CheckCircle2, IndianRupee, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { FileText, Clock, CheckCircle2, IndianRupee } from 'lucide-react';
 import { ProposalKpiSummary } from '../types';
+import { formatRupee } from '../utils';
+import { Skeleton } from '../../../components/ui/Skeleton';
 
 interface ProposalsKpiCardsProps {
-  summary: ProposalKpiSummary;
+  summary: ProposalKpiSummary | null;
+  isLoading?: boolean;
 }
 
-export const ProposalsKpiCards: React.FC<ProposalsKpiCardsProps> = ({ summary }) => {
+export const ProposalsKpiCards: React.FC<ProposalsKpiCardsProps> = ({ summary, isLoading = false }) => {
+  const renderTrend = (trend: number | null | undefined) => {
+    if (trend == null) {
+      return <span className="text-slate-400 font-medium">—</span>;
+    }
+    const isPositive = trend >= 0;
+    return (
+      <span className={`font-semibold ${isPositive ? 'text-[#166534]' : 'text-[#991B1B]'}`}>
+        {isPositive ? '↑' : '↓'} {Math.abs(trend)}%
+      </span>
+    );
+  };
+
   const cards = [
     {
       id: 'total-proposals',
       label: 'Total proposals',
-      value: summary.totalProposals,
-      trend: `${summary.totalProposalsTrend > 0 ? '↑' : '↓'} ${Math.abs(summary.totalProposalsTrend)}%`,
+      value: summary ? summary.totalProposals.toLocaleString('en-IN') : '—',
+      trend: summary?.totalProposalsTrend,
       trendLabel: 'vs last month',
-      trendPositive: summary.totalProposalsTrend >= 0,
       icon: FileText,
       iconBg: 'bg-[#EBF5FF]',
       iconBorder: 'border-[#D1E9FF]',
@@ -23,10 +37,9 @@ export const ProposalsKpiCards: React.FC<ProposalsKpiCardsProps> = ({ summary })
     {
       id: 'pending-decisions',
       label: 'Pending decisions',
-      value: summary.pendingDecisions,
-      trend: `${summary.pendingDecisionsTrend > 0 ? '↑' : '↓'} ${Math.abs(summary.pendingDecisionsTrend)}%`,
+      value: summary ? summary.pendingDecisions.toLocaleString('en-IN') : '—',
+      trend: summary?.pendingDecisionsTrend,
       trendLabel: 'vs last month',
-      trendPositive: summary.pendingDecisionsTrend >= 0,
       icon: Clock,
       iconBg: 'bg-[#FEF2F2]',
       iconBorder: 'border-[#FEE2E2]',
@@ -35,10 +48,9 @@ export const ProposalsKpiCards: React.FC<ProposalsKpiCardsProps> = ({ summary })
     {
       id: 'approved-proposals',
       label: 'Approved proposals',
-      value: summary.approvedProposals,
-      trend: `${summary.approvedProposalsTrend > 0 ? '↑' : '↓'} ${Math.abs(summary.approvedProposalsTrend)}%`,
+      value: summary ? summary.approvedProposals.toLocaleString('en-IN') : '—',
+      trend: summary?.approvedProposalsTrend,
       trendLabel: 'vs last month',
-      trendPositive: summary.approvedProposalsTrend >= 0,
       icon: CheckCircle2,
       iconBg: 'bg-[#ECFDF5]',
       iconBorder: 'border-[#D1FAE5]',
@@ -47,10 +59,9 @@ export const ProposalsKpiCards: React.FC<ProposalsKpiCardsProps> = ({ summary })
     {
       id: 'total-proposal-value',
       label: 'Total proposal value',
-      value: '₹ 8,5000',
-      trend: `${summary.totalProposalValueTrend > 0 ? '↑' : '↓'} ${Math.abs(summary.totalProposalValueTrend)}%`,
+      value: summary ? formatRupee(summary.totalProposalValue) : '—',
+      trend: summary?.totalProposalValueTrend,
       trendLabel: 'vs last month',
-      trendPositive: summary.totalProposalValueTrend >= 0,
       icon: IndianRupee,
       iconBg: 'bg-[#FFF1F2]',
       iconBorder: 'border-[#FFE4E6]',
@@ -80,15 +91,21 @@ export const ProposalsKpiCards: React.FC<ProposalsKpiCardsProps> = ({ summary })
                 {card.label}
               </span>
               <div className="text-2xl font-extrabold tracking-[-0.6px] leading-8 text-slate-900 mt-0.5">
-                {card.value}
+                {isLoading ? <Skeleton className="h-8 w-24" /> : card.value}
               </div>
               <div className="flex items-center gap-1 mt-1 text-[11px] leading-4">
-                <span className={`font-semibold ${card.trendPositive ? 'text-[#166534]' : 'text-[#991B1B]'}`}>
-                  {card.trend}
-                </span>
-                <span className="text-slate-400 font-medium">
-                  {card.trendLabel}
-                </span>
+                {isLoading ? (
+                  <Skeleton className="h-3.5 w-16" />
+                ) : (
+                  <>
+                    {renderTrend(card.trend)}
+                    {card.trend != null && (
+                      <span className="text-slate-400 font-medium">
+                        {card.trendLabel}
+                      </span>
+                    )}
+                  </>
+                )}
               </div>
             </div>
           </div>

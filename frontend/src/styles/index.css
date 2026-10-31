@@ -272,28 +272,3 @@ button {
   }
 }
 
-/* Sidebar collapse button - styled to match TopNav Search Bar theme */
-.sidebar-collapse-btn {
-  box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 8px;
-  background: #F8FAFC;
-  border: 1px solid #E2E8F0;
-  cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
-}
-
-.sidebar-collapse-btn:hover {
-  background: #F1F5F9;
-  border-color: #CBD5E1;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-}
-
-.sidebar-collapse-btn:active {
-  transform: scale(0.95);
-  background: #E2E8F0;
-}
