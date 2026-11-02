@@ -141,6 +141,7 @@ export const EmployeeExitPage: React.FC = () => {
 
   const handleClearFilters = () => {
     setFilters(defaultFilters);
+    setSortOption('id-desc');
     setCurrentPage(1);
     addToast('info', 'Filters Cleared', 'All search and filter criteria have been reset.');
   };

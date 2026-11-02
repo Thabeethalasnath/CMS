@@ -164,6 +164,7 @@ export const ProposalsPage: React.FC = () => {
 
   const handleClearFilters = () => {
     setFilters(defaultFilters);
+    setSortOption('date-newest');
     setCurrentPage(1);
     addToast('info', 'Filters Cleared', 'Reset to display all proposals.');
   };

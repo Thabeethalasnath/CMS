@@ -24,52 +24,87 @@ export class ApiError extends Error {
 
 let devTokenPromise: Promise<string | null> | null = null;
 
+function isTokenExpired(token: string): boolean {
+  try {
+    const parts = token.split('.');
+    if (parts.length < 2) return true;
+    const base64Url = parts[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    const decoded = JSON.parse(jsonPayload);
+    if (!decoded.exp) return false;
+    // Expired or expiring within 30 seconds
+    return Date.now() >= decoded.exp * 1000 - 30000;
+  } catch {
+    return true;
+  }
+}
+
+async function acquireDevToken(): Promise<string | null> {
+  try {
+    const authRes = await fetch(`${BASE_URL}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({ username: 'akshit.ujjain', password: 'password123' }),
+    });
+    if (authRes.ok) {
+      const resData = await authRes.json();
+      const jwt = resData?.data?.token;
+      if (jwt) {
+        localStorage.setItem('auth_token', jwt);
+        if (resData?.data?.username) {
+          localStorage.setItem('auth_user_name', resData.data.name || resData.data.username);
+        }
+        if (resData?.data?.role) {
+          localStorage.setItem('auth_user_role', resData.data.role);
+        }
+        return jwt;
+      }
+    }
+  } catch {
+    // ignore
+  }
+  return null;
+}
+
 async function getAuthToken(endpoint: string): Promise<string | null> {
   if (typeof window === 'undefined') return null;
   let token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
+
+  // Purge expired tokens immediately
+  if (token && isTokenExpired(token)) {
+    localStorage.removeItem('auth_token');
+    sessionStorage.removeItem('auth_token');
+    token = null;
+  }
+
   if (token) return token;
 
   const isTestEnv = typeof process !== 'undefined' && process.env?.NODE_ENV === 'test';
   // In development browser sessions, auto-acquire dev credentials so pages load smoothly
   if (import.meta.env.DEV && !isTestEnv && !endpoint.includes('/auth/login')) {
     if (!devTokenPromise) {
-      devTokenPromise = (async () => {
-        try {
-          const authRes = await fetch(`${BASE_URL}/auth/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-            body: JSON.stringify({ username: 'akshit.ujjain', password: 'password123' }),
-          });
-          if (authRes.ok) {
-            const resData = await authRes.json();
-            const jwt = resData?.data?.token;
-            if (jwt) {
-              localStorage.setItem('auth_token', jwt);
-              if (resData?.data?.username) {
-                localStorage.setItem('auth_user_name', resData.data.name || resData.data.username);
-              }
-              if (resData?.data?.role) {
-                localStorage.setItem('auth_user_role', resData.data.role);
-              }
-              return jwt;
-            }
-          }
-        } catch {
-          // ignore
-        } finally {
-          devTokenPromise = null;
-        }
-        return null;
-      })();
+      devTokenPromise = acquireDevToken().finally(() => {
+        devTokenPromise = null;
+      });
     }
     token = await devTokenPromise;
   }
   return token;
 }
 
+interface CustomRequestInit extends RequestInit {
+  _isRetry?: boolean;
+}
+
 async function executeRequest<T>(
   endpoint: string,
-  options: RequestInit = {}
+  options: CustomRequestInit = {}
 ): Promise<ApiResponse<T>> {
   const normalizedEndpoint = endpoint.startsWith(BASE_URL)
     ? endpoint
@@ -97,6 +132,27 @@ async function executeRequest<T>(
     const rawMsg = networkErr instanceof Error ? networkErr.message : String(networkErr);
     const message = `Cannot connect to server at ${url}: ${rawMsg}`;
     throw new ApiError(message, 0);
+  }
+
+  // Handle 401 Unauthorized by clearing stale tokens and retrying once in DEV mode
+  if (response.status === 401 && !options._isRetry) {
+    localStorage.removeItem('auth_token');
+    sessionStorage.removeItem('auth_token');
+
+    const isTestEnv = typeof process !== 'undefined' && process.env?.NODE_ENV === 'test';
+    if (import.meta.env.DEV && !isTestEnv && !endpoint.includes('/auth/login')) {
+      const freshToken = await acquireDevToken();
+      if (freshToken) {
+        return executeRequest<T>(endpoint, {
+          ...options,
+          _isRetry: true,
+          headers: {
+            ...options.headers,
+            Authorization: `Bearer ${freshToken}`,
+          },
+        });
+      }
+    }
   }
 
   // Handle 204 No Content
