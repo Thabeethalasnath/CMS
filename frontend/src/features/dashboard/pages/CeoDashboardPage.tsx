@@ -38,14 +38,10 @@ export const CeoDashboardPage: React.FC<CeoDashboardPageProps> = ({
     try {
       const fetched = await dashboardService.getDashboardData();
       setData(fetched);
-      if (fetched.settings?.last_updated && fetched.settings.last_updated !== '—') {
-        setLastRefreshed(fetched.settings.last_updated);
-      } else {
-        const now = new Date();
-        setLastRefreshed(
-          `${now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}, ${now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`
-        );
-      }
+      const now = new Date();
+      setLastRefreshed(
+        `${now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}, ${now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`
+      );
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to connect to backend server';
       setErrorMessage(msg);
