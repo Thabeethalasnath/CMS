@@ -17,3 +17,4 @@ public interface PayrollCounterRepository extends JpaRepository<PayrollCounterEn
     @Query("SELECT c FROM PayrollCounterEntity c WHERE c.prefix = :prefix")
     Optional<PayrollCounterEntity> findByPrefixWithLock(@Param("prefix") String prefix);
 }
+

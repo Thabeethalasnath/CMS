@@ -177,3 +177,4 @@ VALUES ('PAY-202610', 248)
 ON CONFLICT (prefix) DO UPDATE
 SET current_val = GREATEST(public.hr_payroll_counters.current_val, 248),
     updated_at = NOW();
+

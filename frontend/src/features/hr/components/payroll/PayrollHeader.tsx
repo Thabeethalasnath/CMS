@@ -73,3 +73,4 @@ export const PayrollHeader: React.FC<PayrollHeaderProps> = ({
     </div>
   );
 };
+

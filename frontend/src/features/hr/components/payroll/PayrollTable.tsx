@@ -484,3 +484,4 @@ export const PayrollTable: React.FC<PayrollTableProps> = ({
     </div>
   );
 };
+

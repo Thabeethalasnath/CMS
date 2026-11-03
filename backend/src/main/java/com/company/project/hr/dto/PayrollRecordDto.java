@@ -40,3 +40,4 @@ public class PayrollRecordDto {
     private OffsetDateTime createdAt;
     private OffsetDateTime updatedAt;
 }
+

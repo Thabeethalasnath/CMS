@@ -106,3 +106,4 @@ export interface UpdatePayrollPayload {
   panNumber?: string;
   notes?: string;
 }
+

@@ -199,3 +199,4 @@ export const PayslipModal: React.FC<PayslipModalProps> = ({ isOpen, onClose, rec
     </div>
   );
 };
+
