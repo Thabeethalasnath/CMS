@@ -42,3 +42,4 @@ public interface FinancePaymentRepository extends JpaRepository<FinancePaymentEn
     @Query("SELECT DISTINCT TO_CHAR(p.paymentDate, 'YYYY-MM') FROM FinancePaymentEntity p ORDER BY 1 DESC")
     List<String> findDistinctMonths();
 }
+

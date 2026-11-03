@@ -292,3 +292,4 @@ export const PaymentsTable: React.FC<PaymentsTableProps> = ({
     </div>
   );
 };
+

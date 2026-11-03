@@ -46,3 +46,4 @@ public class RecordPaymentRequest {
 
     private String notes;
 }
+

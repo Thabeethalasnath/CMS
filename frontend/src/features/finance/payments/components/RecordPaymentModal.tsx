@@ -275,3 +275,4 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
     </div>
   );
 };
+

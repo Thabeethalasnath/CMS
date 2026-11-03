@@ -22,3 +22,4 @@ public class FinancePaymentCounterEntity {
     @Column(name = "last_number", nullable = false)
     private Integer lastNumber;
 }
+

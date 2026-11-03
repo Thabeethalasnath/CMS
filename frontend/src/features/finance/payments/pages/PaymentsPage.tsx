@@ -73,8 +73,8 @@ export const PaymentsPage: React.FC = () => {
     return { startDate: undefined, endDate: undefined };
   }, [dateRange]);
 
-  // Fetch KPI data
-  const loadKpis = useCallback(async () => {
+  // Fetch KPI data with auto-retry
+  const loadKpis = useCallback(async (retryCount = 0) => {
     try {
       setIsKpiLoading(true);
       const targetMonth = month !== 'All' ? month : '2026-10';
@@ -82,13 +82,16 @@ export const PaymentsPage: React.FC = () => {
       setKpis(data);
     } catch (err) {
       console.error('Failed to load payment KPIs:', err);
+      if (retryCount < 2) {
+        setTimeout(() => loadKpis(retryCount + 1), 1500);
+      }
     } finally {
       setIsKpiLoading(false);
     }
   }, [month]);
 
-  // Fetch filter options
-  const loadFilterOptions = useCallback(async () => {
+  // Fetch filter options with auto-retry
+  const loadFilterOptions = useCallback(async (retryCount = 0) => {
     try {
       const data = await paymentsService.getFilterOptions();
       setFilterOptions((prev) => ({
@@ -97,11 +100,14 @@ export const PaymentsPage: React.FC = () => {
       }));
     } catch (err) {
       console.error('Failed to load filter options:', err);
+      if (retryCount < 2) {
+        setTimeout(() => loadFilterOptions(retryCount + 1), 1500);
+      }
     }
   }, []);
 
-  // Fetch Payment records
-  const loadPayments = useCallback(async () => {
+  // Fetch Payment records with auto-retry
+  const loadPayments = useCallback(async (retryCount = 0) => {
     try {
       setIsLoading(true);
       const res = await paymentsService.getPayments({
@@ -127,6 +133,9 @@ export const PaymentsPage: React.FC = () => {
       }
     } catch (err) {
       console.error('Failed to load payment records:', err);
+      if (retryCount < 2) {
+        setTimeout(() => loadPayments(retryCount + 1), 1500);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -320,3 +329,4 @@ export const PaymentsPage: React.FC = () => {
 };
 
 export default PaymentsPage;
+

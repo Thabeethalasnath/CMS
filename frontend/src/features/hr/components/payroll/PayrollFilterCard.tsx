@@ -112,6 +112,11 @@ export const PayrollFilterCard: React.FC<PayrollFilterCardProps> = ({
               className={`${dropdownBaseCls} pl-[32px] pr-[32px]`}
             >
               <option value="All">All Months</option>
+              {filters.payrollMonth && filters.payrollMonth !== 'All' && !filterOptions.payrollMonths?.includes(filters.payrollMonth) && (
+                <option value={filters.payrollMonth}>
+                  {formatMonthDateRange(filters.payrollMonth)}
+                </option>
+              )}
               {filterOptions.payrollMonths?.map((m) => (
                 <option key={m} value={m}>
                   {formatMonthDateRange(m)}
@@ -137,6 +142,11 @@ export const PayrollFilterCard: React.FC<PayrollFilterCardProps> = ({
               className={`${dropdownBaseCls} pl-[12px] pr-[32px]`}
             >
               <option value="All">All</option>
+              {filters.employmentType && filters.employmentType !== 'All' && !filterOptions.employmentTypes?.includes(filters.employmentType) && (
+                <option value={filters.employmentType}>
+                  {filters.employmentType}
+                </option>
+              )}
               {filterOptions.employmentTypes?.map((t) => (
                 <option key={t} value={t}>
                   {t}
@@ -162,6 +172,11 @@ export const PayrollFilterCard: React.FC<PayrollFilterCardProps> = ({
               className={`${dropdownBaseCls} pl-[12px] pr-[32px]`}
             >
               <option value="All">All</option>
+              {filters.status && filters.status !== 'All' && !filterOptions.statuses?.includes(filters.status) && (
+                <option value={filters.status}>
+                  {filters.status}
+                </option>
+              )}
               {filterOptions.statuses?.map((s) => (
                 <option key={s} value={s}>
                   {s}
@@ -187,8 +202,13 @@ export const PayrollFilterCard: React.FC<PayrollFilterCardProps> = ({
               className={`${dropdownBaseCls} pl-[12px] pr-[32px]`}
             >
               <option value="All">All Employees</option>
-              {filterOptions.employees?.map((emp) => (
-                <option key={emp.employeeId} value={emp.employeeId}>
+              {filters.employee && filters.employee !== 'All' && filters.employee !== 'All Employees' && !filterOptions.employees?.some((e) => e.employeeId === filters.employee) && (
+                <option value={filters.employee}>
+                  {filters.employee}
+                </option>
+              )}
+              {filterOptions.employees?.map((emp, idx) => (
+                <option key={`${emp.employeeId}-${idx}`} value={emp.employeeId}>
                   {emp.employeeName} ({emp.employeeId})
                 </option>
               ))}

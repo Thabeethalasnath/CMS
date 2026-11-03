@@ -71,3 +71,4 @@ export const PaymentsHeader: React.FC<PaymentsHeaderProps> = ({
     </div>
   );
 };
+

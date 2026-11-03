@@ -36,3 +36,4 @@ public class FinancePaymentKpiResponse {
     private String lastUpdatedFormatted;
     private Long totalRecordCount;
 }
+

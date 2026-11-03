@@ -71,8 +71,8 @@ export const PayrollSalaryPage: React.FC = () => {
     return count;
   }, [filters]);
 
-  // Fetch records from backend database
-  const fetchRecords = useCallback(async () => {
+  // Fetch records from backend database with auto-retry
+  const fetchRecords = useCallback(async (retryCount = 0) => {
     try {
       setIsLoading(true);
       const res = await payrollService.getPayrollRecords({
@@ -88,23 +88,25 @@ export const PayrollSalaryPage: React.FC = () => {
 
       setRecords(res.content || []);
       setFilteredCount(res.totalElements ?? 0);
-      if (filters.payrollMonth === 'All' && !filters.search) {
-        setTotalRecords(res.totalElements ?? 0);
-      }
+      setTotalRecords((prev) => (res.totalElements && res.totalElements > prev ? res.totalElements : prev || res.totalElements || 0));
     } catch (err: any) {
       console.error('Error fetching payroll records from database:', err);
-      addToast(
-        'error',
-        'Database Connection Error',
-        err.message || 'Could not fetch payroll records from database.'
-      );
+      if (retryCount < 2) {
+        setTimeout(() => fetchRecords(retryCount + 1), 1500);
+      } else {
+        addToast(
+          'error',
+          'Database Connection Error',
+          err.message || 'Could not fetch payroll records from database.'
+        );
+      }
     } finally {
       setIsLoading(false);
     }
   }, [filters, sortOption, currentPage, pageSize, addToast]);
 
-  // Fetch KPIs and filter options from database
-  const fetchMetadata = useCallback(async () => {
+  // Fetch KPIs and filter options from database with auto-retry
+  const fetchMetadata = useCallback(async (retryCount = 0) => {
     try {
       const [kpiRes, optionsRes] = await Promise.all([
         payrollService.getKpis(filters.payrollMonth),
@@ -122,6 +124,9 @@ export const PayrollSalaryPage: React.FC = () => {
       }
     } catch (err: any) {
       console.error('Error fetching payroll metadata from database:', err);
+      if (retryCount < 2) {
+        setTimeout(() => fetchMetadata(retryCount + 1), 1500);
+      }
     }
   }, [filters.payrollMonth]);
 

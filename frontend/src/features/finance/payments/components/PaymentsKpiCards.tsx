@@ -118,3 +118,4 @@ export const PaymentsKpiCards: React.FC<PaymentsKpiCardsProps> = ({ kpis, isLoad
     </div>
   );
 };
+

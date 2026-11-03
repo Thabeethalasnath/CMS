@@ -32,3 +32,4 @@ public class FinancePaymentIdGeneratorService {
         return String.format("PAY-%s-%03d", yearMonth, nextNumber);
     }
 }
+

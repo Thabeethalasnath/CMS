@@ -135,7 +135,7 @@ async function executeRequest<T>(
   }
 
   // Handle 401 Unauthorized by clearing stale tokens and retrying once in DEV mode
-  if (response.status === 401 && !options._isRetry) {
+  if ((response.status === 401 || response.status === 403) && !options._isRetry) {
     localStorage.removeItem('auth_token');
     sessionStorage.removeItem('auth_token');
 

@@ -21,3 +21,4 @@ public class UpdatePaymentRequest {
     private BigDecimal varianceAmount;
     private String notes;
 }
+

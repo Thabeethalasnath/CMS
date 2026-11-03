@@ -17,3 +17,4 @@ public class FinancePaymentFilterOptionsResponse {
     private List<ClientFilterOptionDto> clients;
     private List<String> months;
 }
+
