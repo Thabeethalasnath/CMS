@@ -18,6 +18,7 @@ import { LeaveManagementPage } from '../features/leave/pages/LeaveManagementPage
 import { HrDashboardPage } from '../features/hr/pages/HrDashboardPage';
 import { EmployeeExitPage } from '../features/hr/pages/EmployeeExitPage';
 import { PayrollSalaryPage } from '../features/hr/pages/PayrollSalaryPage';
+import { PaymentsPage } from '../features/finance/payments/pages/PaymentsPage';
 
 const CeoDashboardRoute: React.FC = () => {
   const context = useOutletContext<AppLayoutContextType>();
@@ -65,6 +66,8 @@ export const AppRouter: React.FC = () => {
         <Route path="/hr/payroll-salary" element={<PayrollSalaryPage />} />
         <Route path="/hr/payroll" element={<Navigate to="/hr/payroll-salary" replace />} />
         <Route path="/payroll" element={<Navigate to="/hr/payroll-salary" replace />} />
+        <Route path="/finance/payments" element={<PaymentsPage />} />
+        <Route path="/payments" element={<Navigate to="/finance/payments" replace />} />
 
         {/* Generate dynamic module engine routes for all other navigation items */}
         {navigationSections.map((section) =>
@@ -90,7 +93,9 @@ export const AppRouter: React.FC = () => {
                 item.path !== '/leave' &&
                 item.path !== '/hr/employee-exit' &&
                 item.path !== '/hr/payroll' &&
-                item.path !== '/hr/payroll-salary'
+                item.path !== '/hr/payroll-salary' &&
+                item.path !== '/finance/payments' &&
+                item.path !== '/payments'
             )
             .map((item) => (
               <Route

@@ -105,4 +105,11 @@ export const API_ENDPOINTS = {
     PAYROLL_EXPORT: '/hr/payroll/export',
     PAYROLL_PROCESS: '/hr/payroll/process',
   },
+  FINANCE: {
+    PAYMENTS: '/finance/payments',
+    PAYMENT_BY_ID: (id: string) => `/finance/payments/${encodeURIComponent(id)}`,
+    PAYMENTS_KPIS: '/finance/payments/kpis',
+    PAYMENTS_FILTERS: '/finance/payments/filters',
+    PAYMENTS_EXPORT: '/finance/payments/export',
+  },
 };
