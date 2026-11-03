@@ -120,7 +120,10 @@ describe('PayrollSalaryPage Component', () => {
     expect(
       screen.getByText(/Manage monthly payroll, salaries, deductions, employer cost and payslip records/i)
     ).toBeInTheDocument();
-    expect(screen.getByText(/Last Updated: 15 Oct 2026, 11:30 AM/i)).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(screen.getByText(/Last Updated: 15 Oct 2026, 11:30 AM/i)).toBeInTheDocument();
+    });
   });
 
   it('renders all 4 live KPI cards with correct metrics and percentages', async () => {

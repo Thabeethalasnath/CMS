@@ -28,6 +28,22 @@ export const PayrollFilterCard: React.FC<PayrollFilterCardProps> = ({
     boxSizing: 'border-box',
   };
 
+  // Helper to dynamically format month range string (e.g. "Oct 2026" -> "Oct 01, 2026 - Oct 31, 2026")
+  const formatMonthDateRange = (monthStr: string) => {
+    if (!monthStr || monthStr === 'All') return 'All Months';
+    const parts = monthStr.trim().split(/\s+/);
+    if (parts.length === 2) {
+      const month = parts[0];
+      const year = parseInt(parts[1], 10);
+      const monthIndex = new Date(`${month} 1, ${year}`).getMonth();
+      if (!isNaN(monthIndex)) {
+        const lastDay = new Date(year, monthIndex + 1, 0).getDate();
+        return `${month} 01, ${year} - ${month} ${lastDay}, ${year}`;
+      }
+    }
+    return monthStr;
+  };
+
   return (
     <div className="bg-white border border-[#E2E8F0] rounded-2xl p-4 shadow-2xs flex flex-col gap-3.5 w-full">
       {/* Row 1: Search Input & Action Buttons */}
@@ -78,7 +94,7 @@ export const PayrollFilterCard: React.FC<PayrollFilterCardProps> = ({
         </div>
       </div>
 
-      {/* Row 2: 4 Filter Dropdowns */}
+      {/* Row 2: 4 Dynamic Filter Dropdowns */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-0.5">
         {/* 1. Payroll Month */}
         <div className="flex flex-col gap-1 min-w-0">
@@ -98,7 +114,7 @@ export const PayrollFilterCard: React.FC<PayrollFilterCardProps> = ({
               <option value="All">All Months</option>
               {filterOptions.payrollMonths?.map((m) => (
                 <option key={m} value={m}>
-                  {m === 'Oct 2026' ? 'Oct 01, 2026 - Oct 31, 2026' : m}
+                  {formatMonthDateRange(m)}
                 </option>
               ))}
             </select>
@@ -121,10 +137,11 @@ export const PayrollFilterCard: React.FC<PayrollFilterCardProps> = ({
               className={`${dropdownBaseCls} pl-[12px] pr-[32px]`}
             >
               <option value="All">All</option>
-              <option value="Full Time">Full Time</option>
-              <option value="Contract">Contract</option>
-              <option value="Part Time">Part Time</option>
-              <option value="Intern">Intern</option>
+              {filterOptions.employmentTypes?.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
             </select>
             <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
@@ -145,10 +162,11 @@ export const PayrollFilterCard: React.FC<PayrollFilterCardProps> = ({
               className={`${dropdownBaseCls} pl-[12px] pr-[32px]`}
             >
               <option value="All">All</option>
-              <option value="Paid">Paid</option>
-              <option value="Pending">Pending</option>
-              <option value="Processing">Processing</option>
-              <option value="Failed">Failed</option>
+              {filterOptions.statuses?.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
             </select>
             <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>

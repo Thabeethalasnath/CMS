@@ -3,10 +3,31 @@ import { Users, IndianRupee, FileText, Clock, ArrowUp, ArrowDown } from 'lucide-
 import { PayrollKpiData } from '../../types/payroll';
 
 interface PayrollKpisProps {
-  kpiData: PayrollKpiData;
+  kpiData: PayrollKpiData | null;
+  isLoading?: boolean;
 }
 
-export const PayrollKpis: React.FC<PayrollKpisProps> = ({ kpiData }) => {
+export const PayrollKpis: React.FC<PayrollKpisProps> = ({ kpiData, isLoading = false }) => {
+  if (isLoading || !kpiData) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
+        {[1, 2, 3, 4].map((idx) => (
+          <div
+            key={`kpi-skeleton-${idx}`}
+            className="bg-white border border-[#E2E8F0] rounded-2xl p-4 flex items-center gap-3.5 shadow-2xs animate-pulse"
+          >
+            <div className="w-11 h-11 rounded-xl bg-slate-100 shrink-0" />
+            <div className="min-w-0 flex-1 flex flex-col gap-2">
+              <div className="h-3 w-24 bg-slate-100 rounded" />
+              <div className="h-6 w-32 bg-slate-200 rounded" />
+              <div className="h-3 w-20 bg-slate-100 rounded" />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   const cards = [
     {
       id: 'total-employees',

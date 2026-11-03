@@ -17,11 +17,11 @@ import {
 import { payrollService } from '../services/payrollService';
 
 export const PayrollSalaryPage: React.FC = () => {
-  // 1. Records and pagination
+  // 1. Records and pagination (strictly dynamic from DB)
   const [records, setRecords] = useState<PayrollRecord[]>([]);
-  const [totalRecords, setTotalRecords] = useState<number>(248);
-  const [filteredCount, setFilteredCount] = useState<number>(248);
-  const [lastUpdated, setLastUpdated] = useState('15 Oct 2026, 11:30 AM');
+  const [totalRecords, setTotalRecords] = useState<number>(0);
+  const [filteredCount, setFilteredCount] = useState<number>(0);
+  const [lastUpdated, setLastUpdated] = useState<string>('');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -35,11 +35,11 @@ export const PayrollSalaryPage: React.FC = () => {
   };
   const [filters, setFilters] = useState<PayrollFilters>(defaultFilters);
 
-  // 3. Filter options from DB
+  // 3. Filter options loaded strictly from database
   const [filterOptions, setFilterOptions] = useState<PayrollFilterOptions>({
-    payrollMonths: ['Oct 2026', 'Sep 2026', 'Aug 2026'],
-    employmentTypes: ['Full Time', 'Contract', 'Part Time', 'Intern'],
-    statuses: ['Paid', 'Pending', 'Processing', 'Failed'],
+    payrollMonths: [],
+    employmentTypes: [],
+    statuses: [],
     employees: [],
   });
 
@@ -48,24 +48,8 @@ export const PayrollSalaryPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(10);
 
-  // 5. KPIs
-  const [kpiData, setKpiData] = useState<PayrollKpiData>({
-    totalEmployees: 248,
-    totalEmployeesTrend: '8% vs last month',
-    totalEmployeesTrendPositive: true,
-    totalPayrollCost: 4820000,
-    formattedTotalPayrollCost: '₹ 48,20,000',
-    totalPayrollCostTrend: '12% vs last month',
-    totalPayrollCostTrendPositive: true,
-    netPayDisbursed: 3890000,
-    formattedNetPayDisbursed: '₹ 38,90,000',
-    netPayDisbursedTrend: '10% vs last month',
-    netPayDisbursedTrendPositive: true,
-    pendingPayrolls: 12,
-    pendingPayrollsTrend: '20% vs last month',
-    pendingPayrollsTrendPositive: false,
-    lastUpdated: '15 Oct 2026, 11:30 AM',
-  });
+  // 5. KPIs (strictly loaded from database)
+  const [kpiData, setKpiData] = useState<PayrollKpiData | null>(null);
 
   // 6. Modal states
   const [isProcessModalOpen, setIsProcessModalOpen] = useState(false);
@@ -87,7 +71,7 @@ export const PayrollSalaryPage: React.FC = () => {
     return count;
   }, [filters]);
 
-  // Fetch records from backend
+  // Fetch records from backend database
   const fetchRecords = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -108,10 +92,10 @@ export const PayrollSalaryPage: React.FC = () => {
         setTotalRecords(res.totalElements ?? 0);
       }
     } catch (err: any) {
-      console.error('Error fetching payroll records:', err);
+      console.error('Error fetching payroll records from database:', err);
       addToast(
         'error',
-        'Failed to Load Records',
+        'Database Connection Error',
         err.message || 'Could not fetch payroll records from database.'
       );
     } finally {
@@ -119,7 +103,7 @@ export const PayrollSalaryPage: React.FC = () => {
     }
   }, [filters, sortOption, currentPage, pageSize, addToast]);
 
-  // Fetch KPIs and filter options
+  // Fetch KPIs and filter options from database
   const fetchMetadata = useCallback(async () => {
     try {
       const [kpiRes, optionsRes] = await Promise.all([
@@ -137,7 +121,7 @@ export const PayrollSalaryPage: React.FC = () => {
         setFilterOptions(optionsRes);
       }
     } catch (err: any) {
-      console.error('Error fetching payroll metadata:', err);
+      console.error('Error fetching payroll metadata from database:', err);
     }
   }, [filters.payrollMonth]);
 
@@ -154,7 +138,7 @@ export const PayrollSalaryPage: React.FC = () => {
     setIsRefreshing(true);
     await Promise.all([fetchRecords(), fetchMetadata()]);
     setIsRefreshing(false);
-    addToast('success', 'Payroll Refreshed', 'Latest payroll data synced from database.');
+    addToast('success', 'Payroll Synced', 'Live payroll records refreshed from PostgreSQL database.');
   };
 
   // Handle Export
@@ -168,7 +152,7 @@ export const PayrollSalaryPage: React.FC = () => {
         employee: filters.employee,
         sort: sortOption,
       });
-      addToast('success', 'Export Completed', 'Payroll report has been downloaded successfully.');
+      addToast('success', 'Export Completed', 'Payroll report generated and downloaded from database.');
     } catch (err: any) {
       addToast('error', 'Export Failed', err.message || 'Failed to export payroll report.');
     }
@@ -184,7 +168,7 @@ export const PayrollSalaryPage: React.FC = () => {
   const handleClearFilters = () => {
     setFilters(defaultFilters);
     setCurrentPage(1);
-    addToast('info', 'Filters Cleared', 'All payroll filter criteria have been reset.');
+    addToast('info', 'Filters Reset', 'All payroll filter criteria have been reset.');
   };
 
   // Handle Process Payroll
@@ -194,8 +178,8 @@ export const PayrollSalaryPage: React.FC = () => {
       const created = await payrollService.processPayroll(payload);
       addToast(
         'success',
-        'Payroll Processed',
-        `Disbursement recorded for ${created.employeeName} (${created.payrollId}).`
+        'Payroll Recorded in DB',
+        `Disbursement saved for ${created.employeeName} (${created.payrollId}).`
       );
       await Promise.all([fetchRecords(), fetchMetadata()]);
     } catch (err: any) {
@@ -224,10 +208,10 @@ export const PayrollSalaryPage: React.FC = () => {
         paymentStatus: 'Paid',
         paymentDate: new Date().toISOString().slice(0, 10),
       });
-      addToast('success', 'Status Updated', `${record.payrollId} marked as Paid.`);
+      addToast('success', 'Database Updated', `${record.payrollId} marked as Paid in PostgreSQL.`);
       await Promise.all([fetchRecords(), fetchMetadata()]);
     } catch (err: any) {
-      addToast('error', 'Update Failed', err.message || 'Could not update payment status.');
+      addToast('error', 'Update Failed', err.message || 'Could not update payment status in DB.');
     }
   };
 
@@ -238,15 +222,15 @@ export const PayrollSalaryPage: React.FC = () => {
 
       {/* 1. Header with Title, Timestamp, Sync, Export, and Process Payroll Button */}
       <PayrollHeader
-        lastUpdated={lastUpdated}
+        lastUpdated={lastUpdated || 'Syncing...'}
         onRefresh={handleRefresh}
         onExport={handleExport}
         onProcessPayroll={() => setIsProcessModalOpen(true)}
         isRefreshing={isRefreshing}
       />
 
-      {/* 2. Four KPI Metric Cards */}
-      <PayrollKpis kpiData={kpiData} />
+      {/* 2. Four Dynamic KPI Metric Cards */}
+      <PayrollKpis kpiData={kpiData} isLoading={!kpiData} />
 
       {/* 3. Filter Bar Card */}
       <PayrollFilterCard

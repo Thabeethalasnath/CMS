@@ -17,9 +17,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.text.NumberFormat;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
@@ -30,6 +30,8 @@ public class PayrollServiceImpl implements PayrollService {
 
     private final PayrollRecordRepository payrollRepository;
     private final PayrollIdGeneratorService idGeneratorService;
+
+    private static final DateTimeFormatter DISPLAY_TIMESTAMP_FORMATTER = DateTimeFormatter.ofPattern("dd MMM yyyy, hh:mm a");
 
     @Override
     @Transactional(readOnly = true)
@@ -190,7 +192,6 @@ public class PayrollServiceImpl implements PayrollService {
             entity.setDeductions(request.getDeductions());
         }
 
-        // Recalculate gross and net
         BigDecimal gross = entity.getBasicPay().add(entity.getHra()).add(entity.getAllowances());
         entity.setGrossSalary(gross);
         entity.setNetSalary(gross.subtract(entity.getDeductions()));
@@ -233,17 +234,21 @@ public class PayrollServiceImpl implements PayrollService {
                 ? month.trim()
                 : null;
 
+        if (queryMonth == null) {
+            List<String> availableMonths = getSortedPayrollMonths();
+            if (!availableMonths.isEmpty()) {
+                queryMonth = availableMonths.get(0);
+            }
+        }
+
+        // 1. Current metrics queried directly from database
         long totalEmployees = queryMonth != null
                 ? payrollRepository.countDistinctEmployeesByMonth(queryMonth)
                 : payrollRepository.countDistinctEmployees();
 
-        if (totalEmployees == 0) {
-            totalEmployees = payrollRepository.count();
-        }
-
         BigDecimal totalCost = queryMonth != null
-                ? payrollRepository.sumMonthlyCtcByMonth(queryMonth)
-                : payrollRepository.sumTotalMonthlyCtc();
+                ? payrollRepository.sumGrossSalaryByMonth(queryMonth)
+                : payrollRepository.sumTotalGrossSalary();
 
         BigDecimal netDisbursed = queryMonth != null
                 ? payrollRepository.sumNetSalaryDisbursedByMonth(queryMonth)
@@ -253,33 +258,44 @@ public class PayrollServiceImpl implements PayrollService {
                 ? payrollRepository.countPendingPayrollsByMonth(queryMonth)
                 : payrollRepository.countTotalPendingPayrolls();
 
-        // If the database has exactly 248 records matching our UI preset values:
-        // totalEmployees = 248, totalCost = 4820000, netDisbursed = 3890000, pending = 12
-        if (totalEmployees == 248 && totalCost.compareTo(BigDecimal.valueOf(4820000)) != 0 && (queryMonth == null || queryMonth.contains("Oct 2026"))) {
-            totalCost = BigDecimal.valueOf(4820000);
-            netDisbursed = BigDecimal.valueOf(3890000);
+        // 2. Previous month metrics queried dynamically from database for month-over-month comparison
+        String prevMonth = getPreviousMonthString(queryMonth != null ? queryMonth : "Oct 2026");
+        long prevEmployees = payrollRepository.countDistinctEmployeesByMonth(prevMonth);
+        BigDecimal prevCost = payrollRepository.sumGrossSalaryByMonth(prevMonth);
+        BigDecimal prevDisbursed = payrollRepository.sumNetSalaryDisbursedByMonth(prevMonth);
+        long prevPending = payrollRepository.countPendingPayrollsByMonth(prevMonth);
+
+        // 3. Dynamic trend calculations based entirely on actual DB figures
+        TrendResult empTrend = calculateTrend(totalEmployees, prevEmployees);
+        TrendResult costTrend = calculateTrend(totalCost, prevCost);
+        TrendResult netTrend = calculateTrend(netDisbursed, prevDisbursed);
+        TrendResult pendingTrend = calculateTrend(pending, prevPending);
+
+        // 4. Dynamic Last Updated timestamp from database audit column
+        OffsetDateTime maxUpdated = queryMonth != null
+                ? payrollRepository.findMaxUpdatedAtByMonth(queryMonth)
+                : payrollRepository.findMaxUpdatedAt();
+
+        if (maxUpdated == null) {
+            maxUpdated = OffsetDateTime.now();
         }
-
-        String formattedCost = formatIndianCurrency(totalCost);
-        String formattedNet = formatIndianCurrency(netDisbursed);
-
-        String lastUpdated = "15 Oct 2026, 11:30 AM";
+        String lastUpdated = maxUpdated.format(DISPLAY_TIMESTAMP_FORMATTER);
 
         return PayrollKpiResponse.builder()
                 .totalEmployees(totalEmployees)
-                .totalEmployeesTrend("8% vs last month")
-                .totalEmployeesTrendPositive(true)
+                .totalEmployeesTrend(empTrend.trendText)
+                .totalEmployeesTrendPositive(empTrend.isPositive)
                 .totalPayrollCost(totalCost)
-                .formattedTotalPayrollCost(formattedCost)
-                .totalPayrollCostTrend("12% vs last month")
-                .totalPayrollCostTrendPositive(true)
+                .formattedTotalPayrollCost(formatIndianCurrency(totalCost))
+                .totalPayrollCostTrend(costTrend.trendText)
+                .totalPayrollCostTrendPositive(costTrend.isPositive)
                 .netPayDisbursed(netDisbursed)
-                .formattedNetPayDisbursed(formattedNet)
-                .netPayDisbursedTrend("10% vs last month")
-                .netPayDisbursedTrendPositive(true)
+                .formattedNetPayDisbursed(formatIndianCurrency(netDisbursed))
+                .netPayDisbursedTrend(netTrend.trendText)
+                .netPayDisbursedTrendPositive(netTrend.isPositive)
                 .pendingPayrolls(pending)
-                .pendingPayrollsTrend("20% vs last month")
-                .pendingPayrollsTrendPositive(false)
+                .pendingPayrollsTrend(pendingTrend.trendText)
+                .pendingPayrollsTrendPositive(pendingTrend.isPositive)
                 .lastUpdated(lastUpdated)
                 .build();
     }
@@ -287,20 +303,9 @@ public class PayrollServiceImpl implements PayrollService {
     @Override
     @Transactional(readOnly = true)
     public PayrollFilterOptionsResponse getFilterOptions() {
-        List<String> months = payrollRepository.findDistinctPayrollMonths();
-        if (months.isEmpty()) {
-            months = List.of("Oct 2026", "Sep 2026", "Aug 2026");
-        }
-
+        List<String> months = getSortedPayrollMonths();
         List<String> types = payrollRepository.findDistinctEmploymentTypes();
-        if (types.isEmpty()) {
-            types = List.of("Full Time", "Contract", "Part Time", "Intern");
-        }
-
         List<String> statuses = payrollRepository.findDistinctPaymentStatuses();
-        if (statuses.isEmpty()) {
-            statuses = List.of("Paid", "Pending", "Processing", "Failed");
-        }
 
         List<Object[]> pairs = payrollRepository.findDistinctEmployeePairs();
         List<PayrollFilterOptionsResponse.EmployeeOptionDto> employees = new ArrayList<>();
@@ -319,6 +324,21 @@ public class PayrollServiceImpl implements PayrollService {
                 .statuses(statuses)
                 .employees(employees)
                 .build();
+    }
+
+    private List<String> getSortedPayrollMonths() {
+        List<String> months = new ArrayList<>(payrollRepository.findDistinctPayrollMonths());
+        DateTimeFormatter parseFmt = DateTimeFormatter.ofPattern("MMM yyyy", Locale.ENGLISH);
+        months.sort((a, b) -> {
+            try {
+                YearMonth ymA = YearMonth.parse(a.trim(), parseFmt);
+                YearMonth ymB = YearMonth.parse(b.trim(), parseFmt);
+                return ymB.compareTo(ymA);
+            } catch (Exception e) {
+                return b.compareTo(a);
+            }
+        });
+        return months;
     }
 
     private Specification<PayrollRecordEntity> buildSpecification(
@@ -378,7 +398,44 @@ public class PayrollServiceImpl implements PayrollService {
         if (sort.toLowerCase().contains("name")) {
             return Sort.by(Sort.Direction.ASC, "employeeName");
         }
-        return Sort.by(Sort.Direction.DESC, "id");
+        return Sort.by(Sort.Direction.ASC, "id");
+    }
+
+    private String getPreviousMonthString(String monthStr) {
+        if (monthStr == null) return "Sep 2026";
+        try {
+            String[] parts = monthStr.trim().split("\\s+");
+            if (parts.length == 2) {
+                DateTimeFormatter parseFmt = DateTimeFormatter.ofPattern("MMM yyyy", Locale.ENGLISH);
+                YearMonth ym = YearMonth.parse(monthStr.trim(), parseFmt);
+                return ym.minusMonths(1).format(parseFmt);
+            }
+        } catch (Exception ignored) {
+        }
+        return "Sep 2026";
+    }
+
+    private record TrendResult(String trendText, boolean isPositive) {}
+
+    private TrendResult calculateTrend(long current, long previous) {
+        if (previous <= 0) {
+            return new TrendResult("0% vs last month", true);
+        }
+        long diff = current - previous;
+        long percent = Math.round(((double) Math.abs(diff) / previous) * 100.0);
+        boolean isPositive = diff >= 0;
+        return new TrendResult(percent + "% vs last month", isPositive);
+    }
+
+    private TrendResult calculateTrend(BigDecimal current, BigDecimal previous) {
+        if (previous == null || previous.compareTo(BigDecimal.ZERO) <= 0) {
+            return new TrendResult("0% vs last month", true);
+        }
+        BigDecimal diff = current.subtract(previous);
+        double percent = Math.abs(diff.doubleValue() / previous.doubleValue()) * 100.0;
+        long rounded = Math.round(percent);
+        boolean isPositive = diff.compareTo(BigDecimal.ZERO) >= 0;
+        return new TrendResult(rounded + "% vs last month", isPositive);
     }
 
     private String formatIndianCurrency(BigDecimal amount) {
