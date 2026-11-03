@@ -33,8 +33,8 @@ export const PayrollHeader: React.FC<PayrollHeaderProps> = ({
         </div>
       </div>
 
-      {/* Right Controls: Timestamp & Actions */}
-      <div className="flex items-center flex-wrap gap-2.5 self-start md:self-auto">
+      {/* Right Controls: Timestamp & Actions - strictly single line without wrapping */}
+      <div className="flex items-center flex-nowrap shrink-0 gap-2.5 self-start md:self-auto overflow-x-auto max-w-full">
         <span className="text-xs text-slate-400 font-normal whitespace-nowrap">
           Last Updated: {lastUpdated}
         </span>
