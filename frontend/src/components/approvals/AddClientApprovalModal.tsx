@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Plus, Building, Tag, DollarSign, Calendar, User } from 'lucide-react';
 import { ClientApproval } from '../../types/approvals';
 
@@ -20,6 +20,18 @@ export const AddClientApprovalModal: React.FC<AddClientApprovalModalProps> = ({
   const [dueDate, setDueDate] = useState('');
   const [amount, setAmount] = useState('');
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    if (isOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -34,7 +46,7 @@ export const AddClientApprovalModal: React.FC<AddClientApprovalModalProps> = ({
       request_type: requestType,
       reference_id: referenceId.trim(),
       requester: requester.trim() || 'Akshit Ujjain',
-      due_date: dueDate || '25 Mar 2025',
+      due_date: dueDate || new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
       amount: amount.trim() || '-'
     });
 

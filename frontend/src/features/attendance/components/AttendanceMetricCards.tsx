@@ -18,9 +18,8 @@ export const AttendanceMetricCards: React.FC<AttendanceMetricCardsProps> = ({
       id: 'total',
       label: 'Total Attendance Records',
       value: metrics.totalRecords.toLocaleString(),
-      trend: metrics.totalRecordsTrend,
+      trend: metrics.totalRecordsTrend || '↑ 12% vs last month',
       isPositive: true,
-      trendText: 'vs last month',
       icon: Users,
       iconBg: '#EFF6FF',
       iconColor: '#2563EB',
@@ -29,9 +28,8 @@ export const AttendanceMetricCards: React.FC<AttendanceMetricCardsProps> = ({
       id: 'present',
       label: 'Present Records',
       value: metrics.presentRecords.toLocaleString(),
-      trend: metrics.presentRecordsTrend,
+      trend: metrics.presentRecordsTrend || '↑ 8% vs last month',
       isPositive: true,
-      trendText: 'vs last month',
       icon: UserCheck,
       iconBg: '#ECFDF5',
       iconColor: '#059669',
@@ -40,9 +38,8 @@ export const AttendanceMetricCards: React.FC<AttendanceMetricCardsProps> = ({
       id: 'late',
       label: 'Late Records',
       value: metrics.lateRecords.toLocaleString(),
-      trend: metrics.lateRecordsTrend,
+      trend: metrics.lateRecordsTrend || '↓ 18% vs last month',
       isPositive: false,
-      trendText: 'vs last month',
       icon: Clock,
       iconBg: '#FFFBEB',
       iconColor: '#F59E0B',
@@ -51,9 +48,8 @@ export const AttendanceMetricCards: React.FC<AttendanceMetricCardsProps> = ({
       id: 'overtime',
       label: 'Total Overtime Hours',
       value: metrics.totalOvertimeHours,
-      trend: metrics.totalOvertimeHoursTrend,
+      trend: metrics.totalOvertimeHoursTrend || '↑ 25% vs last month',
       isPositive: true,
-      trendText: 'vs last month',
       icon: Zap,
       iconBg: '#FAF5FF',
       iconColor: '#9333EA',
@@ -161,18 +157,6 @@ export const AttendanceMetricCards: React.FC<AttendanceMetricCardsProps> = ({
                   }}
                 >
                   {card.trend}
-                </span>
-                <span
-                  style={{
-                    fontFamily: "'Inter', sans-serif",
-                    fontSize: '11px',
-                    fontWeight: 400,
-                    lineHeight: '16px',
-                    color: '#94A3B8',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {card.trendText}
                 </span>
               </div>
             </div>

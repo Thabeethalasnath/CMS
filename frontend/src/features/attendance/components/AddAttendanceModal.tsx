@@ -68,8 +68,8 @@ export const AddAttendanceModal: React.FC<AddAttendanceModalProps> = ({
         notes,
       });
       onClose();
-    } catch (err) {
-      console.error(err);
+    } catch {
+      // Handled by caller
     } finally {
       setIsSubmitting(false);
     }

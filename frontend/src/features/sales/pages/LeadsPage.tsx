@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Users, RotateCw, Plus, Loader2 } from 'lucide-react';
-import { Lead, LeadsFilterState, LeadSortOption } from '../types/leads';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { Users, RotateCw, Plus } from 'lucide-react';
+import { Lead, LeadsFilterState, LeadSortOption, LeadsMetrics } from '../types/leads';
 import { leadsService } from '../services/leadsService';
 import { LeadsMetricCards } from '../components/LeadsMetricCards';
 import { LeadsFilterBar } from '../components/LeadsFilterBar';
@@ -8,12 +8,17 @@ import { LeadsTable } from '../components/LeadsTable';
 import { AddLeadModal } from '../components/AddLeadModal';
 import { LeadDetailModal } from '../components/LeadDetailModal';
 import { ToastNotification, ToastItem } from '../../../components/ui/ToastNotification';
+import { ErrorBanner } from '../../../components/ui/ErrorBanner';
+import { EmptyState } from '../../../components/ui/EmptyState';
+import { Skeleton } from '../../../components/ui/Skeleton';
 
 export const LeadsPage: React.FC = () => {
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [metrics, setMetrics] = useState<LeadsMetrics | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [lastRefreshed, setLastRefreshed] = useState('15 Mar 2025, 10:30 AM');
+  const [lastRefreshed, setLastRefreshed] = useState<string>('—');
+  const [error, setError] = useState<string | null>(null);
 
   // Modals state
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -69,40 +74,47 @@ export const LeadsPage: React.FC = () => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
 
-  // Fetch leads from live database
-  const loadLeadsFromDb = async (showToast = false) => {
+  // Fetch leads and summary metrics from live database
+  const loadData = useCallback(async (showToast = false) => {
+    setError(null);
     try {
-      const data = await leadsService.getLeads();
-      setLeads(data);
+      const [leadsData, summaryMetrics] = await Promise.all([
+        leadsService.getLeads(),
+        leadsService.getSummary(),
+      ]);
+      setLeads(leadsData);
+      setMetrics(summaryMetrics);
+      if (summaryMetrics.lastUpdated) {
+        setLastRefreshed(summaryMetrics.lastUpdated);
+      } else {
+        const now = new Date();
+        setLastRefreshed(
+          now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) +
+            ', ' +
+            now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+        );
+      }
       if (showToast) {
         addToast('info', 'Leads Refreshed', 'Synchronized live records from Supabase database.');
       }
-    } catch (err: any) {
-      console.error('Failed to load leads from database:', err);
-      addToast('error', 'Database Connection Error', 'Could not fetch records from the database.');
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : 'Could not fetch records from the database.';
+      setError(errMsg);
+      addToast('error', 'Database Connection Error', errMsg);
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  };
-
-  useEffect(() => {
-    loadLeadsFromDb();
   }, []);
 
-  // Metrics calculation directly from live database leads
-  const metrics = useMemo(() => leadsService.getMetrics(leads), [leads]);
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   // Handle Manual Refresh
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    const now = new Date();
-    const timeStr =
-      now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) +
-      ', ' +
-      now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-    setLastRefreshed(timeStr);
-    await loadLeadsFromDb(true);
+    await loadData(true);
   };
 
   // Filter Updates
@@ -128,14 +140,16 @@ export const LeadsPage: React.FC = () => {
           metricFilter === 'followups' &&
           lead.status !== 'Follow-up Required' &&
           lead.stage !== 'Contacted'
-        )
+        ) {
           return false;
+        }
         if (
           metricFilter === 'converted' &&
           lead.stage !== 'Won' &&
           lead.status !== 'Converted'
-        )
+        ) {
           return false;
+        }
 
         // Search Query filter
         if (filterState.searchQuery.trim()) {
@@ -155,8 +169,9 @@ export const LeadsPage: React.FC = () => {
         if (
           filterState.serviceInterest !== 'All' &&
           lead.serviceInterest !== filterState.serviceInterest
-        )
+        ) {
           return false;
+        }
         if (filterState.country !== 'All' && lead.country !== filterState.country) return false;
         if (filterState.city !== 'All' && lead.city !== filterState.city) return false;
         if (filterState.ownerId !== 'All' && lead.ownerId !== filterState.ownerId) return false;
@@ -168,10 +183,9 @@ export const LeadsPage: React.FC = () => {
       .sort((a, b) => {
         switch (sortBy) {
           case 'date-desc':
-            // L-2025-001 (15 Mar 2025) is the newest lead, down to L-2025-008 (11 Mar 2025)
-            return a.id.localeCompare(b.id);
+            return b.leadDate.localeCompare(a.leadDate) || b.id.localeCompare(a.id);
           case 'date-asc':
-            return b.id.localeCompare(a.id);
+            return a.leadDate.localeCompare(b.leadDate) || a.id.localeCompare(b.id);
           case 'company-asc':
             return a.company.localeCompare(b.company);
           case 'company-desc':
@@ -181,7 +195,7 @@ export const LeadsPage: React.FC = () => {
           case 'id-desc':
             return b.id.localeCompare(a.id);
           default:
-            return a.id.localeCompare(b.id);
+            return b.id.localeCompare(a.id);
         }
       });
   }, [leads, filterState, metricFilter, sortBy]);
@@ -192,49 +206,62 @@ export const LeadsPage: React.FC = () => {
     return filteredAndSortedLeads.slice(start, start + pageSize);
   }, [filteredAndSortedLeads, currentPage, pageSize]);
 
-  // Handlers for Add, Update, Delete, Export (Live DB Operations)
+  // Handlers for Add, Update, Delete with Rollback on Failure
   const handleAddLead = async (newLeadData: Omit<Lead, 'id' | 'leadDate'>) => {
     try {
-      const created = await leadsService.addLead(newLeadData);
+      const todayIso = new Date().toISOString().split('T')[0];
+      const created = await leadsService.addLead({ ...newLeadData, leadDate: todayIso });
       setLeads((prev) => [created, ...prev]);
       addToast(
         'success',
-        'Lead Created in Database',
+        'Lead Created',
         `${created.company} (${created.id}) saved to Supabase PostgreSQL.`
       );
-    } catch (err: any) {
-      addToast('error', 'Creation Failed', 'Could not insert new lead into database.');
+      // Reload summary metrics to reflect updated counts
+      leadsService.getSummary().then(setMetrics).catch(() => {});
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : 'Could not insert new lead into database.';
+      addToast('error', 'Creation Failed', errMsg);
     }
   };
 
   const handleUpdateLead = async (updatedLead: Lead) => {
+    const previousLeads = [...leads];
+    setLeads((prev) => prev.map((l) => (l.id === updatedLead.id ? updatedLead : l)));
     try {
       const saved = await leadsService.updateLead(updatedLead);
       setLeads((prev) => prev.map((l) => (l.id === saved.id ? saved : l)));
       addToast(
         'success',
-        'Lead Updated in Database',
-        `Lead ${saved.id} (${saved.company}) updated in Supabase PostgreSQL.`
+        'Lead Updated',
+        `Lead ${saved.id} (${saved.company}) updated successfully.`
       );
-    } catch (err: any) {
-      addToast('error', 'Update Failed', 'Could not update lead in database.');
+      leadsService.getSummary().then(setMetrics).catch(() => {});
+    } catch (err: unknown) {
+      setLeads(previousLeads);
+      const errMsg = err instanceof Error ? err.message : 'Could not update lead in database.';
+      addToast('error', 'Update Failed', errMsg);
     }
   };
 
   const handleDeleteLead = async (id: string) => {
+    const previousLeads = [...leads];
+    const leadToDelete = leads.find((l) => l.id === id);
+    setLeads((prev) => prev.filter((l) => l.id !== id));
     try {
-      const leadToDelete = leads.find((l) => l.id === id);
       await leadsService.deleteLead(id);
-      setLeads((prev) => prev.filter((l) => l.id !== id));
       addToast(
-        'error',
-        'Lead Deleted from Database',
+        'success',
+        'Lead Deleted',
         leadToDelete
           ? `Lead ${leadToDelete.company} (${id}) deleted from database.`
           : `Lead ${id} deleted from database.`
       );
-    } catch (err: any) {
-      addToast('error', 'Delete Failed', 'Could not remove lead from database.');
+      leadsService.getSummary().then(setMetrics).catch(() => {});
+    } catch (err: unknown) {
+      setLeads(previousLeads);
+      const errMsg = err instanceof Error ? err.message : 'Could not remove lead from database.';
+      addToast('error', 'Delete Failed', errMsg);
     }
   };
 
@@ -252,7 +279,6 @@ export const LeadsPage: React.FC = () => {
       {/* Page Title & Breadcrumb Row */}
       <div className="flex flex-row items-center justify-between flex-wrap gap-4 w-full">
         <div className="flex flex-row items-center gap-3">
-          {/* Green Icon Badge matching Figma */}
           <div className="w-[39px] h-[39px] bg-[#ECFDF5] border border-[#D1FAE5] rounded-xl flex items-center justify-center shrink-0 shadow-2xs">
             <Users size={20} className="text-[#059669]" />
           </div>
@@ -275,7 +301,8 @@ export const LeadsPage: React.FC = () => {
             </span>
             <button
               onClick={handleRefresh}
-              className="p-1 rounded hover:bg-slate-200/60 text-[#2563EB] transition-colors cursor-pointer"
+              disabled={isRefreshing}
+              className="p-1 rounded hover:bg-slate-200/60 text-[#2563EB] transition-colors cursor-pointer disabled:opacity-50"
               title="Sync with database"
             >
               <RotateCw size={14} className={isRefreshing ? 'animate-spin' : ''} />
@@ -293,9 +320,22 @@ export const LeadsPage: React.FC = () => {
         </div>
       </div>
 
+      {/* Error Banner with Retry */}
+      {error && (
+        <ErrorBanner
+          title="Error Loading Leads"
+          message={error}
+          onRetry={() => {
+            setIsLoading(true);
+            loadData();
+          }}
+        />
+      )}
+
       {/* 4 Metric Summary Cards */}
       <LeadsMetricCards
         metrics={metrics}
+        isLoading={isLoading}
         activeFilter={metricFilter}
         onSelectFilter={setMetricFilter}
       />
@@ -307,12 +347,44 @@ export const LeadsPage: React.FC = () => {
         onClearFilters={handleClearFilters}
       />
 
-      {/* Leads Table or Loading State */}
+      {/* Leads Table or Loading or Empty State */}
       {isLoading ? (
-        <div className="bg-white rounded-xl border border-slate-200 p-12 flex flex-col items-center justify-center gap-3 text-slate-500 shadow-sm">
-          <Loader2 size={28} className="animate-spin text-indigo-600" />
-          <span className="text-xs font-semibold">Loading live leads from Supabase PostgreSQL...</span>
+        <div className="bg-white rounded-xl border border-slate-200 p-6 flex flex-col gap-4 shadow-sm">
+          <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+            <Skeleton variant="text" className="w-48 h-5" />
+            <Skeleton variant="text" className="w-32 h-8 rounded-lg" />
+          </div>
+          {[1, 2, 3, 4, 5].map((idx) => (
+            <div key={idx} className="flex items-center gap-4 py-3 border-b border-slate-50 last:border-0">
+              <Skeleton variant="text" className="w-24 h-4" />
+              <Skeleton variant="text" className="w-36 h-4" />
+              <Skeleton variant="text" className="w-28 h-4" />
+              <Skeleton variant="text" className="w-32 h-4" />
+              <Skeleton variant="text" className="w-20 h-5 rounded-full" />
+              <Skeleton variant="text" className="w-24 h-4" />
+              <Skeleton variant="text" className="w-16 h-5 rounded-full" />
+            </div>
+          ))}
         </div>
+      ) : filteredAndSortedLeads.length === 0 ? (
+        <EmptyState
+          title="No Leads Found"
+          description={
+            filterState.searchQuery || filterState.stage !== 'All' || filterState.status !== 'All'
+              ? 'No leads matched your filter criteria. Try adjusting or clearing your filters.'
+              : 'No leads available in the database yet. Click below to add your first lead.'
+          }
+          actionLabel={
+            filterState.searchQuery || filterState.stage !== 'All' || filterState.status !== 'All'
+              ? 'Clear Filters'
+              : 'Add Lead'
+          }
+          onAction={
+            filterState.searchQuery || filterState.stage !== 'All' || filterState.status !== 'All'
+              ? handleClearFilters
+              : () => setIsAddModalOpen(true)
+          }
+        />
       ) : (
         <LeadsTable
           leads={paginatedLeads}

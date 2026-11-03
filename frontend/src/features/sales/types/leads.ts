@@ -41,38 +41,52 @@ export type LeadStatus =
   | 'Lost';
 
 export interface Lead {
-  id: string; // e.g. "L-2025-001"
-  leadDate: string; // e.g. "15 Mar 2025"
-  company: string; // e.g. "Acme Pvt Ltd"
-  contactName: string; // e.g. "Rahul Mehta"
-  email: string; // e.g. "rahul@acme.com"
-  phone: string; // e.g. "+91 98765 43210"
-  source: LeadSource;
-  serviceInterest: ServiceInterest;
+  id: string; // Server-generated lead ID, e.g. "L-YYYY-NNN"
+  leadDate: string; // ISO date string e.g. "2025-03-15"
+  company: string;
+  contactName: string;
+  email: string;
+  phone: string;
+  source: LeadSource | string;
+  serviceInterest: ServiceInterest | string;
   country: string;
   city: string;
   ownerId: string;
-  stage: LeadStage;
-  status: LeadStatus;
-  leadScore?: number; // e.g. 85
-  expectedValue?: string; // e.g. "₹ 12,00,000"
-  expectedCloseDate?: string; // e.g. "20 Apr 2025"
-  nextFollowUp?: string; // e.g. "18 Mar 2025"
-  estimatedValue?: string; // e.g. "₹ 12,00,000"
-  lostReason?: string; // e.g. "Budget issue"
-  notes?: string;
+  stage: LeadStage | string;
+  status: LeadStatus | string;
+  leadScore?: number | null;
+  expectedValue?: number | string | null;
+  expectedCloseDate?: string | null;
+  nextFollowUp?: string | null;
+  estimatedValue?: number | string | null;
+  lostReason?: string | null;
+  notes?: string | null;
   createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface LeadsMetrics {
   totalLeads: number;
-  totalLeadsTrend: string;
+  totalLeadsTrend?: string | null;
   newLeads: number;
-  newLeadsTrend: string;
+  newLeadsTrend?: string | null;
   followUpsDue: number;
-  followUpsDueTrend: string;
+  followUpsDueTrend?: string | null;
   convertedLeads: number;
-  convertedLeadsTrend: string;
+  convertedLeadsTrend?: string | null;
+  lastUpdated?: string | null;
+}
+
+export interface LeadSummaryDto {
+  totalLeads: number;
+  newThisMonth: number;
+  followUpsDue: number;
+  convertedLeads: number;
+  totalLeadsMoM: number | null;
+  newLeadsMoM: number | null;
+  followUpsDueMoM: number | null;
+  convertedMoM: number | null;
+  lastUpdated?: string;
 }
 
 export interface LeadsFilterState {

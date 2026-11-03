@@ -97,3 +97,5 @@ export interface FullDashboardData {
   people_summary: PeopleSummary;
   alerts: ManagementAlertItem[];
 }
+
+export type DashboardKpiCard = KpiCard;

@@ -16,12 +16,12 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onS
   const [source, setSource] = useState<LeadSource>('Website');
   const [serviceInterest, setServiceInterest] = useState<ServiceInterest>('Web Development');
   const [country, setCountry] = useState('India');
-  const [city, setCity] = useState('Mumbai');
-  const [ownerId, setOwnerId] = useState('Akshit Ujjain (CEO)');
+  const [city, setCity] = useState('');
+  const [ownerId, setOwnerId] = useState('');
   const [stage, setStage] = useState<LeadStage>('New');
   const [status, setStatus] = useState<LeadStatus>('Active');
-  const [estimatedValue, setEstimatedValue] = useState('₹10,00,000');
-  const [nextFollowUp, setNextFollowUp] = useState('20 Mar 2025');
+  const [estimatedValue, setEstimatedValue] = useState('');
+  const [nextFollowUp, setNextFollowUp] = useState('');
   const [notes, setNotes] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -103,7 +103,7 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onS
                 <Building2 size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
                   type="text"
-                  placeholder="e.g. Acme Innovations Pvt Ltd"
+                  placeholder="Enter company name"
                   value={company}
                   onChange={(e) => {
                     setCompany(e.target.value);
@@ -150,7 +150,7 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onS
                 <Mail size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
                   type="email"
-                  placeholder="e.g. contact@acme.com"
+                  placeholder="Enter email address"
                   value={email}
                   onChange={(e) => {
                     setEmail(e.target.value);
@@ -309,7 +309,7 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onS
                 <DollarSign size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
                   type="text"
-                  placeholder="e.g. ₹10,00,000"
+                  placeholder="Enter estimated value"
                   value={estimatedValue}
                   onChange={(e) => setEstimatedValue(e.target.value)}
                   className="w-full pl-9 pr-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -322,8 +322,8 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onS
               <div className="relative">
                 <Calendar size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
-                  type="text"
-                  placeholder="e.g. 20 Mar 2025"
+                  type="date"
+                  placeholder="YYYY-MM-DD"
                   value={nextFollowUp}
                   onChange={(e) => setNextFollowUp(e.target.value)}
                   className="w-full pl-9 pr-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"

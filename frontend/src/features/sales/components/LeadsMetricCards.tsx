@@ -1,18 +1,38 @@
 import React from 'react';
 import { Users, FileText, Calendar, ShieldCheck } from 'lucide-react';
 import { LeadsMetrics } from '../types/leads';
+import { Skeleton } from '../../../components/ui/Skeleton';
 
 interface LeadsMetricCardsProps {
-  metrics: LeadsMetrics;
+  metrics: LeadsMetrics | null;
+  isLoading?: boolean;
   activeFilter?: string | null;
   onSelectFilter?: (filter: string | null) => void;
 }
 
 export const LeadsMetricCards: React.FC<LeadsMetricCardsProps> = ({
   metrics,
+  isLoading = false,
   activeFilter,
   onSelectFilter,
 }) => {
+  if (isLoading || !metrics) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="bg-white rounded-xl border border-slate-200 p-4 sm:p-5 flex items-center gap-4">
+            <Skeleton variant="rectangular" className="w-12 h-12 rounded-xl shrink-0" />
+            <div className="flex flex-col gap-2 flex-1">
+              <Skeleton variant="text" className="w-20 h-3" />
+              <Skeleton variant="text" className="w-16 h-6" />
+              <Skeleton variant="text" className="w-24 h-3" />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   const cards = [
     {
       id: 'total',
@@ -89,15 +109,19 @@ export const LeadsMetricCards: React.FC<LeadsMetricCardsProps> = ({
                 {card.label}
               </span>
               <span className="text-[26px] font-bold text-slate-900 leading-tight mt-1 tracking-tight">
-                {card.value}
+                {card.value ?? '—'}
               </span>
               <div className="flex items-center gap-1 mt-1">
                 <span
                   className={`text-[11.5px] font-semibold flex items-center gap-0.5 ${
-                    card.trendType === 'positive' ? 'text-emerald-600' : 'text-rose-500'
+                    card.trend
+                      ? card.trendType === 'positive'
+                        ? 'text-emerald-600'
+                        : 'text-rose-500'
+                      : 'text-slate-400'
                   }`}
                 >
-                  {card.trend}
+                  {card.trend || '—'}
                 </span>
               </div>
             </div>

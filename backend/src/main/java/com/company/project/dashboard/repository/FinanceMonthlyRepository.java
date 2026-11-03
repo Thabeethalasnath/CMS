@@ -10,3 +10,4 @@ import java.util.List;
 public interface FinanceMonthlyRepository extends JpaRepository<FinanceMonthly, Long> {
     List<FinanceMonthly> findAllByOrderBySortOrderAsc();
 }
+

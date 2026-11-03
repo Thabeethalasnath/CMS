@@ -6,6 +6,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { Lead, LeadSortOption, ServiceInterest, LeadStage, LeadStatus } from '../types/leads';
+import { formatRupee } from '../../collections/utils';
 
 interface LeadsTableProps {
   leads: Lead[];
@@ -104,14 +105,19 @@ export const LeadsTable: React.FC<LeadsTableProps> = ({
     }
   };
 
-  // Next follow-up highlighting helper
-  const getFollowUpColor = (dateStr?: string) => {
-    if (!dateStr || dateStr === '-') return 'text-slate-400';
-    if (dateStr.includes('18 Mar') || dateStr.includes('14 Mar')) {
-      return 'text-[#DC2626] font-semibold'; // Critical due date in red
+  // Next follow-up highlighting helper based on live date calculation
+  const getFollowUpColor = (dateStr?: string | null) => {
+    if (!dateStr || dateStr === '-' || dateStr === '—') return 'text-slate-400';
+    const followUp = new Date(dateStr);
+    if (isNaN(followUp.getTime())) return 'text-slate-600 font-normal';
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (followUp < today) {
+      return 'text-[#DC2626] font-semibold'; // Overdue in red
     }
-    if (dateStr.includes('16 Mar')) {
-      return 'text-[#D97706] font-semibold'; // Urgent date in amber/orange
+    const diffDays = Math.ceil((followUp.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    if (diffDays <= 3) {
+      return 'text-[#D97706] font-semibold'; // Due soon in amber
     }
     return 'text-slate-600 font-normal';
   };
@@ -253,29 +259,9 @@ export const LeadsTable: React.FC<LeadsTableProps> = ({
                 const statusBadge = getStatusBadgeStyle(lead.status);
                 const followUpColor = getFollowUpColor(lead.nextFollowUp);
 
-                // Notes formatting matching exact Figma screenshot text
                 const getNotesSnippet = (l: Lead) => {
-                  switch (l.id) {
-                    case 'L-2025-001':
-                      return 'Interested in ...';
-                    case 'L-2025-002':
-                      return 'Discussed initial...';
-                    case 'L-2025-003':
-                      return 'Client interested...';
-                    case 'L-2025-004':
-                      return 'Proposal to be...';
-                    case 'L-2025-005':
-                      return 'Waiting for...';
-                    case 'L-2025-006':
-                      return '-';
-                    case 'L-2025-007':
-                      return 'Call scheduled...';
-                    case 'L-2025-008':
-                      return 'Client not...';
-                    default:
-                      if (!l.notes || l.notes === '-') return '-';
-                      return l.notes.length > 20 ? `${l.notes.slice(0, 18)}...` : l.notes;
-                  }
+                  if (!l.notes || l.notes === '-') return '—';
+                  return l.notes.length > 22 ? `${l.notes.slice(0, 20)}...` : l.notes;
                 };
 
                 const notesSnippet = getNotesSnippet(lead);
@@ -347,7 +333,7 @@ export const LeadsTable: React.FC<LeadsTableProps> = ({
 
                     {/* 9. COUNTRY */}
                     <td className="py-3.5 px-4 whitespace-nowrap text-slate-700">
-                      {lead.country || 'India'}
+                      {lead.country || '—'}
                     </td>
 
                     {/* 10. CITY */}
@@ -357,7 +343,7 @@ export const LeadsTable: React.FC<LeadsTableProps> = ({
 
                     {/* 11. OWNER ID */}
                     <td className="py-3.5 px-4 whitespace-nowrap text-slate-700 font-mono text-xs">
-                      {lead.ownerId || 'EMP-001'}
+                      {lead.ownerId || '—'}
                     </td>
 
                     {/* 12. STAGE */}
@@ -371,12 +357,17 @@ export const LeadsTable: React.FC<LeadsTableProps> = ({
 
                     {/* 13. LEAD SCORE */}
                     <td className="py-3.5 px-4 whitespace-nowrap text-slate-800 font-medium">
-                      {lead.leadScore ?? 65}
+                      {lead.leadScore != null ? lead.leadScore : '—'}
                     </td>
 
                     {/* 14. EXPECTED VALUE */}
                     <td className="py-3.5 px-4 whitespace-nowrap font-semibold font-mono text-slate-900 text-[12px]">
-                      {lead.expectedValue || lead.estimatedValue || '₹ 10,00,000'}
+                      {(() => {
+                        const val = lead.expectedValue ?? lead.estimatedValue;
+                        if (val == null || val === '') return '—';
+                        if (typeof val === 'number') return formatRupee(val);
+                        return String(val);
+                      })()}
                     </td>
 
                     {/* 15. EXPECTED CLOSE DATE */}
@@ -406,7 +397,7 @@ export const LeadsTable: React.FC<LeadsTableProps> = ({
                     {/* 19. NOTES */}
                     <td
                       className="py-3.5 px-4 whitespace-nowrap text-slate-600 max-w-[180px] truncate"
-                      title={lead.notes}
+                      title={lead.notes ?? undefined}
                     >
                       {notesSnippet}
                     </td>

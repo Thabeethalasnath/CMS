@@ -8,10 +8,12 @@ import { ClientsTable } from '../components/ClientsTable';
 import { AddClientModal } from '../components/AddClientModal';
 import { ClientDetailModal } from '../components/ClientDetailModal';
 import { ToastNotification, ToastItem } from '../../../components/ui/ToastNotification';
+import { ErrorBanner } from '../../../components/ui/ErrorBanner';
 
 export const ClientsPage: React.FC = () => {
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastRefreshed, setLastRefreshed] = useState('15 Mar 2025, 10:30 AM');
 
@@ -70,14 +72,16 @@ export const ClientsPage: React.FC = () => {
   // Fetch clients from live database
   const loadClientsFromDb = async (showToast = false) => {
     try {
+      setError(null);
       const data = await clientsService.getClients();
       setClients(data);
       if (showToast) {
         addToast('info', 'Clients Refreshed', 'Synchronized live records from Supabase database.');
       }
     } catch (err: any) {
-      console.error('Failed to load clients from database:', err);
-      addToast('error', 'Database Connection Error', 'Could not fetch records from the database.');
+      const msg = err?.message || 'Could not fetch records from the database.';
+      setError(msg);
+      addToast('error', 'Database Connection Error', msg);
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -106,6 +110,13 @@ export const ClientsPage: React.FC = () => {
 
   // Metric Card Quick Filter Click
   const handleMetricCardClick = (cardId: string | null) => {
+    if (metricFilter === cardId || cardId === null) {
+      setMetricFilter(null);
+      setFilterState((prev) => ({ ...prev, status: 'All' }));
+      setCurrentPage(1);
+      return;
+    }
+
     setMetricFilter(cardId);
     setCurrentPage(1);
 
@@ -238,8 +249,7 @@ export const ClientsPage: React.FC = () => {
         `Successfully added ${created.clientName} (${created.id}) to the live database.`
       );
     } catch (err: any) {
-      console.error('Failed to create client:', err);
-      addToast('error', 'Creation Failed', err.message || 'Could not save client to database.');
+      addToast('error', 'Creation Failed', err?.message || 'Could not save client to database.');
     }
   };
 
@@ -254,8 +264,7 @@ export const ClientsPage: React.FC = () => {
         `Changes to ${saved.clientName} were saved to the database.`
       );
     } catch (err: any) {
-      console.error('Failed to update client:', err);
-      addToast('error', 'Update Failed', err.message || 'Could not update client in database.');
+      addToast('error', 'Update Failed', err?.message || 'Could not update client in database.');
     }
   };
 
@@ -266,8 +275,7 @@ export const ClientsPage: React.FC = () => {
       setClients((prev) => prev.filter((c) => c.id !== id));
       addToast('warning', 'Client Deleted', `Client ${id} was deleted from database.`);
     } catch (err: any) {
-      console.error('Failed to delete client:', err);
-      addToast('error', 'Delete Failed', err.message || 'Could not delete client from database.');
+      addToast('error', 'Delete Failed', err?.message || 'Could not delete client from database.');
     }
   };
 
@@ -351,6 +359,14 @@ export const ClientsPage: React.FC = () => {
     >
       {/* Toast Notifications */}
       <ToastNotification toasts={toasts} onDismiss={removeToast} />
+
+      {/* Error Banner */}
+      {error && (
+        <ErrorBanner
+          message={error}
+          onRetry={() => loadClientsFromDb(true)}
+        />
+      )}
 
       {/* Section - Breadcrumb and Header */}
       <div

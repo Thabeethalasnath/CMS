@@ -101,8 +101,8 @@ export const EmployeeApprovalsSection: React.FC<EmployeeApprovalsSectionProps> =
   }, [approvals, searchQuery, selectedType, selectedStatus, applicationDate, requestedDateRange]);
 
   // Pagination logic
-  const totalItems = 28; // Preserving baseline visual total from spec
-  const totalPages = Math.ceil(totalItems / pageSize);
+  const totalItems = filteredData.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
   const displayItems = filteredData.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   const handleClearFilters = () => {

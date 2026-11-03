@@ -34,8 +34,8 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
 }) => {
   if (!isOpen || !lead) return null;
 
-  const [currentStage, setCurrentStage] = useState<LeadStage>(lead.stage);
-  const [currentStatus, setCurrentStatus] = useState<LeadStatus>(lead.status);
+  const [currentStage, setCurrentStage] = useState<LeadStage>((lead.stage as LeadStage) || 'New');
+  const [currentStatus, setCurrentStatus] = useState<LeadStatus>((lead.status as LeadStatus) || 'Open');
   const [followUpDate, setFollowUpDate] = useState(lead.nextFollowUp || '');
   const [notes, setNotes] = useState(lead.notes || '');
   const [isSaved, setIsSaved] = useState(false);
@@ -227,7 +227,7 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
               <div>
                 <span className="text-[11px] text-slate-500 block">Lead Score</span>
                 <span className="text-xs font-bold text-indigo-600">
-                  {lead.leadScore ?? 65} / 100
+                  {lead.leadScore != null ? `${lead.leadScore} / 100` : '—'}
                 </span>
               </div>
             </div>
@@ -279,8 +279,8 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
                 Reschedule Next Follow-up
               </label>
               <input
-                type="text"
-                placeholder="e.g. 24 Mar 2025"
+                type="date"
+                placeholder="YYYY-MM-DD"
                 value={followUpDate}
                 onChange={(e) => setFollowUpDate(e.target.value)}
                 className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"

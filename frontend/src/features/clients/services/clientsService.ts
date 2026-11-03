@@ -1,20 +1,7 @@
+import { apiClient } from '../../../services/api/apiClient';
+import { API_ENDPOINTS } from '../../../services/api/apiEndpoints';
+import { triggerNotificationRefresh } from '../../../services/notificationService';
 import { Client, ClientsMetrics } from '../types/clients';
-
-const PRIMARY_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
-const FALLBACK_URL = '/api/v1';
-
-async function requestWithFallback(endpoint: string, options?: RequestInit): Promise<Response> {
-  try {
-    const res = await fetch(`${PRIMARY_URL}${endpoint}`, options);
-    if (res.ok) return res;
-    console.warn(`[ClientsService] ${PRIMARY_URL}${endpoint} returned ${res.status}, attempting fallback to ${FALLBACK_URL}${endpoint}`);
-  } catch (err) {
-    console.warn(`[ClientsService] ${PRIMARY_URL}${endpoint} failed, falling back to ${FALLBACK_URL}${endpoint}:`, err);
-  }
-
-  // Gracefully fallback to Vite local DB proxy
-  return fetch(`${FALLBACK_URL}${endpoint}`, options);
-}
 
 function mapClient(item: any): Client {
   return {
@@ -41,78 +28,65 @@ function mapClient(item: any): Client {
 
 export const clientsService = {
   async getClients(): Promise<Client[]> {
-    const res = await requestWithFallback('/clients');
-    if (!res.ok) {
-      throw new Error(`Failed to fetch clients: HTTP ${res.status}`);
-    }
-    const data = await res.json();
+    const res = await apiClient.get<Client[]>(API_ENDPOINTS.CLIENTS_RESOURCE.BASE);
+    const data = res.data || [];
     if (!Array.isArray(data)) {
-      throw new Error('Invalid clients data format received');
+      return [];
     }
     return data.map(mapClient);
   },
 
   async getClientById(id: string): Promise<Client> {
-    const res = await requestWithFallback(`/clients/${encodeURIComponent(id)}`);
-    if (!res.ok) {
-      throw new Error(`Failed to fetch client ${id}: HTTP ${res.status}`);
-    }
-    const data = await res.json();
-    return mapClient(data);
+    const res = await apiClient.get<Client>(API_ENDPOINTS.CLIENTS_RESOURCE.BY_ID(id));
+    return mapClient(res.data);
   },
 
   async createClient(client: Partial<Client>): Promise<Client> {
-    const res = await requestWithFallback('/clients', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(client),
-    });
-    if (!res.ok) {
-      throw new Error(`Failed to create client: HTTP ${res.status}`);
-    }
-    const data = await res.json();
-    return mapClient(data);
+    const res = await apiClient.post<Client>(API_ENDPOINTS.CLIENTS_RESOURCE.BASE, client);
+    triggerNotificationRefresh();
+    return mapClient(res.data);
   },
 
   async updateClient(id: string, updates: Partial<Client>): Promise<Client> {
-    const res = await requestWithFallback(`/clients/${encodeURIComponent(id)}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updates),
-    });
-    if (!res.ok) {
-      throw new Error(`Failed to update client ${id}: HTTP ${res.status}`);
-    }
-    const data = await res.json();
-    return mapClient(data);
+    const res = await apiClient.put<Client>(API_ENDPOINTS.CLIENTS_RESOURCE.BY_ID(id), updates);
+    triggerNotificationRefresh();
+    return mapClient(res.data);
   },
 
   async deleteClient(id: string): Promise<void> {
-    const res = await requestWithFallback(`/clients/${encodeURIComponent(id)}`, {
-      method: 'DELETE',
-    });
-    if (!res.ok && res.status !== 204 && res.status !== 404) {
-      throw new Error(`Failed to delete client ${id}: HTTP ${res.status}`);
-    }
+    await apiClient.delete(API_ENDPOINTS.CLIENTS_RESOURCE.BY_ID(id));
+    triggerNotificationRefresh();
   },
 
   getMetrics(clients: Client[]): ClientsMetrics {
     const totalClients = clients.length;
-    const activeClients = clients.filter(
-      (c) => String(c.status).toLowerCase() === 'active'
-    ).length;
-    const newClients = clients.filter(
-      (c) =>
-        String(c.status).toLowerCase() === 'pending' ||
-        String(c.status).toLowerCase() === 'new'
-    ).length;
+    const activeClients = clients.filter((c) => String(c.status).toLowerCase() === 'active').length;
+    const pendingClients = clients.filter((c) => String(c.status).toLowerCase() === 'pending').length;
+    const newClients = pendingClients > 0
+      ? pendingClients
+      : clients.filter((c) => {
+          const s = String(c.status).toLowerCase();
+          return s === 'pending' || s === 'prospect';
+        }).length;
 
-    let sum = 0;
-    clients.forEach((c) => {
-      const num = parseInt(String(c.creditLimit || '').replace(/[^\d]/g, ''), 10);
-      if (!isNaN(num)) sum += num;
-    });
-    const totalCreditLimit = `₹ ${sum.toLocaleString('en-IN')}`;
+    let totalCreditAmount = 0;
+    for (const c of clients) {
+      if (c.creditLimit) {
+        const cleaned = String(c.creditLimit).replace(/[^\d]/g, '');
+        if (cleaned) {
+          totalCreditAmount += parseInt(cleaned, 10);
+        }
+      }
+    }
+
+    let formattedCreditLimit = '₹ 0';
+    if (totalCreditAmount >= 10000000) {
+      formattedCreditLimit = `₹ ${(totalCreditAmount / 10000000).toFixed(2)} Cr`;
+    } else if (totalCreditAmount >= 100000) {
+      formattedCreditLimit = `₹ ${(totalCreditAmount / 100000).toFixed(2)} Lakh`;
+    } else if (totalCreditAmount > 0) {
+      formattedCreditLimit = `₹ ${totalCreditAmount.toLocaleString('en-IN')}`;
+    }
 
     return {
       totalClients,
@@ -121,7 +95,7 @@ export const clientsService = {
       activeClientsTrend: '↑ 8% vs last month',
       newClients,
       newClientsTrend: '↑ 20% vs last month',
-      totalCreditLimit,
+      totalCreditLimit: formattedCreditLimit,
       totalCreditLimitTrend: '↑ 18% vs last month',
     };
   },

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { CheckCircle2, XCircle, Clock, Info, X } from 'lucide-react';
 
 export interface ToastItem {
@@ -13,66 +13,125 @@ export interface ToastItem {
 interface ToastNotificationProps {
   toasts: ToastItem[];
   onDismiss: (id: string) => void;
+  position?: 'top-right' | 'bottom-right';
 }
 
-export const ToastNotification: React.FC<ToastNotificationProps> = ({ toasts, onDismiss }) => {
+export const ToastNotification: React.FC<ToastNotificationProps> = ({
+  toasts,
+  onDismiss,
+  position = 'top-right',
+}) => {
   if (toasts.length === 0) return null;
+
+  const positionClass =
+    position === 'bottom-right'
+      ? 'fixed bottom-6 right-6 z-[9999]'
+      : 'fixed top-6 right-6 z-[9999]';
 
   return (
     <div
-      className="fixed top-[76px] right-6 z-[9999] flex flex-col gap-2.5 pointer-events-none"
+      className={`${positionClass} flex flex-col gap-3 pointer-events-none`}
+      style={{ fontFamily: "'Inter', sans-serif" }}
       role="region"
       aria-label="Notifications"
     >
       {toasts.map((toast) => {
-        let iconEl = <Info size={14} className="text-indigo-600" />;
-        let iconBoxBg = 'bg-indigo-50 border-indigo-200/70 text-indigo-600';
+        let iconEl = <Info size={18} className="text-blue-600 stroke-[2]" />;
+        let iconBoxBg = 'bg-[#EFF6FF] border-[#BFDBFE] text-blue-600';
 
-        if (toast.type === 'success' || toast.statusBadge === 'Approved') {
-          iconEl = <CheckCircle2 size={14} className="text-emerald-600" />;
-          iconBoxBg = 'bg-emerald-50 border-emerald-200/70 text-emerald-600';
-        } else if (toast.type === 'error' || toast.statusBadge === 'Rejected') {
-          iconEl = <XCircle size={14} className="text-rose-600" />;
-          iconBoxBg = 'bg-rose-50 border-rose-200/70 text-rose-600';
-        } else if (toast.type === 'warning' || toast.statusBadge === 'Pending') {
-          iconEl = <Clock size={14} className="text-amber-600" />;
-          iconBoxBg = 'bg-amber-50 border-amber-200/70 text-amber-600';
+        if (toast.type === 'success' || toast.statusBadge === 'Approved' || toast.statusBadge === 'Paid') {
+          iconEl = <CheckCircle2 size={18} className="text-[#16A34A] stroke-[2]" />;
+          iconBoxBg = 'bg-[#F0FDF4] border-[#BBF7D0] text-[#16A34A]';
+        } else if (toast.type === 'error' || toast.statusBadge === 'Rejected' || toast.statusBadge === 'Overdue') {
+          iconEl = <XCircle size={18} className="text-[#E11D48] stroke-[2]" />;
+          iconBoxBg = 'bg-[#FEF2F2] border-[#FECACA] text-[#E11D48]';
+        } else if (toast.type === 'warning' || toast.statusBadge === 'Pending' || toast.statusBadge === 'Due Soon') {
+          iconEl = <Clock size={18} className="text-[#D97706] stroke-[2]" />;
+          iconBoxBg = 'bg-[#FFFBEB] border-[#FDE68A] text-[#D97706]';
         }
 
         return (
           <div
             key={toast.id}
-            className="pointer-events-auto bg-white/95 backdrop-blur-md border border-slate-200 rounded-xl shadow-[0_10px_25px_-5px_rgba(0,0,0,0.1),0_8px_10px_-6px_rgba(0,0,0,0.06)] px-3.5 py-2.5 flex items-center gap-3 min-w-[280px] max-w-sm animate-slide-in-right transition-all duration-200"
+            className="pointer-events-auto bg-white border border-slate-200/90 rounded-2xl shadow-[0_12px_36px_-6px_rgba(0,0,0,0.12),0_4px_16px_-2px_rgba(0,0,0,0.06)] p-3.5 pl-4 pr-3.5 flex items-center gap-3.5 min-w-[320px] max-w-md animate-in slide-in-from-top-3 fade-in duration-200 transition-all"
+            style={{
+              backgroundColor: '#FFFFFF',
+              boxShadow: '0 12px 36px -6px rgba(15, 23, 42, 0.12), 0 4px 16px -2px rgba(15, 23, 42, 0.06)',
+            }}
           >
-            {/* Status Icon Box */}
-            <div className={`w-7 h-7 rounded-lg border flex items-center justify-center shrink-0 ${iconBoxBg}`}>
+            {/* Semantic Status Icon Box */}
+            <div
+              className={`w-9 h-9 rounded-xl border flex items-center justify-center shrink-0 ${iconBoxBg}`}
+              style={{ flexShrink: 0 }}
+            >
               {iconEl}
             </div>
 
-            {/* Content text */}
-            <div className="flex-1 min-w-0 flex flex-col">
-              <span className="text-xs font-semibold text-slate-900 leading-tight truncate">
+            {/* Content Text */}
+            <div className="flex-1 min-w-0 flex flex-col justify-center">
+              <span className="text-[14px] font-semibold text-slate-900 leading-[20px] tracking-tight">
                 {toast.title}
               </span>
               {toast.message && (
-                <span className="text-[11.5px] text-slate-500 truncate leading-snug mt-0.5">
+                <span className="text-[12px] font-normal text-slate-500 leading-[18px] mt-0.5 truncate">
                   {toast.message}
                 </span>
               )}
             </div>
 
-            {/* Dismiss button */}
+            {/* Dismiss Button */}
             <button
               type="button"
               onClick={() => onDismiss(toast.id)}
-              className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-md transition-colors shrink-0 cursor-pointer ml-1"
+              className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors shrink-0 cursor-pointer self-start -mt-0.5 -mr-0.5"
               title="Dismiss notification"
             >
-              <X size={13} />
+              <X size={15} />
             </button>
           </div>
         );
       })}
     </div>
   );
+};
+
+// Custom Hook to manage toast notifications
+export const useToast = () => {
+  const [toasts, setToasts] = useState<ToastItem[]>([]);
+
+  const addToast = useCallback(
+    (
+      type: 'success' | 'error' | 'warning' | 'info',
+      title: string,
+      message?: string,
+      statusBadge?: string,
+      duration: number = 4500
+    ) => {
+      const id = Date.now().toString() + Math.random().toString().slice(2, 6);
+      const newToast: ToastItem = {
+        id,
+        type,
+        title,
+        message,
+        statusBadge,
+        timestamp: 'Just now',
+      };
+      setToasts((prev) => [...prev, newToast]);
+
+      if (duration > 0) {
+        setTimeout(() => {
+          setToasts((prev) => prev.filter((t) => t.id !== id));
+        }, duration);
+      }
+
+      return id;
+    },
+    []
+  );
+
+  const removeToast = useCallback((id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
+
+  return { toasts, addToast, removeToast };
 };

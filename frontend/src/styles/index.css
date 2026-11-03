@@ -211,3 +211,64 @@ button {
   animation: toastProgress 4.5s linear forwards;
 }
 
+/* Custom Accessible Table Scrollbar */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #CBD5E1 #F8FAFC;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  height: 7px;
+  width: 7px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #F8FAFC;
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 4px;
+  border: 1px solid #F8FAFC;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
+
+/* Flyout custom scrollbar matching design reference */
+.search-flyout-scrollable {
+  scrollbar-width: thin;
+  scrollbar-color: #E2E8F0 transparent;
+  scrollbar-gutter: stable;
+}
+
+.search-flyout-scrollable::-webkit-scrollbar {
+  width: 5px;
+}
+
+.search-flyout-scrollable::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.search-flyout-scrollable::-webkit-scrollbar-thumb {
+  background: #E2E8F0;
+  border-radius: 9999px;
+}
+
+.search-flyout-scrollable::-webkit-scrollbar-thumb:hover {
+  background: #CBD5E1;
+}
+
+@keyframes flyoutIn {
+  from {
+    opacity: 0;
+    transform: scale(0.97) translateX(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateX(0);
+  }
+}
+

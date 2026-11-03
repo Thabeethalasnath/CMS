@@ -2,6 +2,7 @@ package com.company.project.clients.controller;
 
 import com.company.project.clients.entity.ClientEntity;
 import com.company.project.clients.service.ClientService;
+import com.company.project.common.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -12,42 +13,41 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/clients")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class ClientController {
 
     private final ClientService clientService;
 
     @GetMapping
-    public ResponseEntity<List<ClientEntity>> getAllClients() {
-        return ResponseEntity.ok(clientService.getAllClients());
+    public ResponseEntity<ApiResponse<List<ClientEntity>>> getAllClients() {
+        return ResponseEntity.ok(ApiResponse.success(clientService.getAllClients()));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ClientEntity> getClientById(@PathVariable String id) {
+    public ResponseEntity<ApiResponse<ClientEntity>> getClientById(@PathVariable String id) {
         return clientService.getClientById(id)
-                .map(ResponseEntity::ok)
+                .map(client -> ResponseEntity.ok(ApiResponse.success(client)))
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping
-    public ResponseEntity<ClientEntity> createClient(@RequestBody ClientEntity client) {
+    public ResponseEntity<ApiResponse<ClientEntity>> createClient(@RequestBody ClientEntity client) {
         ClientEntity created = clientService.createClient(client);
-        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success("Client created successfully", created));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ClientEntity> updateClient(@PathVariable String id, @RequestBody ClientEntity updatedClient) {
+    public ResponseEntity<ApiResponse<ClientEntity>> updateClient(@PathVariable String id, @RequestBody ClientEntity updatedClient) {
         try {
             ClientEntity saved = clientService.updateClient(id, updatedClient);
-            return ResponseEntity.ok(saved);
+            return ResponseEntity.ok(ApiResponse.success("Client updated successfully", saved));
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteClient(@PathVariable String id) {
+    public ResponseEntity<ApiResponse<Void>> deleteClient(@PathVariable String id) {
         clientService.deleteClient(id);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(ApiResponse.success("Client deleted successfully", null));
     }
 }

@@ -5,6 +5,8 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -20,8 +22,8 @@ public class LeadEntity {
     @Column(name = "id", length = 64, nullable = false)
     private String id;
 
-    @Column(name = "lead_date", length = 64, nullable = false)
-    private String leadDate;
+    @Column(name = "lead_date", nullable = false)
+    private LocalDate leadDate;
 
     @Column(name = "company", length = 255, nullable = false)
     private String company;
@@ -56,20 +58,20 @@ public class LeadEntity {
     @Column(name = "status", length = 64, nullable = false)
     private String status;
 
-    @Column(name = "next_follow_up", length = 64)
-    private String nextFollowUp;
+    @Column(name = "next_follow_up")
+    private LocalDate nextFollowUp;
 
-    @Column(name = "estimated_value", length = 64)
-    private String estimatedValue;
+    @Column(name = "estimated_value", precision = 14, scale = 2)
+    private BigDecimal estimatedValue;
 
     @Column(name = "lead_score")
     private Integer leadScore;
 
-    @Column(name = "expected_value", length = 64)
-    private String expectedValue;
+    @Column(name = "expected_value", precision = 14, scale = 2)
+    private BigDecimal expectedValue;
 
-    @Column(name = "expected_close_date", length = 64)
-    private String expectedCloseDate;
+    @Column(name = "expected_close_date")
+    private LocalDate expectedCloseDate;
 
     @Column(name = "lost_reason", length = 255)
     private String lostReason;

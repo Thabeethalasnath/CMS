@@ -8,10 +8,12 @@ import { AttendanceTable } from '../components/AttendanceTable';
 import { AddAttendanceModal } from '../components/AddAttendanceModal';
 import { AttendanceDetailModal } from '../components/AttendanceDetailModal';
 import { ToastNotification, ToastItem } from '../../../components/ui/ToastNotification';
+import { ErrorBanner } from '../../../components/ui/ErrorBanner';
 
 export const AttendancePage: React.FC = () => {
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastRefreshed, setLastRefreshed] = useState('15 Oct 2026, 11:30 AM');
 
@@ -69,14 +71,16 @@ export const AttendancePage: React.FC = () => {
   // Fetch live attendance from database
   const loadAttendanceFromDb = async (showToast = false) => {
     try {
+      setError(null);
       const data = await attendanceService.getAttendance();
       setRecords(data);
       if (showToast) {
         addToast('info', 'Attendance Refreshed', 'Synchronized live records from Supabase PostgreSQL.');
       }
     } catch (err: any) {
-      console.error('Failed to load attendance from database:', err);
-      addToast('error', 'Database Connection Error', 'Could not fetch attendance records from the database.');
+      const msg = err?.message || 'Could not fetch attendance records from the database.';
+      setError(msg);
+      addToast('error', 'Database Connection Error', msg);
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -231,7 +235,6 @@ export const AttendancePage: React.FC = () => {
         `Added record ${created.id} for ${created.employeeName} to live database.`
       );
     } catch (err: any) {
-      console.error('Failed to create attendance:', err);
       addToast('error', 'Creation Failed', err.message || 'Could not save attendance to database.');
     }
   };
@@ -247,7 +250,6 @@ export const AttendancePage: React.FC = () => {
         `Changes to attendance ${saved.id} were saved to database.`
       );
     } catch (err: any) {
-      console.error('Failed to update attendance:', err);
       addToast('error', 'Update Failed', err.message || 'Could not update record in database.');
     }
   };
@@ -259,7 +261,6 @@ export const AttendancePage: React.FC = () => {
       setRecords((prev) => prev.filter((r) => r.id !== id));
       addToast('warning', 'Record Deleted', `Attendance ${id} was deleted from database.`);
     } catch (err: any) {
-      console.error('Failed to delete attendance:', err);
       addToast('error', 'Delete Failed', err.message || 'Could not delete record from database.');
     }
   };
@@ -533,6 +534,9 @@ export const AttendancePage: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* Error Banner */}
+      {error && <ErrorBanner message={error} onRetry={() => loadAttendanceFromDb(true)} />}
 
       {/* 4 KPI Metric Cards */}
       <AttendanceMetricCards

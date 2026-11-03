@@ -5,88 +5,99 @@ import {
   ApprovalsSummary,
   ApprovalStatus
 } from '../types/approvals';
-
-const API_BASE = '/api/v1/approvals';
+import { apiClient } from './api/apiClient';
+import { triggerNotificationRefresh } from './notificationService';
 
 export interface AllApprovalsData {
   employees: EmployeeApproval[];
   clients: ClientApproval[];
   ticketsAssets: TicketAssetApproval[];
   summary: ApprovalsSummary;
+  lastUpdated?: string;
 }
 
 export const approvalsService = {
-  // Load all approvals directly from PostgreSQL DB
-  async getApprovalsData(): Promise<AllApprovalsData> {
-    const res = await fetch(API_BASE);
-    if (!res.ok) {
-      throw new Error(`Failed to fetch approvals from database: HTTP ${res.status}`);
-    }
-    const data: AllApprovalsData = await res.json();
-    return data;
+  // Fetch approvals data directly from the Spring Boot API; errors propagate
+  async fetchApprovalsData(): Promise<AllApprovalsData> {
+    const response = await apiClient.get<any>('/approvals');
+    const data = response.data || response;
+
+    const employees: EmployeeApproval[] = data.employees || [];
+    const clients: ClientApproval[] = data.clients || [];
+    const ticketsAssets: TicketAssetApproval[] = data.ticketsAssets || [];
+
+    const summary: ApprovalsSummary = data.summary || {
+      total: employees.length + clients.length + ticketsAssets.length,
+      pending: employees.filter(e => e.status === 'Pending').length +
+               clients.filter(c => c.status === 'Pending').length +
+               ticketsAssets.filter(t => t.status === 'Pending').length,
+      approved: employees.filter(e => e.status === 'Approved').length +
+                clients.filter(c => c.status === 'Approved').length +
+                ticketsAssets.filter(t => t.status === 'Approved').length,
+      rejected: employees.filter(e => e.status === 'Rejected').length +
+                clients.filter(c => c.status === 'Rejected').length +
+                ticketsAssets.filter(t => t.status === 'Rejected').length,
+    };
+
+    return {
+      employees,
+      clients,
+      ticketsAssets,
+      summary,
+      lastUpdated: data.lastUpdated || data.serverTime || new Date().toLocaleString('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      })
+    };
   },
 
   async updateEmployeeStatus(id: number, status: ApprovalStatus): Promise<AllApprovalsData> {
-    const res = await fetch(`${API_BASE}/employee/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status })
-    });
-    if (!res.ok) {
-      throw new Error(`Failed to update employee approval status: HTTP ${res.status}`);
-    }
-    return this.getApprovalsData();
+    await apiClient.put(`/approvals/employee/${id}/status`, { status });
+    triggerNotificationRefresh();
+    return await this.fetchApprovalsData();
   },
 
   async updateClientStatus(id: number, status: ApprovalStatus): Promise<AllApprovalsData> {
-    const res = await fetch(`${API_BASE}/client/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status })
-    });
-    if (!res.ok) {
-      throw new Error(`Failed to update client approval status: HTTP ${res.status}`);
-    }
-    return this.getApprovalsData();
+    await apiClient.put(`/approvals/client/${id}/status`, { status });
+    triggerNotificationRefresh();
+    return await this.fetchApprovalsData();
   },
 
   async updateTicketAssetStatus(id: number, status: ApprovalStatus): Promise<AllApprovalsData> {
-    const res = await fetch(`${API_BASE}/ticket-asset/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status })
-    });
-    if (!res.ok) {
-      throw new Error(`Failed to update ticket/asset approval status: HTTP ${res.status}`);
-    }
-    return this.getApprovalsData();
+    await apiClient.put(`/approvals/ticket-asset/${id}/status`, { status });
+    triggerNotificationRefresh();
+    return await this.fetchApprovalsData();
   },
 
   async addEmployeeRequest(
     data: Omit<EmployeeApproval, 'id' | 'applied_date' | 'status'>
   ): Promise<AllApprovalsData> {
-    const res = await fetch(`${API_BASE}/employee`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
+    await apiClient.post('/approvals/employee', {
+      ...data,
+      status: 'Pending'
     });
-    if (!res.ok) {
-      throw new Error(`Failed to create employee approval: HTTP ${res.status}`);
-    }
-    return this.getApprovalsData();
+    triggerNotificationRefresh();
+    return await this.fetchApprovalsData();
   },
 
   async addClientRequest(
     data: Omit<ClientApproval, 'id' | 'approval_id' | 'request_date' | 'status'>
   ): Promise<AllApprovalsData> {
-    const res = await fetch(`${API_BASE}/client`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
+    // Backend generates approval_id and request_date
+    await apiClient.post('/approvals/client', {
+      ...data,
+      status: 'Pending'
     });
-    if (!res.ok) {
-      throw new Error(`Failed to create client approval: HTTP ${res.status}`);
-    }
-    return this.getApprovalsData();
+    triggerNotificationRefresh();
+    return await this.fetchApprovalsData();
+  },
+
+  async resetData(): Promise<AllApprovalsData> {
+    await apiClient.post('/approvals/reset');
+    return await this.fetchApprovalsData();
   }
 };

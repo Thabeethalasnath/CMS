@@ -1,19 +1,7 @@
+import { apiClient } from '../../../services/api/apiClient';
+import { API_ENDPOINTS } from '../../../services/api/apiEndpoints';
+import { triggerNotificationRefresh } from '../../../services/notificationService';
 import { AttendanceRecord, AttendanceMetrics } from '../types/attendance';
-
-const PRIMARY_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
-const FALLBACK_URL = '/api/v1';
-
-async function requestWithFallback(endpoint: string, options?: RequestInit): Promise<Response> {
-  try {
-    const res = await fetch(`${PRIMARY_URL}${endpoint}`, options);
-    if (res.ok) return res;
-    console.warn(`[AttendanceService] ${PRIMARY_URL}${endpoint} returned ${res.status}, falling back to ${FALLBACK_URL}${endpoint}`);
-  } catch (err) {
-    console.warn(`[AttendanceService] ${PRIMARY_URL}${endpoint} failed, falling back to ${FALLBACK_URL}${endpoint}:`, err);
-  }
-
-  return fetch(`${FALLBACK_URL}${endpoint}`, options);
-}
 
 function mapAttendance(item: any): AttendanceRecord {
   return {
@@ -45,59 +33,34 @@ function mapAttendance(item: any): AttendanceRecord {
 
 export const attendanceService = {
   async getAttendance(): Promise<AttendanceRecord[]> {
-    const res = await requestWithFallback('/attendance');
-    if (!res.ok) {
-      throw new Error(`Failed to fetch attendance: HTTP ${res.status}`);
-    }
-    const data = await res.json();
+    const res = await apiClient.get<AttendanceRecord[]>(API_ENDPOINTS.ATTENDANCE.BASE);
+    const data = res.data || [];
     if (!Array.isArray(data)) {
-      throw new Error('Invalid attendance data format received');
+      return [];
     }
     return data.map(mapAttendance);
   },
 
   async getAttendanceById(id: string): Promise<AttendanceRecord> {
-    const res = await requestWithFallback(`/attendance/${encodeURIComponent(id)}`);
-    if (!res.ok) {
-      throw new Error(`Failed to fetch record ${id}: HTTP ${res.status}`);
-    }
-    const data = await res.json();
-    return mapAttendance(data);
+    const res = await apiClient.get<AttendanceRecord>(API_ENDPOINTS.ATTENDANCE.BY_ID(id));
+    return mapAttendance(res.data);
   },
 
   async createAttendance(record: Partial<AttendanceRecord>): Promise<AttendanceRecord> {
-    const res = await requestWithFallback('/attendance', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(record),
-    });
-    if (!res.ok) {
-      throw new Error(`Failed to create attendance: HTTP ${res.status}`);
-    }
-    const data = await res.json();
-    return mapAttendance(data);
+    const res = await apiClient.post<AttendanceRecord>(API_ENDPOINTS.ATTENDANCE.BASE, record);
+    triggerNotificationRefresh();
+    return mapAttendance(res.data);
   },
 
   async updateAttendance(id: string, updates: Partial<AttendanceRecord>): Promise<AttendanceRecord> {
-    const res = await requestWithFallback(`/attendance/${encodeURIComponent(id)}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updates),
-    });
-    if (!res.ok) {
-      throw new Error(`Failed to update attendance ${id}: HTTP ${res.status}`);
-    }
-    const data = await res.json();
-    return mapAttendance(data);
+    const res = await apiClient.put<AttendanceRecord>(API_ENDPOINTS.ATTENDANCE.BY_ID(id), updates);
+    triggerNotificationRefresh();
+    return mapAttendance(res.data);
   },
 
   async deleteAttendance(id: string): Promise<void> {
-    const res = await requestWithFallback(`/attendance/${encodeURIComponent(id)}`, {
-      method: 'DELETE',
-    });
-    if (!res.ok && res.status !== 204 && res.status !== 404) {
-      throw new Error(`Failed to delete attendance ${id}: HTTP ${res.status}`);
-    }
+    await apiClient.delete(API_ENDPOINTS.ATTENDANCE.BY_ID(id));
+    triggerNotificationRefresh();
   },
 
   getMetrics(records: AttendanceRecord[]): AttendanceMetrics {

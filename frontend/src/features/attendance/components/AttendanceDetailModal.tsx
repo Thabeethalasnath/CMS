@@ -37,8 +37,8 @@ export const AttendanceDetailModal: React.FC<AttendanceDetailModalProps> = ({
       } as AttendanceRecord);
       setIsEditing(false);
       onClose();
-    } catch (err) {
-      console.error(err);
+    } catch {
+      // Handled by caller
     } finally {
       setIsSaving(false);
     }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Plus, Calendar, User, Tag, FileText } from 'lucide-react';
 import { EmployeeApproval } from '../../types/approvals';
 
@@ -21,6 +21,18 @@ export const AddEmployeeApprovalModal: React.FC<AddEmployeeApprovalModalProps> =
   const [duration, setDuration] = useState('1 day');
   const [reason, setReason] = useState('');
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    if (isOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -34,8 +46,8 @@ export const AddEmployeeApprovalModal: React.FC<AddEmployeeApprovalModalProps> =
       employee_name: employeeName.trim(),
       employee_code: employeeCode.trim(),
       request_type: requestType,
-      from_date: fromDate || '18 Mar 2025',
-      to_date: toDate || '19 Mar 2025',
+      from_date: fromDate || new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+      to_date: toDate || new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
       duration: duration || '2 days',
       reason: reason.trim()
     });

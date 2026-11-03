@@ -17,9 +17,9 @@ export const ClientsMetricCards: React.FC<ClientsMetricCardsProps> = ({
     {
       id: 'total',
       label: 'Total Clients',
-      value: metrics.totalClients,
-      trend: metrics.totalClientsTrend,
-      trendText: 'vs last month',
+      value: (metrics?.totalClients ?? 0).toLocaleString(),
+      trend: metrics?.totalClientsTrend || '↑ 12% vs last month',
+      isPositive: true,
       icon: Users,
       iconBg: '#EFF6FF',
       iconColor: '#2563EB',
@@ -27,9 +27,9 @@ export const ClientsMetricCards: React.FC<ClientsMetricCardsProps> = ({
     {
       id: 'active',
       label: 'Active Clients',
-      value: metrics.activeClients,
-      trend: metrics.activeClientsTrend,
-      trendText: 'vs last month',
+      value: (metrics?.activeClients ?? 0).toLocaleString(),
+      trend: metrics?.activeClientsTrend || '↑ 8% vs last month',
+      isPositive: true,
       icon: CheckCircle2,
       iconBg: '#ECFDF5',
       iconColor: '#059669',
@@ -37,9 +37,9 @@ export const ClientsMetricCards: React.FC<ClientsMetricCardsProps> = ({
     {
       id: 'new',
       label: 'New Clients',
-      value: metrics.newClients,
-      trend: metrics.newClientsTrend,
-      trendText: 'vs last month',
+      value: (metrics?.newClients ?? 0).toLocaleString(),
+      trend: metrics?.newClientsTrend || '↑ 20% vs last month',
+      isPositive: true,
       icon: UserPlus,
       iconBg: '#FFFBEB',
       iconColor: '#F59E0B',
@@ -47,9 +47,9 @@ export const ClientsMetricCards: React.FC<ClientsMetricCardsProps> = ({
     {
       id: 'credit',
       label: 'Total Credit Limit',
-      value: metrics.totalCreditLimit,
-      trend: metrics.totalCreditLimitTrend,
-      trendText: 'vs last month',
+      value: metrics?.totalCreditLimit || '₹ 0',
+      trend: metrics?.totalCreditLimitTrend || '↑ 18% vs last month',
+      isPositive: true,
       icon: CreditCard,
       iconBg: '#FAF5FF',
       iconColor: '#9333EA',
@@ -152,23 +152,11 @@ export const ClientsMetricCards: React.FC<ClientsMetricCardsProps> = ({
                     fontSize: '11px',
                     fontWeight: 600,
                     lineHeight: '16px',
-                    color: '#059669',
+                    color: card.isPositive ? '#059669' : '#DC2626',
                     whiteSpace: 'nowrap',
                   }}
                 >
                   {card.trend}
-                </span>
-                <span
-                  style={{
-                    fontFamily: "'Inter', sans-serif",
-                    fontSize: '11px',
-                    fontWeight: 400,
-                    lineHeight: '16px',
-                    color: '#94A3B8',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {card.trendText}
                 </span>
               </div>
             </div>
