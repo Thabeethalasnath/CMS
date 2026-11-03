@@ -15,6 +15,8 @@ import { LeadsPage } from '../features/sales/pages/LeadsPage';
 import { ClientsPage } from '../features/clients/pages/ClientsPage';
 import { AttendancePage } from '../features/attendance/pages/AttendancePage';
 import { LeaveManagementPage } from '../features/leave/pages/LeaveManagementPage';
+import { HrDashboardPage } from '../features/hr/pages/HrDashboardPage';
+import { EmployeeExitPage } from '../features/hr/pages/EmployeeExitPage';
 
 const CeoDashboardRoute: React.FC = () => {
   const context = useOutletContext<AppLayoutContextType>();
@@ -51,11 +53,14 @@ export const AppRouter: React.FC = () => {
         <Route path="/sales/contracts" element={<ContractsPage />} />
         <Route path="/clients/list" element={<ClientsPage />} />
         <Route path="/clients" element={<Navigate to="/clients/list" replace />} />
+        <Route path="/hr/dashboard" element={<HrDashboardPage />} />
+        <Route path="/hr" element={<Navigate to="/hr/dashboard" replace />} />
         <Route path="/hr/employee-master" element={<EmployeeMasterPage />} />
         <Route path="/hr/attendance" element={<AttendancePage />} />
         <Route path="/attendance" element={<Navigate to="/hr/attendance" replace />} />
         <Route path="/hr/leave" element={<LeaveManagementPage />} />
         <Route path="/leave" element={<Navigate to="/hr/leave" replace />} />
+        <Route path="/hr/employee-exit" element={<EmployeeExitPage />} />
 
         {/* Generate dynamic module engine routes for all other navigation items */}
         {navigationSections.map((section) =>
@@ -72,11 +77,14 @@ export const AppRouter: React.FC = () => {
                 item.path !== '/sales/contracts' &&
                 item.path !== '/clients/list' &&
                 item.path !== '/clients' &&
+                item.path !== '/hr/dashboard' &&
+                item.path !== '/hr' &&
                 item.path !== '/hr/employee-master' &&
                 item.path !== '/hr/attendance' &&
                 item.path !== '/attendance' &&
                 item.path !== '/hr/leave' &&
-                item.path !== '/leave'
+                item.path !== '/leave' &&
+                item.path !== '/hr/employee-exit'
             )
             .map((item) => (
               <Route
