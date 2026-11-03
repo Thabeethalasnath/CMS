@@ -1,0 +1,184 @@
+import React from 'react';
+import { Search, Filter, RotateCcw, ChevronDown, Calendar } from 'lucide-react';
+import { PayrollFilters, PayrollFilterOptions } from '../../types/payroll';
+
+interface PayrollFilterCardProps {
+  filters: PayrollFilters;
+  filterOptions: PayrollFilterOptions;
+  onFilterChange: <K extends keyof PayrollFilters>(key: K, value: PayrollFilters[K]) => void;
+  onClearFilters: () => void;
+  activeFilterCount: number;
+}
+
+export const PayrollFilterCard: React.FC<PayrollFilterCardProps> = ({
+  filters,
+  filterOptions,
+  onFilterChange,
+  onClearFilters,
+  activeFilterCount,
+}) => {
+  const dropdownBaseCls =
+    'w-full h-[36px] py-[6px] text-xs font-normal text-[#1E293B] bg-white border border-[#E2E8F0] hover:border-[#CBD5E1] rounded-[8px] appearance-none cursor-pointer focus:outline-none focus:ring-1 focus:ring-indigo-500/20 focus:border-[#CBD5E1] transition-colors';
+
+  const dropdownInlineStyle: React.CSSProperties = {
+    border: '1px solid #E2E8F0',
+    borderRadius: '8px',
+    backgroundColor: '#FFFFFF',
+    height: '36px',
+    boxSizing: 'border-box',
+  };
+
+  return (
+    <div className="bg-white border border-[#E2E8F0] rounded-2xl p-4 shadow-2xs flex flex-col gap-3.5 w-full">
+      {/* Row 1: Search Input & Action Buttons */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full">
+        {/* Search Field */}
+        <div className="relative flex-1 min-w-0">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <input
+            type="text"
+            value={filters.search}
+            onChange={(e) => onFilterChange('search', e.target.value)}
+            placeholder="Search by Payroll ID, Employee ID, Employee Name..."
+            style={{
+              border: '1px solid #E2E8F0',
+              borderRadius: '8px',
+              backgroundColor: '#FFFFFF',
+              boxSizing: 'border-box',
+            }}
+            className="w-full h-[38px] pl-10 pr-4 text-xs font-normal text-slate-800 placeholder-slate-400 bg-white border border-[#E2E8F0] rounded-[8px] focus:outline-none focus:ring-1 focus:ring-indigo-500/20 focus:border-[#CBD5E1] transition-all shadow-2xs"
+          />
+        </div>
+
+        {/* Filters Count Button */}
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            style={{
+              border: '1px solid #E2E8F0',
+              borderRadius: '8px',
+              backgroundColor: '#FFFFFF',
+              boxSizing: 'border-box',
+            }}
+            className="inline-flex items-center gap-1.5 px-3.5 h-[38px] rounded-[8px] border border-[#E2E8F0] bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors cursor-pointer shadow-2xs"
+          >
+            <Filter className="w-3.5 h-3.5 text-slate-500" />
+            <span>Filters ({activeFilterCount})</span>
+          </button>
+
+          {/* Clear Filters Button */}
+          <button
+            type="button"
+            onClick={onClearFilters}
+            className="inline-flex items-center gap-1.5 px-3 h-[38px] rounded-[8px] text-[#4338CA] hover:text-[#3730A3] hover:bg-indigo-50/50 text-xs font-semibold transition-colors cursor-pointer border-none bg-transparent"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span>Clear Filters</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Row 2: 4 Filter Dropdowns */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-0.5">
+        {/* 1. Payroll Month */}
+        <div className="flex flex-col gap-1 min-w-0">
+          <label className="text-[12px] font-medium text-[#475569]">Payroll Month</label>
+          <div className="relative">
+            <Calendar className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <select
+              value={filters.payrollMonth}
+              onChange={(e) => onFilterChange('payrollMonth', e.target.value)}
+              style={{
+                ...dropdownInlineStyle,
+                paddingLeft: '32px',
+                paddingRight: '32px',
+              }}
+              className={`${dropdownBaseCls} pl-[32px] pr-[32px]`}
+            >
+              <option value="All">All Months</option>
+              {filterOptions.payrollMonths?.map((m) => (
+                <option key={m} value={m}>
+                  {m === 'Oct 2026' ? 'Oct 01, 2026 - Oct 31, 2026' : m}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          </div>
+        </div>
+
+        {/* 2. Employment Type */}
+        <div className="flex flex-col gap-1 min-w-0">
+          <label className="text-[12px] font-medium text-[#475569]">Employment Type</label>
+          <div className="relative">
+            <select
+              value={filters.employmentType}
+              onChange={(e) => onFilterChange('employmentType', e.target.value)}
+              style={{
+                ...dropdownInlineStyle,
+                paddingLeft: '12px',
+                paddingRight: '32px',
+              }}
+              className={`${dropdownBaseCls} pl-[12px] pr-[32px]`}
+            >
+              <option value="All">All</option>
+              <option value="Full Time">Full Time</option>
+              <option value="Contract">Contract</option>
+              <option value="Part Time">Part Time</option>
+              <option value="Intern">Intern</option>
+            </select>
+            <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          </div>
+        </div>
+
+        {/* 3. Payroll Status */}
+        <div className="flex flex-col gap-1 min-w-0">
+          <label className="text-[12px] font-medium text-[#475569]">Payroll Status</label>
+          <div className="relative">
+            <select
+              value={filters.status}
+              onChange={(e) => onFilterChange('status', e.target.value)}
+              style={{
+                ...dropdownInlineStyle,
+                paddingLeft: '12px',
+                paddingRight: '32px',
+              }}
+              className={`${dropdownBaseCls} pl-[12px] pr-[32px]`}
+            >
+              <option value="All">All</option>
+              <option value="Paid">Paid</option>
+              <option value="Pending">Pending</option>
+              <option value="Processing">Processing</option>
+              <option value="Failed">Failed</option>
+            </select>
+            <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          </div>
+        </div>
+
+        {/* 4. Employee */}
+        <div className="flex flex-col gap-1 min-w-0">
+          <label className="text-[12px] font-medium text-[#475569]">Employee</label>
+          <div className="relative">
+            <select
+              value={filters.employee}
+              onChange={(e) => onFilterChange('employee', e.target.value)}
+              style={{
+                ...dropdownInlineStyle,
+                paddingLeft: '12px',
+                paddingRight: '32px',
+              }}
+              className={`${dropdownBaseCls} pl-[12px] pr-[32px]`}
+            >
+              <option value="All">All Employees</option>
+              {filterOptions.employees?.map((emp) => (
+                <option key={emp.employeeId} value={emp.employeeId}>
+                  {emp.employeeName} ({emp.employeeId})
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};

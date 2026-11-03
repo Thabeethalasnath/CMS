@@ -1,0 +1,58 @@
+package com.company.project.hr.repository;
+
+import com.company.project.hr.entity.PayrollRecordEntity;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Optional;
+
+@Repository
+public interface PayrollRecordRepository extends JpaRepository<PayrollRecordEntity, Long>, JpaSpecificationExecutor<PayrollRecordEntity> {
+
+    Optional<PayrollRecordEntity> findByPayrollId(String payrollId);
+
+    boolean existsByPayrollId(String payrollId);
+
+    void deleteByPayrollId(String payrollId);
+
+    @Query("SELECT COUNT(DISTINCT p.employeeId) FROM PayrollRecordEntity p")
+    long countDistinctEmployees();
+
+    @Query("SELECT COUNT(DISTINCT p.employeeId) FROM PayrollRecordEntity p WHERE p.payrollMonth = :month")
+    long countDistinctEmployeesByMonth(@Param("month") String month);
+
+    @Query("SELECT COALESCE(SUM(p.monthlyCtc), 0) FROM PayrollRecordEntity p WHERE p.payrollMonth = :month")
+    BigDecimal sumMonthlyCtcByMonth(@Param("month") String month);
+
+    @Query("SELECT COALESCE(SUM(p.monthlyCtc), 0) FROM PayrollRecordEntity p")
+    BigDecimal sumTotalMonthlyCtc();
+
+    @Query("SELECT COALESCE(SUM(p.netSalary), 0) FROM PayrollRecordEntity p WHERE p.paymentStatus = 'Paid' AND p.payrollMonth = :month")
+    BigDecimal sumNetSalaryDisbursedByMonth(@Param("month") String month);
+
+    @Query("SELECT COALESCE(SUM(p.netSalary), 0) FROM PayrollRecordEntity p WHERE p.paymentStatus = 'Paid'")
+    BigDecimal sumTotalNetSalaryDisbursed();
+
+    @Query("SELECT COUNT(p) FROM PayrollRecordEntity p WHERE p.paymentStatus = 'Pending' AND p.payrollMonth = :month")
+    long countPendingPayrollsByMonth(@Param("month") String month);
+
+    @Query("SELECT COUNT(p) FROM PayrollRecordEntity p WHERE p.paymentStatus = 'Pending'")
+    long countTotalPendingPayrolls();
+
+    @Query("SELECT DISTINCT p.payrollMonth FROM PayrollRecordEntity p ORDER BY p.payrollMonth DESC")
+    List<String> findDistinctPayrollMonths();
+
+    @Query("SELECT DISTINCT p.employmentType FROM PayrollRecordEntity p ORDER BY p.employmentType ASC")
+    List<String> findDistinctEmploymentTypes();
+
+    @Query("SELECT DISTINCT p.paymentStatus FROM PayrollRecordEntity p ORDER BY p.paymentStatus ASC")
+    List<String> findDistinctPaymentStatuses();
+
+    @Query("SELECT DISTINCT p.employeeId, p.employeeName FROM PayrollRecordEntity p ORDER BY p.employeeName ASC")
+    List<Object[]> findDistinctEmployeePairs();
+}

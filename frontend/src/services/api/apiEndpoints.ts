@@ -98,5 +98,11 @@ export const API_ENDPOINTS = {
     EMPLOYEE_EXIT_NEXT_ID: '/hr/employee-exits/next-id',
     EMPLOYEE_EXIT_FILTERS: '/hr/employee-exits/filters',
     EMPLOYEE_EXIT_EXPORT: '/hr/employee-exits/export',
+    PAYROLL: '/hr/payroll',
+    PAYROLL_BY_ID: (id: string) => `/hr/payroll/${encodeURIComponent(id)}`,
+    PAYROLL_KPIS: '/hr/payroll/kpis',
+    PAYROLL_FILTERS: '/hr/payroll/filters',
+    PAYROLL_EXPORT: '/hr/payroll/export',
+    PAYROLL_PROCESS: '/hr/payroll/process',
   },
 };
