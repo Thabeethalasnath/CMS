@@ -1,4 +1,3 @@
-import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
@@ -93,7 +92,7 @@ describe('ContractsPage Component', () => {
       );
     });
 
-    expect(screen.getByText(/no contracts found/i)).toBeInTheDocument();
+    expect(screen.getByText(/no contracts yet/i)).toBeInTheDocument();
   });
 
   it('renders success state with KPI cards and table rows', async () => {

@@ -22,5 +22,14 @@ public interface EmployeeMasterRepository extends JpaRepository<EmployeeMaster, 
 
     @Query("SELECT COALESCE(SUM(e.monthlyCtc), 0) FROM EmployeeMaster e")
     BigDecimal sumTotalMonthlyCtc();
+
+    @Query("SELECT COUNT(e) FROM EmployeeMaster e WHERE e.createdAt < :cutoff")
+    long countBefore(@org.springframework.data.repository.query.Param("cutoff") java.time.LocalDateTime cutoff);
+
+    @Query("SELECT COUNT(e) FROM EmployeeMaster e WHERE LOWER(e.status) = LOWER(:status) AND e.createdAt < :cutoff")
+    long countByStatusBefore(@org.springframework.data.repository.query.Param("status") String status, @org.springframework.data.repository.query.Param("cutoff") java.time.LocalDateTime cutoff);
+
+    @Query("SELECT COALESCE(SUM(e.monthlyCtc), 0) FROM EmployeeMaster e WHERE e.createdAt < :cutoff")
+    BigDecimal sumTotalMonthlyCtcBefore(@org.springframework.data.repository.query.Param("cutoff") java.time.LocalDateTime cutoff);
 }
 

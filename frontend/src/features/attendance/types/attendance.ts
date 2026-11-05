@@ -1,7 +1,7 @@
 export interface AttendanceRecord {
   id: string; // e.g. ATT-001248
   attendanceDate: string; // e.g. 31 Oct 2026
-  employeeId: string; // e.g. EMP-001
+  employeeId: string; // e.g. EMP-101
   employeeName: string; // e.g. Amit Sharma
   avatarInitials: string; // e.g. AS
   avatarColor: string; // e.g. blue, purple, amber, pink, rose, orange, teal, emerald

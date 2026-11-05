@@ -194,7 +194,7 @@ public class ContractServiceImpl implements ContractService {
     @Override
     @Transactional
     public void resetSeedData() {
-        contractRepository.deleteAll();
+        contractRepository.deleteAllInBatch();
 
         List<Contract> seeds = new ArrayList<>();
         seeds.add(Contract.builder()

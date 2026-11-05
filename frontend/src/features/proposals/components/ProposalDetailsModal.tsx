@@ -15,6 +15,7 @@ interface ProposalDetailsModalProps {
   proposal: Proposal | null;
   isOpen: boolean;
   onClose: () => void;
+  onEdit?: (proposal: Proposal) => void;
   onUpdateStatus?: (proposalId: string, newStatus: ProposalStatus) => void;
   onDelete?: (proposalId: string) => void;
 }
@@ -23,6 +24,7 @@ export const ProposalDetailsModal: React.FC<ProposalDetailsModalProps> = ({
   proposal,
   isOpen,
   onClose,
+  onEdit,
   onUpdateStatus,
   onDelete,
 }) => {
@@ -204,6 +206,18 @@ export const ProposalDetailsModal: React.FC<ProposalDetailsModalProps> = ({
             KALPANAAA CMS · Proposals Management
           </div>
           <div className="flex items-center gap-2.5">
+            {onEdit && (
+              <button
+                type="button"
+                onClick={() => {
+                  onEdit(proposal);
+                  onClose();
+                }}
+                className="px-3.5 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-lg text-xs font-semibold leading-4 transition-colors cursor-pointer"
+              >
+                Edit
+              </button>
+            )}
             {proposal.status === 'Draft' && onDelete && (
               <button
                 type="button"

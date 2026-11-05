@@ -238,6 +238,24 @@ public class DashboardService {
     }
 
     @Transactional
+    public DashboardKpiCard updateKpi(Long id, com.company.project.dashboard.dto.UpdateDashboardKpiCardRequest updateRequest) {
+        DashboardKpiCard card = kpiCardRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("KPI Card not found with id: " + id));
+
+        if (updateRequest.getFormattedValue() != null) card.setFormattedValue(updateRequest.getFormattedValue());
+        if (updateRequest.getRawValue() != null) card.setRawValue(updateRequest.getRawValue());
+        if (updateRequest.getChangePercentage() != null) card.setChangePercentage(updateRequest.getChangePercentage());
+        if (updateRequest.getChangeType() != null) card.setChangeType(updateRequest.getChangeType());
+        if (updateRequest.getTitle() != null) card.setTitle(updateRequest.getTitle());
+        if (updateRequest.getComparisonText() != null) card.setComparisonText(updateRequest.getComparisonText());
+        if (updateRequest.getIconType() != null) card.setIconType(updateRequest.getIconType());
+        if (updateRequest.getColorTheme() != null) card.setColorTheme(updateRequest.getColorTheme());
+        if (updateRequest.getSortOrder() != null) card.setSortOrder(updateRequest.getSortOrder());
+
+        return kpiCardRepository.save(card);
+    }
+
+    @Transactional
     public ManagementAlert updateAlert(Long id, Integer delta) {
         ManagementAlert alert = managementAlertRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Alert not found with id: " + id));

@@ -72,7 +72,7 @@ export const AttendanceTable: React.FC<AttendanceTableProps> = ({
     }
   };
 
-  const getAvatarStyle = (color?: string, initials?: string) => {
+  const getAvatarStyle = (color?: string) => {
     switch (color) {
       case 'purple':
         return { backgroundColor: '#F3E8FF', color: '#9333EA' };
@@ -282,7 +282,7 @@ export const AttendanceTable: React.FC<AttendanceTableProps> = ({
             ) : (
               records.map((rec) => {
                 const badgeStyle = getStatusBadgeStyle(rec.status);
-                const avatarStyle = getAvatarStyle(rec.avatarColor, rec.avatarInitials);
+                const avatarStyle = getAvatarStyle(rec.avatarColor);
                 const isMenuOpen = activeMenuId === rec.id;
 
                 return (

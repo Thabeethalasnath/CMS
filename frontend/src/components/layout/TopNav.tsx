@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Check, Clock, UserCheck, Shield, FileText, TrendingUp, Bell } from 'lucide-react';
+import { Check, Clock, UserCheck, Shield, FileText, TrendingUp, Bell, Menu } from 'lucide-react';
 import {
   notificationService,
   PortalNotification,
@@ -81,15 +81,21 @@ interface TopNavProps {
   onDateRangeChange?: (range: string) => void;
   userName?: string;
   userRole?: string;
+  userEmail?: string;
+  onToggleMobileMenu?: () => void;
+  onToggleSidebar?: () => void;
 }
 
 export const TopNav: React.FC<TopNavProps> = ({
   searchQuery = '',
   onSearchChange,
-  selectedDateRange = 'Apr 2024 - Mar 2025',
+  selectedDateRange = '',
   onDateRangeChange,
   userName = '—',
   userRole = '—',
+  userEmail = '',
+  onToggleMobileMenu,
+  onToggleSidebar,
 }) => {
   const navigate = useNavigate();
   const [isDateOpen, setIsDateOpen] = useState(false);
@@ -97,32 +103,72 @@ export const TopNav: React.FC<TopNavProps> = ({
   const [unreadCount, setUnreadCount] = useState<number>(0);
   const [isLoadingNotifs, setIsLoadingNotifs] = useState<boolean>(false);
 
-  const fetchLiveNotifications = async () => {
-    try {
+  const isStoppedRef = useRef(false);
+  const backoffRef = useRef(15000);
+  const timeoutIdRef = useRef<NodeJS.Timeout | null>(null);
+
+  const fetchLiveNotifications = async (isInitial = false) => {
+    if (isStoppedRef.current) return;
+    if (document.hidden) return;
+
+    if (isInitial) {
       setIsLoadingNotifs(true);
+    }
+
+    try {
       const data = await notificationService.getNotifications(15);
       setNotifications(data.notifications || []);
       setUnreadCount(data.unreadCount ?? 0);
-    } catch {
-      // non-blocking
+      backoffRef.current = 15000;
+    } catch (err: unknown) {
+      const status = (err as { status?: number })?.status;
+      const message = err instanceof Error ? err.message : String(err);
+      if (status === 401 || message.includes('401')) {
+        isStoppedRef.current = true;
+        if (timeoutIdRef.current) clearTimeout(timeoutIdRef.current);
+        return;
+      }
+      backoffRef.current = Math.min(backoffRef.current * 1.5, 60000);
     } finally {
-      setIsLoadingNotifs(false);
+      if (isInitial) {
+        setIsLoadingNotifs(false);
+      }
+      if (!isStoppedRef.current) {
+        if (timeoutIdRef.current) clearTimeout(timeoutIdRef.current);
+        timeoutIdRef.current = setTimeout(() => {
+          fetchLiveNotifications(false);
+        }, backoffRef.current);
+      }
     }
   };
 
   useEffect(() => {
-    fetchLiveNotifications();
+    isStoppedRef.current = false;
+    backoffRef.current = 15000;
+    fetchLiveNotifications(true);
 
-    const handleRefresh = () => {
-      fetchLiveNotifications();
+    const handleVisibilityChange = () => {
+      if (!document.hidden && !isStoppedRef.current) {
+        if (timeoutIdRef.current) clearTimeout(timeoutIdRef.current);
+        fetchLiveNotifications(false);
+      }
     };
 
+    const handleRefresh = () => {
+      if (!isStoppedRef.current) {
+        if (timeoutIdRef.current) clearTimeout(timeoutIdRef.current);
+        fetchLiveNotifications(false);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener(NOTIFICATION_REFRESH_EVENT, handleRefresh);
-    const interval = setInterval(fetchLiveNotifications, 15000);
 
     return () => {
+      isStoppedRef.current = true;
+      if (timeoutIdRef.current) clearTimeout(timeoutIdRef.current);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener(NOTIFICATION_REFRESH_EVENT, handleRefresh);
-      clearInterval(interval);
     };
   }, []);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
@@ -148,23 +194,31 @@ export const TopNav: React.FC<TopNavProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const dateRanges = [
-    'Apr 2024 - Mar 2025',
-    'Jan 2024 - Dec 2024',
-    'Apr 2025 - Mar 2026',
-    'Last 30 Days',
-    'This Quarter (Q4)',
-  ];
+  const dateRanges = React.useMemo(() => {
+    const list: string[] = [];
+    if (selectedDateRange && selectedDateRange !== '—') {
+      list.push(selectedDateRange);
+    }
+    const currentYear = new Date().getFullYear();
+    const nextYear = currentYear + 1;
+    const prevYear = currentYear - 1;
+    list.push(`Apr ${currentYear} - Mar ${nextYear}`);
+    list.push(`Apr ${prevYear} - Mar ${currentYear}`);
+    list.push(`Jan ${currentYear} - Dec ${currentYear}`);
+    list.push('Last 30 Days');
+    list.push('This Quarter');
+    return Array.from(new Set(list));
+  }, [selectedDateRange]);
 
   return (
     <header
+      className="px-3 sm:px-6"
       style={{
         boxSizing: 'border-box',
         display: 'flex',
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '0px 24px',
         width: '100%',
         height: '64px',
         background: '#FFFFFF',
@@ -177,20 +231,36 @@ export const TopNav: React.FC<TopNavProps> = ({
         fontFamily: "'Inter', sans-serif",
       }}
     >
-      {/* Left: Search Bar */}
+      {/* Left: Mobile Menu Toggle & Search Bar */}
       <div
         style={{
           display: 'flex',
           flexDirection: 'row',
           alignItems: 'center',
           padding: '0px',
-          gap: '16px',
+          gap: '10px',
           height: '34px',
           maxWidth: '672px',
           flex: '1 1 auto',
           minWidth: 0,
         }}
       >
+        {/* Hamburger Toggle (opens mobile drawer on mobile, collapses/expands sidebar rail on desktop) */}
+        <button
+          type="button"
+          onClick={() => {
+            if (window.innerWidth < 768) {
+              onToggleMobileMenu?.();
+            } else {
+              onToggleSidebar?.();
+            }
+          }}
+          className="flex items-center justify-center w-8 h-8 rounded-md text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors shrink-0 cursor-pointer"
+          aria-label="Toggle navigation menu"
+          title="Toggle sidebar (Ctrl+B)"
+        >
+          <Menu size={20} strokeWidth={1.75} />
+        </button>
         {/* Container - Search Bar */}
         <div
           style={{
@@ -279,15 +349,9 @@ export const TopNav: React.FC<TopNavProps> = ({
 
       {/* Right: Actions & User Info */}
       <div
+        className="flex flex-row items-center justify-end gap-2 sm:gap-4 shrink-0"
         style={{
           boxSizing: 'border-box',
-          display: 'flex',
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'flex-end',
-          padding: '0px',
-          gap: '16px',
-          width: '406.31px',
           height: '36px',
           flex: 'none',
           order: 1,
@@ -300,15 +364,14 @@ export const TopNav: React.FC<TopNavProps> = ({
           <button
             type="button"
             onClick={() => setIsDateOpen(!isDateOpen)}
-            className="hover:bg-slate-100 transition-colors"
+            className="hover:bg-slate-100 transition-colors w-auto sm:w-[193.31px]"
             style={{
               boxSizing: 'border-box',
               display: 'flex',
               flexDirection: 'row',
               alignItems: 'center',
-              padding: '6px 12px',
-              gap: '8px',
-              width: '193.31px',
+              padding: '6px 10px',
+              gap: '6px',
               height: '30px',
               background: '#F8FAFC',
               border: '1px solid rgba(226, 232, 240, 0.9)',
@@ -337,11 +400,9 @@ export const TopNav: React.FC<TopNavProps> = ({
 
             {/* Text container */}
             <div
+              className="hidden sm:flex flex-col items-start"
               style={{
                 boxSizing: 'border-box',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'flex-start',
                 padding: '0px',
                 width: '121.31px',
                 height: '16px',
@@ -375,12 +436,9 @@ export const TopNav: React.FC<TopNavProps> = ({
 
             {/* SVG:margin chevron */}
             <div
+              className="hidden sm:flex flex-col items-start justify-center"
               style={{
                 boxSizing: 'border-box',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'flex-start',
-                justifyContent: 'center',
                 padding: '0px 0px 0px 4px',
                 width: '16px',
                 height: '12px',
@@ -673,12 +731,9 @@ export const TopNav: React.FC<TopNavProps> = ({
 
             {/* Container: Name & Role */}
             <div
+              className="hidden sm:flex flex-col items-start justify-center"
               style={{
                 boxSizing: 'border-box',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'flex-start',
-                justifyContent: 'center',
                 padding: '0px',
                 width: '73px',
                 height: '30px',
@@ -706,8 +761,6 @@ export const TopNav: React.FC<TopNavProps> = ({
               >
                 <span
                   style={{
-                    width: '73px',
-                    height: '15px',
                     fontFamily: "'Inter', sans-serif",
                     fontStyle: 'normal',
                     fontWeight: 600,
@@ -721,7 +774,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                     textOverflow: 'ellipsis',
                   }}
                 >
-                  {userName && userName !== '—' ? userName : 'Akshit Ujjain'}
+                  {userName && userName !== '—' ? userName : 'User'}
                 </span>
               </div>
 
@@ -733,7 +786,6 @@ export const TopNav: React.FC<TopNavProps> = ({
                   flexDirection: 'column',
                   alignItems: 'flex-start',
                   padding: '0px',
-                  width: '73px',
                   height: '15px',
                   flex: 'none',
                   order: 1,
@@ -743,8 +795,6 @@ export const TopNav: React.FC<TopNavProps> = ({
               >
                 <span
                   style={{
-                    width: '21.03px',
-                    height: '15px',
                     fontFamily: "'Inter', sans-serif",
                     fontStyle: 'normal',
                     fontWeight: 500,
@@ -755,13 +805,14 @@ export const TopNav: React.FC<TopNavProps> = ({
                     color: '#64748B',
                   }}
                 >
-                  {userRole && userRole !== '—' ? userRole : 'CEO'}
+                  {userRole && userRole !== '—' ? userRole : 'Role'}
                 </span>
               </div>
             </div>
 
             {/* SVG: chevron */}
             <svg
+              className="hidden sm:block"
               style={{
                 width: '12px',
                 height: '12px',
@@ -783,8 +834,16 @@ export const TopNav: React.FC<TopNavProps> = ({
           </div>
 
           {isProfileOpen && (
-            <div className="absolute right-0 mt-1.5 w-40 bg-white border border-[#E2E8F0] rounded-xl shadow-lg py-1 z-50">
-              <div>
+            <div className="absolute right-0 mt-1.5 w-52 bg-white border border-[#E2E8F0] rounded-xl shadow-lg py-1 z-50">
+              <div className="px-3.5 py-2.5 border-b border-slate-100">
+                <p className="text-xs font-bold text-slate-900 leading-tight">
+                  {userName && userName !== '—' ? userName : 'Asbin'}
+                </p>
+                <p className="text-[11px] text-slate-500 truncate mt-0.5">
+                  {userEmail || (userName && userName.includes('@') ? userName : (userName && userName !== '—' ? `${userName.toLowerCase().replace(/\s+/g, '.')}@gmail.com` : 'asbin.t.s@gmail.com'))}
+                </p>
+              </div>
+              <div className="py-1">
                 <button
                   type="button"
                   onClick={() => {
@@ -796,18 +855,21 @@ export const TopNav: React.FC<TopNavProps> = ({
                   Settings
                 </button>
               </div>
-              <div className="border-t border-slate-100">
+              <div className="border-t border-slate-100 py-1">
                 <button
                   type="button"
                   onClick={() => {
+                    sessionStorage.setItem('logged_out', 'true');
                     localStorage.removeItem('auth_token');
                     localStorage.removeItem('auth_user_name');
                     localStorage.removeItem('auth_user_role');
+                    localStorage.removeItem('auth_user_email');
                     sessionStorage.removeItem('auth_token');
                     sessionStorage.removeItem('auth_user_name');
                     sessionStorage.removeItem('auth_user_role');
+                    sessionStorage.removeItem('auth_user_email');
                     setIsProfileOpen(false);
-                    navigate('/');
+                    navigate('/login', { replace: true });
                   }}
                   className="w-full text-left px-3.5 py-2 text-xs text-rose-600 hover:bg-rose-50 font-medium cursor-pointer"
                 >

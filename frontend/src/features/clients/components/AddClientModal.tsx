@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Plus, Building2, User, Mail, Phone, MapPin, Calendar, CreditCard, Shield } from 'lucide-react';
+import { X, Plus } from 'lucide-react';
 import { Client, ClientStatus, ClientType, IndustryType } from '../types/clients';
 
 interface AddClientModalProps {
@@ -321,7 +321,7 @@ export const AddClientModal: React.FC<AddClientModalProps> = ({ isOpen, onClose,
               type="text"
               value={onboardingDate}
               onChange={(e) => setOnboardingDate(e.target.value)}
-              placeholder="e.g. 15 Mar 2025"
+              placeholder="DD MMM YYYY"
               className="w-full h-9 px-3 text-xs rounded-lg border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
             />
           </div>

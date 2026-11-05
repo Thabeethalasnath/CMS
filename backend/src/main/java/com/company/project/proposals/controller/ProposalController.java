@@ -10,6 +10,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -71,6 +72,7 @@ public class ProposalController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'CEO')")
     @Operation(summary = "Create a new proposal with validation")
     public ResponseEntity<ApiResponse<ProposalResponse>> createProposal(@Valid @RequestBody CreateProposalRequest request) {
         ProposalResponse created = proposalService.createProposal(request);
@@ -78,6 +80,7 @@ public class ProposalController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CEO')")
     @Operation(summary = "Update an existing draft or pending proposal")
     public ResponseEntity<ApiResponse<ProposalResponse>> updateProposal(
             @PathVariable String id,
@@ -88,6 +91,7 @@ public class ProposalController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Delete a draft proposal (restricted to dev or admin)")
     public ResponseEntity<ApiResponse<Void>> deleteProposal(@PathVariable String id) {
         proposalService.deleteProposal(id);
@@ -95,6 +99,7 @@ public class ProposalController {
     }
 
     @PatchMapping("/{id}/status")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CEO')")
     @Operation(summary = "Update proposal status directly from table dropdown or details modal")
     public ResponseEntity<ApiResponse<ProposalResponse>> updateStatus(
             @PathVariable String id,

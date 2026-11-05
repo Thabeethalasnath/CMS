@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Proposal, ProposalFilters, ProposalSortOption, ProposalStatus, ProposalKpiSummary } from '../types';
 import { proposalsApiService } from '../services/proposalsApiService';
 import { ProposalsHeader } from '../components/ProposalsHeader';
@@ -42,6 +42,18 @@ export const ProposalsPage: React.FC = () => {
   };
 
   const [filters, setFilters] = useState<ProposalFilters>(defaultFilters);
+  const [debouncedSearch, setDebouncedSearch] = useState<string>(filters.search);
+
+  // Debounce search input by 300ms
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(filters.search);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [filters.search]);
+
+  // AbortController ref to cancel stale requests
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // 5. Sorting & Pagination states
   const [sortOption, setSortOption] = useState<ProposalSortOption>('date-newest');
@@ -50,6 +62,7 @@ export const ProposalsPage: React.FC = () => {
 
   // 6. Modal states
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [editingProposal, setEditingProposal] = useState<Proposal | null>(null);
   const [selectedProposal, setSelectedProposal] = useState<Proposal | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [nextProposalId, setNextProposalId] = useState<string>('');
@@ -91,13 +104,13 @@ export const ProposalsPage: React.FC = () => {
   }, [loadMetadata]);
 
   // Primary data query function through dedicated service layer
-  const loadProposals = useCallback(async () => {
+  const loadProposals = useCallback(async (signal?: AbortSignal) => {
     setIsLoading(true);
     setError(null);
     try {
-      const [pageRes, allFiltered, kpis] = await Promise.all([
+      const [pageRes, kpis] = await Promise.all([
         proposalsApiService.getProposals({
-          search: filters.search,
+          search: debouncedSearch,
           status: filters.status,
           ownerId: filters.ownerId,
           clientId: filters.clientId,
@@ -110,37 +123,52 @@ export const ProposalsPage: React.FC = () => {
           page: currentPage,
           size: pageSize,
         }),
-        proposalsApiService.getAllFilteredProposals({
-          search: filters.search,
-          status: filters.status,
-          ownerId: filters.ownerId,
-          clientId: filters.clientId,
-          opportunityId: filters.opportunityId,
-          serviceId: filters.serviceId,
-          proposalDateRange: filters.proposalDateRange,
-          validUntilRange: filters.validUntilRange,
-          expectedDecisionDateRange: filters.expectedDecisionDateRange,
-          sortOption,
-        }),
         proposalsApiService.getKpis(),
       ]);
 
+      if (signal?.aborted) return;
+
       setProposals(pageRes.content);
       setTotalCount(pageRes.totalElements);
-      setAllFilteredProposals(allFiltered);
       setKpiSummary(kpis);
       updateTimestamp();
     } catch (err: unknown) {
+      if (signal?.aborted) return;
       const msg = err instanceof Error ? err.message : 'Failed to fetch proposals.';
       setError(msg);
     } finally {
-      setIsLoading(false);
+      if (!signal?.aborted) {
+        setIsLoading(false);
+      }
     }
-  }, [filters, sortOption, currentPage, pageSize]);
+  }, [
+    debouncedSearch,
+    filters.status,
+    filters.ownerId,
+    filters.clientId,
+    filters.opportunityId,
+    filters.serviceId,
+    filters.proposalDateRange,
+    filters.validUntilRange,
+    filters.expectedDecisionDateRange,
+    sortOption,
+    currentPage,
+    pageSize,
+  ]);
 
-  // Reactive effect when filters, sorting, or pagination change
+  // Reactive effect when filters, sorting, or pagination change with AbortController
   useEffect(() => {
-    loadProposals();
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    loadProposals(controller.signal);
+
+    return () => {
+      controller.abort();
+    };
   }, [loadProposals]);
 
   // Handle filter changes
@@ -155,11 +183,90 @@ export const ProposalsPage: React.FC = () => {
     addToast('info', 'Filters Cleared', 'Reset to display all proposals.');
   };
 
-  // Handle Export to CSV
-  const handleExport = () => {
-    const dataToExport = allFilteredProposals.length > 0 ? allFilteredProposals : proposals;
-    proposalsApiService.exportToCsv(dataToExport);
-    addToast('success', 'Export Completed', `Exported ${dataToExport.length} proposals to CSV.`);
+  // Handle Export to CSV: Only fetch all filtered data when export is clicked
+  const handleExport = async () => {
+    try {
+      addToast('info', 'Preparing Export', 'Fetching matching proposals for export...');
+      const allFiltered = await proposalsApiService.getAllFilteredProposals({
+        search: debouncedSearch,
+        status: filters.status,
+        ownerId: filters.ownerId,
+        clientId: filters.clientId,
+        opportunityId: filters.opportunityId,
+        serviceId: filters.serviceId,
+        proposalDateRange: filters.proposalDateRange,
+        validUntilRange: filters.validUntilRange,
+        expectedDecisionDateRange: filters.expectedDecisionDateRange,
+        sortOption,
+      });
+
+      const dataToExport = allFiltered && allFiltered.length > 0 ? allFiltered : proposals;
+      setAllFilteredProposals(dataToExport);
+      proposalsApiService.exportToCsv(dataToExport);
+      addToast('success', 'Export Completed', `Exported ${dataToExport.length} proposals to CSV.`);
+    } catch {
+      // Fallback to currently loaded page
+      proposalsApiService.exportToCsv(proposals);
+      addToast('success', 'Export Completed', `Exported ${proposals.length} proposals to CSV.`);
+    }
+  };
+
+  const handleEditProposal = (proposal: Proposal) => {
+    setEditingProposal(proposal);
+    setIsCreateModalOpen(true);
+  };
+
+  // Handle Save (Create or Update) Proposal with validation & persistence
+  const handleSaveProposal = async (savedProposal: Proposal) => {
+    if (editingProposal) {
+      // Edit mode (PUT)
+      const previousProposals = [...proposals];
+      const previousFiltered = [...allFilteredProposals];
+
+      setProposals((prev) =>
+        prev.map((p) => (p.proposalId === savedProposal.proposalId ? savedProposal : p))
+      );
+      setAllFilteredProposals((prev) =>
+        prev.map((p) => (p.proposalId === savedProposal.proposalId ? savedProposal : p))
+      );
+
+      try {
+        const res = await proposalsApiService.updateProposal(savedProposal.proposalId, {
+          opportunityId: savedProposal.opportunityId,
+          clientId: savedProposal.clientId,
+          clientName: savedProposal.clientName,
+          proposalDate: savedProposal.proposalDate,
+          validUntil: savedProposal.validUntil,
+          version: savedProposal.version,
+          title: savedProposal.title,
+          serviceId: savedProposal.serviceId,
+          serviceName: savedProposal.serviceName,
+          serviceBeforeTax: savedProposal.serviceBeforeTax,
+          taxAmount: savedProposal.taxAmount,
+          totalAmount: savedProposal.totalAmount,
+          ownerId: savedProposal.ownerId,
+          ownerName: savedProposal.ownerName,
+          status: savedProposal.status,
+          expectedDecisionDate: savedProposal.expectedDecisionDate,
+          description: savedProposal.description,
+        });
+
+        addToast('success', 'Proposal Updated', `${res.title} (${res.proposalId})`, res.status);
+        setIsCreateModalOpen(false);
+        setEditingProposal(null);
+        await loadProposals();
+        const freshKpis = await proposalsApiService.getKpis();
+        setKpiSummary(freshKpis);
+      } catch (err: unknown) {
+        setProposals(previousProposals);
+        setAllFilteredProposals(previousFiltered);
+        const msg = err instanceof Error ? err.message : 'Could not update proposal.';
+        addToast('error', 'Update Failed', msg);
+      }
+    } else {
+      // Create mode (POST)
+      await handleCreateProposal(savedProposal);
+    }
   };
 
   // Handle Create Proposal with validation & persistence
@@ -298,7 +405,10 @@ export const ProposalsPage: React.FC = () => {
       <ProposalsHeader
         lastUpdated={lastUpdated}
         onRefresh={handleRefresh}
-        onCreateProposal={() => setIsCreateModalOpen(true)}
+        onCreateProposal={() => {
+          setEditingProposal(null);
+          setIsCreateModalOpen(true);
+        }}
       />
 
       {/* Error Banner when initial query or load fails */}
@@ -341,6 +451,8 @@ export const ProposalsPage: React.FC = () => {
         }}
         onExport={handleExport}
         onViewDetails={handleViewDetails}
+        onEditProposal={handleEditProposal}
+        onDeleteProposal={handleDeleteProposal}
         onUpdateStatus={handleUpdateStatus}
         isLoading={isLoading}
         error={error}
@@ -348,12 +460,16 @@ export const ProposalsPage: React.FC = () => {
         onClearFilters={handleClearFilters}
       />
 
-      {/* 5. Create Proposal Modal */}
+      {/* 5. Create / Edit Proposal Modal */}
       <CreateProposalModal
         isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-        onSave={handleCreateProposal}
+        onClose={() => {
+          setIsCreateModalOpen(false);
+          setEditingProposal(null);
+        }}
+        onSave={handleSaveProposal}
         nextId={nextProposalId}
+        initialProposal={editingProposal}
       />
 
       {/* 6. Proposal Details Modal */}
@@ -363,6 +479,10 @@ export const ProposalsPage: React.FC = () => {
         onClose={() => {
           setIsDetailsModalOpen(false);
           setSelectedProposal(null);
+        }}
+        onEdit={(proposal: Proposal) => {
+          setIsDetailsModalOpen(false);
+          handleEditProposal(proposal);
         }}
         onUpdateStatus={handleUpdateStatus}
         onDelete={handleDeleteProposal}

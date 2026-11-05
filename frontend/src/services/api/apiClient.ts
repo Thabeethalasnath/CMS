@@ -22,54 +22,88 @@ export class ApiError extends Error {
   }
 }
 
+export function clearAuthStorage(): void {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem('auth_token');
+  localStorage.removeItem('auth_user_name');
+  localStorage.removeItem('auth_user_role');
+  sessionStorage.removeItem('auth_token');
+  sessionStorage.removeItem('auth_user_name');
+  sessionStorage.removeItem('auth_user_role');
+}
+
+export function redirectToLogin(): void {
+  if (typeof window === 'undefined') return;
+  const currentPath = window.location.pathname + window.location.search;
+  if (window.location.pathname !== '/login') {
+    const redirectUrl = `/login?redirect=${encodeURIComponent(currentPath)}`;
+    window.location.href = redirectUrl;
+  }
+}
+
 let devTokenPromise: Promise<string | null> | null = null;
 
-async function getAuthToken(endpoint: string): Promise<string | null> {
+async function acquireDevToken(): Promise<string | null> {
   if (typeof window === 'undefined') return null;
-  let token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
-  if (token) return token;
 
-  const isTestEnv = typeof process !== 'undefined' && process.env?.NODE_ENV === 'test';
-  // In development browser sessions, auto-acquire dev credentials so pages load smoothly
-  if (import.meta.env.DEV && !isTestEnv && !endpoint.includes('/auth/login')) {
-    if (!devTokenPromise) {
-      devTokenPromise = (async () => {
-        try {
-          const authRes = await fetch(`${BASE_URL}/auth/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-            body: JSON.stringify({ username: 'akshit.ujjain', password: 'password123' }),
-          });
-          if (authRes.ok) {
-            const resData = await authRes.json();
-            const jwt = resData?.data?.token;
-            if (jwt) {
-              localStorage.setItem('auth_token', jwt);
-              if (resData?.data?.username) {
-                localStorage.setItem('auth_user_name', resData.data.name || resData.data.username);
-              }
-              if (resData?.data?.role) {
-                localStorage.setItem('auth_user_role', resData.data.role);
-              }
-              return jwt;
-            }
-          }
-        } catch {
-          // ignore
-        } finally {
-          devTokenPromise = null;
-        }
-        return null;
-      })();
-    }
-    token = await devTokenPromise;
+  // If user explicitly logged out, never silently acquire a dev token
+  if (sessionStorage.getItem('logged_out') === 'true') {
+    return null;
   }
-  return token;
+
+  const devUser = import.meta.env.VITE_DEV_USER;
+  const devPassword = import.meta.env.VITE_DEV_PASSWORD;
+
+  // Dev credentials must be configured in untracked .env
+  if (!devUser || !devPassword) {
+    return null;
+  }
+
+  if (!devTokenPromise) {
+    devTokenPromise = (async () => {
+      try {
+        const authRes = await fetch(`${BASE_URL}/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify({ username: devUser, password: devPassword }),
+        });
+        if (authRes.ok) {
+          const resData = await authRes.json();
+          const jwt = resData?.data?.token;
+          if (jwt) {
+            localStorage.setItem('auth_token', jwt);
+            if (resData?.data?.name || resData?.data?.username) {
+              localStorage.setItem('auth_user_name', resData.data.name || resData.data.username);
+            }
+            if (resData?.data?.role) {
+              localStorage.setItem('auth_user_role', resData.data.role);
+            }
+            return jwt;
+          }
+        }
+      } catch {
+        // network or server error during dev login
+      } finally {
+        devTokenPromise = null;
+      }
+      return null;
+    })();
+  }
+  return await devTokenPromise;
+}
+
+export function getStoredAuthToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
+}
+
+interface RequestOptions extends RequestInit {
+  isRetry?: boolean;
 }
 
 async function executeRequest<T>(
   endpoint: string,
-  options: RequestInit = {}
+  options: RequestOptions = {}
 ): Promise<ApiResponse<T>> {
   const normalizedEndpoint = endpoint.startsWith(BASE_URL)
     ? endpoint
@@ -78,7 +112,15 @@ async function executeRequest<T>(
     ? endpoint
     : normalizedEndpoint;
 
-  const token = await getAuthToken(endpoint);
+  const isAuthLogin = endpoint.includes('/auth/login');
+  let token = getStoredAuthToken();
+
+  const isTestEnv = typeof process !== 'undefined' && process.env?.NODE_ENV === 'test';
+
+  // In dev browser sessions without token, if not logged out and not /auth/login, try acquiring dev token
+  if (!token && import.meta.env.DEV && !isTestEnv && !isAuthLogin) {
+    token = await acquireDevToken();
+  }
 
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
@@ -97,6 +139,33 @@ async function executeRequest<T>(
     const rawMsg = networkErr instanceof Error ? networkErr.message : String(networkErr);
     const message = `Cannot connect to server at ${url}: ${rawMsg}`;
     throw new ApiError(message, 0);
+  }
+
+  // Handle 401 Unauthorized
+  if (response.status === 401) {
+    clearAuthStorage();
+
+    // Never loop: retry at most once, and never retry /auth/login
+    if (!options.isRetry && !isAuthLogin && import.meta.env.DEV && !isTestEnv && sessionStorage.getItem('logged_out') !== 'true') {
+      const freshToken = await acquireDevToken();
+      if (freshToken) {
+        return executeRequest<T>(endpoint, {
+          ...options,
+          isRetry: true,
+          headers: {
+            ...options.headers,
+            Authorization: `Bearer ${freshToken}`,
+          },
+        });
+      }
+    }
+
+    // Otherwise redirect to /login
+    if (!isAuthLogin && !isTestEnv) {
+      redirectToLogin();
+    }
+
+    throw new ApiError('Unauthorized: Please log in again.', 401);
   }
 
   // Handle 204 No Content

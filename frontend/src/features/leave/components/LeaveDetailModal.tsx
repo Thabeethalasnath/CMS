@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Calendar, User, Clock, CheckCircle2, XCircle, FileText, Trash2, RotateCcw } from 'lucide-react';
+import { X, CheckCircle2, XCircle, FileText, Trash2, RotateCcw } from 'lucide-react';
 import { LeaveRecord } from '../types/leave';
 
 interface LeaveDetailModalProps {

@@ -86,10 +86,17 @@ export const formatDateToDisplay = (dateStr: string): string => {
   return `${day} ${month} ${year}`;
 };
 
-// Returns reference date for calculation (aligns with CMS simulation baseline 21 Mar 2025 for 2025 dates, or current date)
-export const getReferenceDate = (targetDate: Date): Date => {
-  if (targetDate.getFullYear() <= 2025) {
-    return new Date(2025, 2, 21); // 21 Mar 2025
+// Injectable reference clock for tests
+let testReferenceClock: Date | null = null;
+
+export const setClock = (date: Date | null): void => {
+  testReferenceClock = date ? new Date(date.getTime()) : null;
+};
+
+// Returns reference date for calculation (current date, or injectable clock for tests)
+export const getReferenceDate = (_targetDate?: Date): Date => {
+  if (testReferenceClock) {
+    return new Date(testReferenceClock.getFullYear(), testReferenceClock.getMonth(), testReferenceClock.getDate());
   }
   const now = new Date();
   return new Date(now.getFullYear(), now.getMonth(), now.getDate());
