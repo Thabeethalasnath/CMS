@@ -11,11 +11,13 @@ import { ContractsPage } from '../features/sales/pages/ContractsPage';
 import { ProposalsPage } from '../features/proposals/pages/ProposalsPage';
 import { CollectionsPage } from '../features/collections/pages/CollectionsPage';
 import { EmployeeMasterPage } from '../features/hr/pages/EmployeeMasterPage';
+import { HrDashboardPage } from '../features/hr/pages/HrDashboardPage';
 import { LeadsPage } from '../features/sales/pages/LeadsPage';
 import { ClientsPage } from '../features/clients/pages/ClientsPage';
 import { AttendancePage } from '../features/attendance/pages/AttendancePage';
 import { LeaveManagementPage } from '../features/leave/pages/LeaveManagementPage';
 import { ProjectsTasksPage } from '../features/projects/pages/ProjectsTasksPage';
+import { UiuxPage } from '../features/projects/pages/UiuxPage';
 
 const FinanceDashboardPage = React.lazy(() =>
   import('../features/finance/pages/FinanceDashboardPage').then((m) => ({ default: m.FinanceDashboardPage }))
@@ -85,6 +87,8 @@ export const AppRouter: React.FC = () => {
         <Route path="/leave" element={<Navigate to="/hr/leave" replace />} />
         <Route path="/projects/tasks" element={<ProjectsTasksPage />} />
         <Route path="/projects" element={<Navigate to="/projects/tasks" replace />} />
+        <Route path="/projects/ui-ux" element={<UiuxPage />} />
+        <Route path="/ui-ux" element={<Navigate to="/projects/ui-ux" replace />} />
 
         {/* Generate dynamic module engine routes for all other navigation items */}
         {navigationSections.map((section) =>
@@ -112,7 +116,9 @@ export const AppRouter: React.FC = () => {
                 item.path !== '/finance' &&
                 item.path !== '/reports/finance-dashboard' &&
                 item.path !== '/projects/tasks' &&
-                item.path !== '/projects'
+                item.path !== '/projects' &&
+                item.path !== '/projects/ui-ux' &&
+                item.path !== '/ui-ux'
             )
             .map((item) => (
               <Route
