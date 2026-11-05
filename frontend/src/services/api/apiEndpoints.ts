@@ -80,6 +80,36 @@ export const API_ENDPOINTS = {
     BASE: '/clients',
     BY_ID: (id: string | number) => `/clients/${encodeURIComponent(String(id))}`,
   },
+<<<<<<< HEAD
+  HR: {
+    DASHBOARD: '/hr/dashboard',
+    REFRESH: '/hr/dashboard/refresh',
+    EMPLOYEES: '/hr/employees',
+    LEAVES: '/hr/leaves',
+    LEAVE_STATUS: (id: string | number) => `/hr/leaves/${encodeURIComponent(String(id))}/status`,
+    ATTENDANCE: '/hr/attendance',
+    CANDIDATES: '/hr/candidates',
+    ACTIVITIES: '/hr/activities',
+    EMPLOYEE_EXITS: '/hr/employee-exits',
+    EMPLOYEE_EXIT_BY_ID: (id: string) => `/hr/employee-exits/${encodeURIComponent(id)}`,
+    EMPLOYEE_EXIT_KPIS: '/hr/employee-exits/kpis',
+    EMPLOYEE_EXIT_NEXT_ID: '/hr/employee-exits/next-id',
+    EMPLOYEE_EXIT_FILTERS: '/hr/employee-exits/filters',
+    EMPLOYEE_EXIT_EXPORT: '/hr/employee-exits/export',
+    PAYROLL: '/hr/payroll',
+    PAYROLL_BY_ID: (id: string) => `/hr/payroll/${encodeURIComponent(id)}`,
+    PAYROLL_KPIS: '/hr/payroll/kpis',
+    PAYROLL_FILTERS: '/hr/payroll/filters',
+    PAYROLL_EXPORT: '/hr/payroll/export',
+    PAYROLL_PROCESS: '/hr/payroll/process',
+  },
+  FINANCE: {
+    PAYMENTS: '/finance/payments',
+    PAYMENT_BY_ID: (id: string) => `/finance/payments/${encodeURIComponent(id)}`,
+    PAYMENTS_KPIS: '/finance/payments/kpis',
+    PAYMENTS_FILTERS: '/finance/payments/filters',
+    PAYMENTS_EXPORT: '/finance/payments/export',
+=======
   FINANCE: {
     DASHBOARD: '/finance/dashboard',
     EXPENSES: '/finance/expenses',
@@ -101,5 +131,6 @@ export const API_ENDPOINTS = {
     VERIFY_OTP: '/auth/verify-otp',
     RESET_PASSWORD: '/auth/reset-password',
     ME: '/auth/me',
+>>>>>>> origin/main
   },
 };

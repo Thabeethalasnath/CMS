@@ -15,14 +15,10 @@ import { LeadsPage } from '../features/sales/pages/LeadsPage';
 import { ClientsPage } from '../features/clients/pages/ClientsPage';
 import { AttendancePage } from '../features/attendance/pages/AttendancePage';
 import { LeaveManagementPage } from '../features/leave/pages/LeaveManagementPage';
-import { ProjectsTasksPage } from '../features/projects/pages/ProjectsTasksPage';
-
-const FinanceDashboardPage = React.lazy(() =>
-  import('../features/finance/pages/FinanceDashboardPage').then((m) => ({ default: m.FinanceDashboardPage }))
-);
-
-import { ProtectedRoute } from '../features/auth/components/ProtectedRoute';
-import { LoginPage } from '../features/auth/pages/LoginPage';
+import { HrDashboardPage } from '../features/hr/pages/HrDashboardPage';
+import { EmployeeExitPage } from '../features/hr/pages/EmployeeExitPage';
+import { PayrollSalaryPage } from '../features/hr/pages/PayrollSalaryPage';
+import { PaymentsPage } from '../features/finance/payments/pages/PaymentsPage';
 
 const CeoDashboardRoute: React.FC = () => {
   const context = useOutletContext<AppLayoutContextType>();
@@ -83,8 +79,12 @@ export const AppRouter: React.FC = () => {
         <Route path="/attendance" element={<Navigate to="/hr/attendance" replace />} />
         <Route path="/hr/leave" element={<LeaveManagementPage />} />
         <Route path="/leave" element={<Navigate to="/hr/leave" replace />} />
-        <Route path="/projects/tasks" element={<ProjectsTasksPage />} />
-        <Route path="/projects" element={<Navigate to="/projects/tasks" replace />} />
+        <Route path="/hr/employee-exit" element={<EmployeeExitPage />} />
+        <Route path="/hr/payroll-salary" element={<PayrollSalaryPage />} />
+        <Route path="/hr/payroll" element={<Navigate to="/hr/payroll-salary" replace />} />
+        <Route path="/payroll" element={<Navigate to="/hr/payroll-salary" replace />} />
+        <Route path="/finance/payments" element={<PaymentsPage />} />
+        <Route path="/payments" element={<Navigate to="/finance/payments" replace />} />
 
         {/* Generate dynamic module engine routes for all other navigation items */}
         {navigationSections.map((section) =>
@@ -108,11 +108,11 @@ export const AppRouter: React.FC = () => {
                 item.path !== '/attendance' &&
                 item.path !== '/hr/leave' &&
                 item.path !== '/leave' &&
-                item.path !== '/finance/dashboard' &&
-                item.path !== '/finance' &&
-                item.path !== '/reports/finance-dashboard' &&
-                item.path !== '/projects/tasks' &&
-                item.path !== '/projects'
+                item.path !== '/hr/employee-exit' &&
+                item.path !== '/hr/payroll' &&
+                item.path !== '/hr/payroll-salary' &&
+                item.path !== '/finance/payments' &&
+                item.path !== '/payments'
             )
             .map((item) => (
               <Route
