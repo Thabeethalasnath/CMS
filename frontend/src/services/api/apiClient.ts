@@ -101,6 +101,10 @@ interface RequestOptions extends RequestInit {
   isRetry?: boolean;
 }
 
+interface CustomRequestInit extends RequestInit {
+  _isRetry?: boolean;
+}
+
 async function executeRequest<T>(
   endpoint: string,
   options: RequestOptions = {}

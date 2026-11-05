@@ -76,6 +76,8 @@ export const AppRouter: React.FC = () => {
         <Route path="/sales/contracts" element={<ContractsPage />} />
         <Route path="/clients/list" element={<ClientsPage />} />
         <Route path="/clients" element={<Navigate to="/clients/list" replace />} />
+        <Route path="/hr/dashboard" element={<HrDashboardPage />} />
+        <Route path="/hr" element={<Navigate to="/hr/dashboard" replace />} />
         <Route path="/hr/employee-master" element={<EmployeeMasterPage />} />
         <Route path="/hr/attendance" element={<AttendancePage />} />
         <Route path="/attendance" element={<Navigate to="/hr/attendance" replace />} />
@@ -99,6 +101,8 @@ export const AppRouter: React.FC = () => {
                 item.path !== '/sales/contracts' &&
                 item.path !== '/clients/list' &&
                 item.path !== '/clients' &&
+                item.path !== '/hr/dashboard' &&
+                item.path !== '/hr' &&
                 item.path !== '/hr/employee-master' &&
                 item.path !== '/hr/attendance' &&
                 item.path !== '/attendance' &&

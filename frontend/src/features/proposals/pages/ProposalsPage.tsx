@@ -16,7 +16,8 @@ export const ProposalsPage: React.FC = () => {
   const [allFilteredProposals, setAllFilteredProposals] = useState<Proposal[]>([]);
   const [totalCount, setTotalCount] = useState<number>(0);
   const [lastUpdated, setLastUpdated] = useState('—');
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isTableLoading, setIsTableLoading] = useState<boolean>(true);
+  const [isKpiLoading, setIsKpiLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   // 2. Dynamic KPI summary state (starts null to show skeletons / real data)
@@ -99,9 +100,23 @@ export const ProposalsPage: React.FC = () => {
     }
   }, []);
 
+  // Dedicated KPI loader so filter resets and table filtering do not flash or refresh KPI cards
+  const loadKpis = useCallback(async () => {
+    setIsKpiLoading(true);
+    try {
+      const kpis = await proposalsApiService.getKpis();
+      setKpiSummary(kpis);
+    } catch (err: unknown) {
+      console.warn('Failed to load proposal KPIs:', err);
+    } finally {
+      setIsKpiLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     loadMetadata();
-  }, [loadMetadata]);
+    loadKpis();
+  }, [loadMetadata, loadKpis]);
 
   // Primary data query function through dedicated service layer
   const loadProposals = useCallback(async (signal?: AbortSignal) => {
@@ -179,6 +194,7 @@ export const ProposalsPage: React.FC = () => {
 
   const handleClearFilters = () => {
     setFilters(defaultFilters);
+    setSortOption('date-newest');
     setCurrentPage(1);
     addToast('info', 'Filters Cleared', 'Reset to display all proposals.');
   };
@@ -301,8 +317,7 @@ export const ProposalsPage: React.FC = () => {
       );
 
       setIsCreateModalOpen(false);
-      await loadProposals();
-      loadMetadata();
+      await Promise.all([loadProposals(), loadKpis(), loadMetadata()]);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Could not create proposal.';
       addToast('error', 'Creation Failed', msg);
@@ -311,8 +326,7 @@ export const ProposalsPage: React.FC = () => {
 
   // Handle Refresh
   const handleRefresh = async () => {
-    await loadProposals();
-    await loadMetadata();
+    await Promise.all([loadProposals(), loadKpis(), loadMetadata()]);
     addToast('success', 'Data Refreshed', 'Proposal records synchronized and updated.');
   };
 
@@ -412,7 +426,7 @@ export const ProposalsPage: React.FC = () => {
       />
 
       {/* Error Banner when initial query or load fails */}
-      {error && !isLoading && (
+      {error && !isTableLoading && (
         <div className="mb-6">
           <ErrorBanner
             title="Failed to Load Proposals"
@@ -423,7 +437,7 @@ export const ProposalsPage: React.FC = () => {
       )}
 
       {/* 2. Four KPI Cards */}
-      <ProposalsKpiCards summary={kpiSummary} isLoading={isLoading} />
+      <ProposalsKpiCards summary={kpiSummary} isLoading={isKpiLoading} />
 
       {/* 3. Search and Filter Panel */}
       <ProposalsFilterCard
@@ -454,7 +468,7 @@ export const ProposalsPage: React.FC = () => {
         onEditProposal={handleEditProposal}
         onDeleteProposal={handleDeleteProposal}
         onUpdateStatus={handleUpdateStatus}
-        isLoading={isLoading}
+        isLoading={isTableLoading}
         error={error}
         onRetry={loadProposals}
         onClearFilters={handleClearFilters}
