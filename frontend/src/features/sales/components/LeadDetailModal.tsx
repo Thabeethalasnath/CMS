@@ -11,11 +11,10 @@ import {
   Briefcase,
   CheckCircle2,
   Clock,
-  ArrowRight,
   Trash2,
   Save,
 } from 'lucide-react';
-import { Lead, LeadStage, LeadStatus, ServiceInterest } from '../types/leads';
+import { Lead, LeadStage, LeadStatus } from '../types/leads';
 
 interface LeadDetailModalProps {
   lead: Lead | null;

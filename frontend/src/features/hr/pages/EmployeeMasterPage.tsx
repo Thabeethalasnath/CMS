@@ -34,7 +34,8 @@ export const EmployeeMasterPage: React.FC = () => {
   // Data state
   const [employees, setEmployees] = useState<EmployeeData[]>([]);
   const [summary, setSummary] = useState<EmployeeSummaryData | null>(null);
-  const [lastUpdated, setLastUpdated] = useState<string>('15 Mar 2025, 10:30 AM');
+  const getFormattedTimestamp = () => { const now = new Date(); return `${now.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}, ${now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`; };
+  const [lastUpdated, setLastUpdated] = useState<string>(getFormattedTimestamp);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -75,7 +76,7 @@ export const EmployeeMasterPage: React.FC = () => {
         `${now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}, ${now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`
       );
     } catch (err) {
-      console.error('Failed to fetch employee data:', err);
+      // Failed to fetch employee data
     } finally {
       setIsLoading(false);
     }
@@ -463,7 +464,7 @@ export const EmployeeMasterPage: React.FC = () => {
                 </p>
                 <div className="flex items-center gap-1 mt-0.5 text-[11px] leading-4">
                   <span className="font-semibold text-[#059669]">
-                    {summary?.totalEmployeesTrend || '↑ 12%'}
+                    {(summary?.totalEmployeesTrend || '↑ 12%').replace(/\s*vs\s+last\s+month/gi, '').trim()}
                   </span>
                   <span className="text-[#94A3B8]">vs last month</span>
                 </div>
@@ -484,7 +485,7 @@ export const EmployeeMasterPage: React.FC = () => {
                 </p>
                 <div className="flex items-center gap-1 mt-0.5 text-[11px] leading-4">
                   <span className="font-semibold text-[#059669]">
-                    {summary?.activeEmployeesTrend || '↑ 8%'}
+                    {(summary?.activeEmployeesTrend || '↑ 8%').replace(/\s*vs\s+last\s+month/gi, '').trim()}
                   </span>
                   <span className="text-[#94A3B8]">vs last month</span>
                 </div>
@@ -505,7 +506,7 @@ export const EmployeeMasterPage: React.FC = () => {
                 </p>
                 <div className="flex items-center gap-1 mt-0.5 text-[11px] leading-4">
                   <span className="font-semibold text-[#EF4444]">
-                    {summary?.onNoticeEmployeesTrend || '↓ 25%'}
+                    {(summary?.onNoticeEmployeesTrend || '↓ 25%').replace(/\s*vs\s+last\s+month/gi, '').trim()}
                   </span>
                   <span className="text-[#94A3B8]">vs last month</span>
                 </div>
@@ -529,7 +530,7 @@ export const EmployeeMasterPage: React.FC = () => {
                 </p>
                 <div className="flex items-center gap-1 mt-0.5 text-[11px] leading-4">
                   <span className="font-semibold text-[#059669]">
-                    {summary?.totalMonthlyCtcTrend || '↑ 8%'}
+                    {(summary?.totalMonthlyCtcTrend || '↑ 8%').replace(/\s*vs\s+last\s+month/gi, '').trim()}
                   </span>
                   <span className="text-[#94A3B8]">vs last month</span>
                 </div>

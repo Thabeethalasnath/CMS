@@ -40,7 +40,7 @@ export const DonutChart: React.FC<DonutChartProps> = ({
 
   const handleSliceMouseEnter = (
     item: DonutChartSegment,
-    sliceCenterAngle: number,
+    _sliceCenterAngle: number,
     e: React.MouseEvent<SVGCircleElement>
   ) => {
     if (!containerRef.current) return;

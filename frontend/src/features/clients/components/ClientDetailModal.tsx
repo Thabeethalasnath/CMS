@@ -1,19 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  X,
-  Building2,
-  User,
-  Mail,
-  Phone,
-  MapPin,
-  Calendar,
-  CreditCard,
-  Briefcase,
-  CheckCircle2,
-  Trash2,
-  Save,
-  Shield,
-} from 'lucide-react';
+import { X, Building2, User, Trash2, Save } from 'lucide-react';
 import { Client, ClientStatus, ClientType, IndustryType } from '../types/clients';
 
 interface ClientDetailModalProps {

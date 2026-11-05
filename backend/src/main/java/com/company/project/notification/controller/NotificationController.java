@@ -10,6 +10,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -28,18 +29,21 @@ public class NotificationController {
     }
 
     @PatchMapping("/{id}/read")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CEO')")
     public ResponseEntity<ApiResponse<Boolean>> markAsRead(@PathVariable("id") Long id) {
         boolean updated = notificationService.markAsRead(id);
         return ResponseEntity.ok(ApiResponse.success("Notification marked as read", updated));
     }
 
     @PostMapping("/read-all")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CEO')")
     public ResponseEntity<ApiResponse<Integer>> markAllAsRead() {
         int count = notificationService.markAllAsRead();
         return ResponseEntity.ok(ApiResponse.success("All notifications marked as read", count));
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'CEO')")
     public ResponseEntity<ApiResponse<PortalNotificationResponse>> createNotification(
             @Valid @RequestBody CreateNotificationRequest request
     ) {
@@ -64,4 +68,3 @@ public class NotificationController {
                 .body(ApiResponse.success("Notification created successfully", response));
     }
 }
-

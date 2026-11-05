@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
 @Repository
@@ -25,6 +26,15 @@ public interface CollectionInvoiceRepository extends JpaRepository<CollectionInv
 
     @Query("SELECT COALESCE(SUM(i.amountPaid), 0) FROM CollectionInvoiceEntity i")
     BigDecimal sumTotalAmountPaid();
+
+    @Query("SELECT COALESCE(SUM(i.invoiceAmount), 0) FROM CollectionInvoiceEntity i WHERE i.invoiceDate BETWEEN :startDate AND :endDate")
+    BigDecimal sumInvoiceAmountInPeriod(LocalDate startDate, LocalDate endDate);
+
+    @Query("SELECT i FROM CollectionInvoiceEntity i WHERE i.invoiceDate BETWEEN :startDate AND :endDate ORDER BY i.invoiceDate DESC")
+    List<CollectionInvoiceEntity> findInvoicesInPeriod(LocalDate startDate, LocalDate endDate);
+
+    @Query("SELECT i FROM CollectionInvoiceEntity i WHERE i.invoiceDate <= :asOfDate ORDER BY i.invoiceDate DESC")
+    List<CollectionInvoiceEntity> findInvoicesIssuedOnOrBefore(LocalDate asOfDate);
 
     long countByStatusIgnoreCase(String status);
 }

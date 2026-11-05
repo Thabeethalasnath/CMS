@@ -9,7 +9,7 @@ interface CalendarDateRangePickerProps {
 }
 
 export const CalendarDateRangePicker: React.FC<CalendarDateRangePickerProps> = ({
-  value,
+  value: _value,
   onChange,
   isOpen,
   onClose

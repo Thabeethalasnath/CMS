@@ -12,9 +12,12 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.web.cors.CorsConfigurationSource;
 
 @Configuration
@@ -25,12 +28,17 @@ public class SecurityConfig {
     private final CorsConfigurationSource corsConfigurationSource;
     private final JwtTokenProvider jwtTokenProvider;
 
-    @Value("${spring.profiles.active:dev}")
+    @Value("${spring.profiles.active}")
     private String activeProfile;
 
     public SecurityConfig(CorsConfigurationSource corsConfigurationSource, JwtTokenProvider jwtTokenProvider) {
         this.corsConfigurationSource = corsConfigurationSource;
         this.jwtTokenProvider = jwtTokenProvider;
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 
     @Bean
@@ -61,7 +69,7 @@ public class SecurityConfig {
 
                 // Public Actuator / Health and Auth endpoints
                 auth.requestMatchers("/actuator/**").permitAll()
-                    .requestMatchers("/api/v1/auth/**").permitAll();
+                    .requestMatchers("/api/v1/auth/**", "/api/auth/**").permitAll();
 
                 // Swagger documentation permitted only in dev profile
                 if (isDev) {
@@ -70,14 +78,12 @@ public class SecurityConfig {
                     auth.requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").denyAll();
                 }
 
-                // Reset and DELETE operations: open in dev profile, strictly require ADMIN role in production
-                if (isDev) {
-                    auth.requestMatchers("/api/v1/*/reset", "/api/v1/*/*/reset").permitAll()
-                        .requestMatchers(HttpMethod.DELETE, "/api/v1/**").permitAll();
-                } else {
-                    auth.requestMatchers("/api/v1/*/reset", "/api/v1/*/*/reset").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/v1/**").hasRole("ADMIN");
-                }
+                // Reset and DELETE operations strictly require ROLE_ADMIN in ALL profiles, including dev
+                auth.requestMatchers(
+                        AntPathRequestMatcher.antMatcher("/api/v1/**/reset"),
+                        AntPathRequestMatcher.antMatcher("/api/v1/*/reset")
+                    ).hasRole("ADMIN")
+                    .requestMatchers(HttpMethod.DELETE, "/api/v1/**").hasRole("ADMIN");
 
                 // All other /api/v1/** endpoints require authentication
                 auth.requestMatchers("/api/v1/**").authenticated();

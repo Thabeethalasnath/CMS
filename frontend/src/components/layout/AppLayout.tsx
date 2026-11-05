@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { apiClient } from '../../services/api/apiClient';
 import { dashboardService } from '../../services/dashboardService';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { TopNav } from './TopNav';
 
@@ -12,6 +13,7 @@ export interface AppLayoutContextType {
   setDateRange: (range: string) => void;
   isEditModalOpen: boolean;
   setIsEditModalOpen: (open: boolean) => void;
+  isSidebarCollapsed: boolean;
 }
 
 export const AppLayout: React.FC = () => {
@@ -19,13 +21,45 @@ export const AppLayout: React.FC = () => {
   const [dateRange, setDateRange] = useState('—');
   const [userName, setUserName] = useState('—');
   const [userRole, setUserRole] = useState('—');
+  const [userEmail, setUserEmail] = useState('');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const location = useLocation();
 
   useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    // 1. Fetch user profile directly from /auth/me
+    apiClient.get<{ username: string; name: string; role: string; email?: string }>('/auth/me')
+      .then((res) => {
+        if (res?.data?.name) {
+          setUserName(res.data.name);
+        } else if (res?.data?.username) {
+          setUserName(res.data.username);
+        }
+        if (res?.data?.role) {
+          setUserRole(res.data.role);
+        }
+        if (res?.data?.email) {
+          setUserEmail(res.data.email);
+        } else if (res?.data?.username && res.data.username.includes('@')) {
+          setUserEmail(res.data.username);
+        }
+      })
+      .catch(() => {
+        const storedName = localStorage.getItem('auth_user_name');
+        const storedRole = localStorage.getItem('auth_user_role');
+        const storedEmail = localStorage.getItem('auth_user_email');
+        if (storedName) setUserName(storedName);
+        if (storedRole) setUserRole(storedRole);
+        if (storedEmail) setUserEmail(storedEmail);
+      });
+
+    // 2. Fetch active date range from dashboard settings
     dashboardService.getDashboardData()
       .then((data) => {
         if (data.settings?.active_date_range) setDateRange(data.settings.active_date_range);
-        if (data.settings?.user_name) setUserName(data.settings.user_name);
-        if (data.settings?.user_role) setUserRole(data.settings.user_role);
       })
       .catch(() => {});
   }, []);
@@ -54,10 +88,12 @@ export const AppLayout: React.FC = () => {
         backgroundColor: '#F8FAFC',
       }}
     >
-      {/* CMS Main Sidebar with Collapsible Rail */}
+      {/* CMS Main Sidebar with Collapsible Rail & Responsive Mobile Drawer */}
       <Sidebar
         isCollapsed={isSidebarCollapsed}
         onToggleCollapse={toggleSidebar}
+        isMobileOpen={isMobileMenuOpen}
+        onCloseMobile={() => setIsMobileMenuOpen(false)}
       />
 
       {/* Main Content Area: Header pinned at top, Main scrolling */}
@@ -80,6 +116,9 @@ export const AppLayout: React.FC = () => {
           onDateRangeChange={setDateRange}
           userName={userName}
           userRole={userRole}
+          userEmail={userEmail}
+          onToggleMobileMenu={() => setIsMobileMenuOpen((prev) => !prev)}
+          onToggleSidebar={toggleSidebar}
         />
         <main
           style={{
@@ -99,6 +138,7 @@ export const AppLayout: React.FC = () => {
               setDateRange,
               isEditModalOpen,
               setIsEditModalOpen,
+              isSidebarCollapsed,
             }}
           />
         </main>

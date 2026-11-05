@@ -7,7 +7,7 @@ function mapAttendance(item: any): AttendanceRecord {
   return {
     id: item.id,
     attendanceDate: item.attendanceDate || item.attendance_date || '31 Oct 2026',
-    employeeId: item.employeeId || item.employee_id || 'EMP-001',
+    employeeId: item.employeeId || item.employee_id || '',
     employeeName: item.employeeName || item.employee_name || 'Amit Sharma',
     avatarInitials: item.avatarInitials || item.avatar_initials || 'AS',
     avatarColor: item.avatarColor || item.avatar_color || 'blue',

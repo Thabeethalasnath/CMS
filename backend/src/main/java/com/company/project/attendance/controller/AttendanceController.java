@@ -1,11 +1,15 @@
 package com.company.project.attendance.controller;
 
-import com.company.project.attendance.entity.AttendanceEntity;
+import com.company.project.attendance.dto.AttendanceResponse;
+import com.company.project.attendance.dto.CreateAttendanceRequest;
+import com.company.project.attendance.dto.UpdateAttendanceRequest;
 import com.company.project.attendance.service.AttendanceService;
 import com.company.project.common.response.ApiResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,7 +23,7 @@ public class AttendanceController {
     private final AttendanceService attendanceService;
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<AttendanceEntity>>> getAllAttendance() {
+    public ResponseEntity<ApiResponse<List<AttendanceResponse>>> getAllAttendance() {
         return ResponseEntity.ok(ApiResponse.success(attendanceService.getAllAttendance()));
     }
 
@@ -29,25 +33,27 @@ public class AttendanceController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<AttendanceEntity>> getAttendanceById(@PathVariable String id) {
+    public ResponseEntity<ApiResponse<AttendanceResponse>> getAttendanceById(@PathVariable String id) {
         return attendanceService.getAttendanceById(id)
                 .map(entity -> ResponseEntity.ok(ApiResponse.success(entity)))
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<AttendanceEntity>> createAttendance(@RequestBody AttendanceEntity record) {
-        AttendanceEntity created = attendanceService.createAttendance(record);
+    @PreAuthorize("hasAnyRole('ADMIN', 'CEO')")
+    public ResponseEntity<ApiResponse<AttendanceResponse>> createAttendance(@Valid @RequestBody CreateAttendanceRequest record) {
+        AttendanceResponse created = attendanceService.createAttendance(record);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Attendance record created successfully", created));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<AttendanceEntity>> updateAttendance(
+    @PreAuthorize("hasAnyRole('ADMIN', 'CEO')")
+    public ResponseEntity<ApiResponse<AttendanceResponse>> updateAttendance(
             @PathVariable String id,
-            @RequestBody AttendanceEntity updates) {
+            @Valid @RequestBody UpdateAttendanceRequest updates) {
         try {
-            AttendanceEntity updated = attendanceService.updateAttendance(id, updates);
+            AttendanceResponse updated = attendanceService.updateAttendance(id, updates);
             return ResponseEntity.ok(ApiResponse.success("Attendance record updated successfully", updated));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.notFound().build();
@@ -55,6 +61,7 @@ public class AttendanceController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> deleteAttendance(@PathVariable String id) {
         attendanceService.deleteAttendance(id);
         return ResponseEntity.ok(ApiResponse.success("Attendance record deleted successfully", null));

@@ -10,6 +10,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -40,6 +41,7 @@ public class LeaveController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'CEO')")
     public ResponseEntity<ApiResponse<LeaveEntity>> createLeave(@Valid @RequestBody CreateLeaveRequest request) {
         LeaveEntity created = leaveService.createLeave(request);
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -47,17 +49,18 @@ public class LeaveController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CEO')")
     public ResponseEntity<ApiResponse<LeaveEntity>> updateLeave(
             @PathVariable String id,
-            @RequestBody UpdateLeaveRequest request) {
+            @Valid @RequestBody UpdateLeaveRequest request) {
         LeaveEntity updated = leaveService.updateLeave(id, request);
         return ResponseEntity.ok(ApiResponse.success("Leave request updated successfully", updated));
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> deleteLeave(@PathVariable String id) {
         leaveService.deleteLeave(id);
         return ResponseEntity.ok(ApiResponse.success("Leave request deleted successfully", null));
     }
 }
-

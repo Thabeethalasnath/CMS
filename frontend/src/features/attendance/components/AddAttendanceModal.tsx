@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Calendar, Clock, User } from 'lucide-react';
+import { X, Calendar } from 'lucide-react';
 import { AttendanceRecord } from '../types/attendance';
 
 interface AddAttendanceModalProps {
@@ -15,7 +15,7 @@ export const AddAttendanceModal: React.FC<AddAttendanceModalProps> = ({
   onAdd,
   employees,
 }) => {
-  const [employeeId, setEmployeeId] = useState(employees[0]?.id || 'EMP-001');
+  const [employeeId, setEmployeeId] = useState(employees[0]?.id || '');
   const [attendanceDate, setAttendanceDate] = useState('31 Oct 2026');
   const [status, setStatus] = useState<'Present' | 'Leave' | 'Half Day' | 'Absent' | 'Holiday'>('Present');
   const [checkIn, setCheckIn] = useState('09:00 AM');

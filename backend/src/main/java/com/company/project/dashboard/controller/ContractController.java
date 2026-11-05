@@ -11,6 +11,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -51,6 +52,7 @@ public class ContractController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'CEO')")
     @Operation(summary = "Create a new contract")
     public ResponseEntity<ApiResponse<ContractDto>> createContract(
             @Valid @RequestBody CreateContractRequest request
@@ -61,6 +63,7 @@ public class ContractController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CEO')")
     @Operation(summary = "Update an existing contract")
     public ResponseEntity<ApiResponse<ContractDto>> updateContract(
             @PathVariable Long id,
@@ -71,6 +74,7 @@ public class ContractController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Delete a contract")
     public ResponseEntity<ApiResponse<Void>> deleteContract(@PathVariable Long id) {
         service.deleteContract(id);
@@ -78,10 +82,10 @@ public class ContractController {
     }
 
     @PostMapping("/reset")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Reset contract table to initial seed dataset")
     public ResponseEntity<ApiResponse<Void>> resetSeedData() {
         service.resetSeedData();
         return ResponseEntity.ok(ApiResponse.success("Contracts reset to seed data successfully", null));
     }
 }
-

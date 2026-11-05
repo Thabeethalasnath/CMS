@@ -209,7 +209,7 @@ public class FollowUpServiceImpl implements FollowUpService {
     @Override
     @Transactional
     public void resetSeedData() {
-        repository.deleteAll();
+        repository.deleteAllInBatch();
 
         List<FollowUpItem> initialList = new ArrayList<>();
 

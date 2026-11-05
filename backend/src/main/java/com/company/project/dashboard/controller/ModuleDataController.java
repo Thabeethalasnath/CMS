@@ -141,7 +141,7 @@ public class ModuleDataController {
                     item.put("status", r.get("status") != null ? r.get("status") : "Active");
                     item.put("priority", "Standard");
                     item.put("assignee", r.get("account_owner") != null ? r.get("account_owner") : "Akshit Ujjain");
-                    item.put("value", r.get("credit_limit") != null ? r.get("credit_limit") : "₹ 15,00,000");
+                    item.put("value", r.get("credit_limit") != null ? r.get("credit_limit") : "—");
                     item.put("date", r.get("onboarding_date") != null ? r.get("onboarding_date") : "Active");
                     item.put("details", r.get("notes") != null ? r.get("notes") : "");
                     records.add(item);

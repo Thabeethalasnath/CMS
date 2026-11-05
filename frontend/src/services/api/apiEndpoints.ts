@@ -1,6 +1,3 @@
-const rawEnvUrl = (import.meta as unknown as { env?: Record<string, string> }).env?.VITE_API_BASE_URL;
-const API_BASE_URL = rawEnvUrl && rawEnvUrl.trim() !== '' ? rawEnvUrl.trim() : '/api/v1';
-
 export const API_ENDPOINTS = {
   FOLLOW_UP_QUEUE: {
     BASE: '/follow-up-queue',
@@ -83,20 +80,26 @@ export const API_ENDPOINTS = {
     BASE: '/clients',
     BY_ID: (id: string | number) => `/clients/${encodeURIComponent(String(id))}`,
   },
-  HR: {
-    DASHBOARD: '/hr/dashboard',
-    REFRESH: '/hr/dashboard/refresh',
-    EMPLOYEES: '/hr/employees',
-    LEAVES: '/hr/leaves',
-    LEAVE_STATUS: (id: string | number) => `/hr/leaves/${encodeURIComponent(String(id))}/status`,
-    ATTENDANCE: '/hr/attendance',
-    CANDIDATES: '/hr/candidates',
-    ACTIVITIES: '/hr/activities',
-    EMPLOYEE_EXITS: '/hr/employee-exits',
-    EMPLOYEE_EXIT_BY_ID: (id: string) => `/hr/employee-exits/${encodeURIComponent(id)}`,
-    EMPLOYEE_EXIT_KPIS: '/hr/employee-exits/kpis',
-    EMPLOYEE_EXIT_NEXT_ID: '/hr/employee-exits/next-id',
-    EMPLOYEE_EXIT_FILTERS: '/hr/employee-exits/filters',
-    EMPLOYEE_EXIT_EXPORT: '/hr/employee-exits/export',
+  FINANCE: {
+    DASHBOARD: '/finance/dashboard',
+    EXPENSES: '/finance/expenses',
+    EXPORT: '/finance/export',
+  },
+  PROJECTS: {
+    BASE: '/projects',
+    KPIS: '/projects/kpis',
+    FILTERS: '/projects/filters',
+    BY_ID: (id: string | number) => `/projects/${encodeURIComponent(String(id))}`,
+    TASKS: '/projects/tasks',
+    TASKS_FILTERS: '/projects/tasks/filters',
+    TASK_BY_ID: (id: string | number) => `/projects/tasks/${encodeURIComponent(String(id))}`,
+    TASKS_BY_PROJECT: (projectId: string | number) => `/projects/${encodeURIComponent(String(projectId))}/tasks`,
+  },
+  AUTH: {
+    LOGIN: '/auth/login',
+    FORGOT_PASSWORD: '/auth/forgot-password',
+    VERIFY_OTP: '/auth/verify-otp',
+    RESET_PASSWORD: '/auth/reset-password',
+    ME: '/auth/me',
   },
 };
