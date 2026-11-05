@@ -13,7 +13,7 @@ import {
   Download,
   Info,
   MoreVertical,
-  Calendar,
+
   CheckCircle2,
   Clock,
   TrendingUp,
@@ -67,7 +67,7 @@ export const ModulePlaceholder: React.FC<ModulePlaceholderProps> = ({ title, cat
   const [newSubtitle, setNewSubtitle] = useState('');
   const [newCategory, setNewCategory] = useState('General');
   const [newStatus, setNewStatus] = useState('Active');
-  const [newPriority, setNewPriority] = useState('Normal');
+  const [newPriority] = useState('Normal');
   const [newValue, setNewValue] = useState('');
 
   // Fetch live data from backend
@@ -209,7 +209,7 @@ export const ModulePlaceholder: React.FC<ModulePlaceholderProps> = ({ title, cat
       setNewSubtitle('');
       await fetchData();
     } catch (err) {
-      console.error('Failed to create record:', err);
+      // Failed to create record
     }
   };
 
@@ -221,7 +221,7 @@ export const ModulePlaceholder: React.FC<ModulePlaceholderProps> = ({ title, cat
         setSelectedRecord(null);
         await fetchData();
       } catch (err) {
-        console.error('Failed to delete record:', err);
+        // Failed to delete record
       }
     }
   };

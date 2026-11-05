@@ -9,7 +9,6 @@ import {
 } from '../types';
 import {
   exportInvoicesToCsv,
-  formatRupee,
   computeDynamicKpis,
   computeDynamicAgeingChart,
   computeDynamicStatusDistribution,

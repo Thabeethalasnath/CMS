@@ -24,7 +24,7 @@ export interface Client {
   country: string; // e.g. "India"
   city: string; // e.g. "Bangalore"
   clientType: ClientType | string;
-  accountOwner: string; // e.g. "EMP-001"
+  accountOwner: string; // e.g. "EMP-101"
   status: ClientStatus | string;
   creditLimit?: string; // e.g. "₹ 15,00,000"
   onboardingDate?: string; // e.g. "15 Jan 2024"

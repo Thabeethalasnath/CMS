@@ -1,12 +1,8 @@
 import React, { useState } from 'react';
 import {
   X,
-  Building2,
   Mail,
-  Phone,
-  Calendar,
   IndianRupee,
-  MapPin,
   UserCheck,
   Briefcase,
   Trash2,

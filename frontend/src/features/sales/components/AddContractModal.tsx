@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Plus, FileCheck, IndianRupee, Calendar, User, FileText } from 'lucide-react';
+import { X, Plus, FileCheck } from 'lucide-react';
 import { CreateContractPayload } from '@/types/contract';
 
 interface AddContractModalProps {

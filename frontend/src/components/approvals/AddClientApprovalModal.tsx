@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Plus, Building, Tag, DollarSign, Calendar, User } from 'lucide-react';
+import { X, Plus, Building, Tag, DollarSign } from 'lucide-react';
 import { ClientApproval } from '../../types/approvals';
 
 interface AddClientApprovalModalProps {
@@ -140,7 +140,7 @@ export const AddClientApprovalModal: React.FC<AddClientApprovalModalProps> = ({
                 type="text"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
-                placeholder="e.g. 24 Mar 2025"
+                placeholder="DD MMM YYYY"
                 className="w-full border border-slate-200 rounded-lg px-3 py-2 bg-slate-50/50 outline-none text-slate-800 placeholder-slate-400 focus:border-indigo-500"
               />
             </div>

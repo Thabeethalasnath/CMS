@@ -15,7 +15,8 @@ export const ClientsPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [lastRefreshed, setLastRefreshed] = useState('15 Mar 2025, 10:30 AM');
+  const getFormattedTimestamp = () => { const now = new Date(); return `${now.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}, ${now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`; };
+  const [lastRefreshed, setLastRefreshed] = useState<string>(getFormattedTimestamp);
 
   // Modals state
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -345,17 +346,7 @@ export const ClientsPage: React.FC = () => {
 
   return (
     <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'flex-start',
-        padding: '24px',
-        gap: '20px',
-        width: '100%',
-        boxSizing: 'border-box',
-        backgroundColor: '#F8FAFC',
-        fontFamily: "'Inter', sans-serif",
-      }}
+      className="p-4 sm:p-6 w-full box-border font-sans bg-[#F8FAFC] flex flex-col items-start gap-5"
     >
       {/* Toast Notifications */}
       <ToastNotification toasts={toasts} onDismiss={removeToast} />

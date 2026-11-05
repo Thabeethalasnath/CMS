@@ -197,7 +197,7 @@ export const OpportunitiesTable: React.FC<OpportunitiesTableProps> = ({
           <div className="p-8 w-full flex justify-center">
             <EmptyState
               icon={Target}
-              title="No opportunities found"
+              title="No opportunities yet"
               description="No sales opportunities match your active filters or none have been recorded yet."
             />
           </div>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Mail, CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
+import { X, Mail, CheckCircle2, AlertCircle } from 'lucide-react';
 import { collectionsApiService } from '../services/collectionsApiService';
 import { Invoice } from '../types';
 import { formatRupee } from '../utils';
@@ -37,6 +37,7 @@ export const SendReminderModal: React.FC<SendReminderModalProps> = ({
       await collectionsApiService.sendReminder(invoice.id, {
         channels,
         template,
+        recipient: invoice.client || invoice.clientId || 'Client Contact',
       });
       setSentSuccess(true);
       setTimeout(() => {

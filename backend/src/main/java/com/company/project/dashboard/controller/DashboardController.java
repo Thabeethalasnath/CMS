@@ -10,6 +10,7 @@ import com.company.project.dashboard.service.DashboardService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -25,6 +26,7 @@ public class DashboardController {
     }
 
     @PutMapping("/ceo")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CEO')")
     public ResponseEntity<ApiResponse<CeoDashboardResponse>> updateCeoDashboard(@Valid @RequestBody CeoDashboardUpdateRequest request) {
         return ResponseEntity.ok(ApiResponse.success("CEO dashboard updated successfully", dashboardService.updateDashboardData(request)));
     }
@@ -35,14 +37,16 @@ public class DashboardController {
     }
 
     @PutMapping("/ceo/kpis/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CEO')")
     public ResponseEntity<ApiResponse<DashboardKpiCard>> updateKpi(
             @PathVariable Long id,
-            @RequestBody DashboardKpiCard request
+            @Valid @RequestBody com.company.project.dashboard.dto.UpdateDashboardKpiCardRequest request
     ) {
         return ResponseEntity.ok(ApiResponse.success("KPI updated successfully", dashboardService.updateKpi(id, request)));
     }
 
     @PutMapping("/ceo/alerts/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CEO')")
     public ResponseEntity<ApiResponse<ManagementAlert>> updateAlertCount(
             @PathVariable Long id,
             @RequestParam(defaultValue = "1") Integer delta

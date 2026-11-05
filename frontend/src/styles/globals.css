@@ -442,31 +442,6 @@ html, body {
   transform: rotate(180deg);
 }
 
-/* Live Count Badges */
-.sidebar-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 11px;
-  font-weight: 700;
-  line-height: 1;
-  padding: 2px 6.5px;
-  border-radius: 9999px;
-  margin-left: auto;
-}
-
-.sidebar-badge-amber {
-  background-color: rgba(245, 158, 11, 0.2);
-  color: #FBBF24;
-  border: 1px solid rgba(245, 158, 11, 0.4);
-}
-
-.sidebar-badge-red {
-  background-color: rgba(239, 68, 68, 0.2);
-  color: #F87171;
-  border: 1px solid rgba(239, 68, 68, 0.4);
-}
-
 /* Page Extra: Card lift on hover */
 .card-lift {
   transition: transform 0.2s ease, box-shadow 0.2s ease;

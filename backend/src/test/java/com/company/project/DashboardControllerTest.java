@@ -74,7 +74,7 @@ class DashboardControllerTest {
         req.setRawValue(new BigDecimal("5000000"));
         req.setFormattedValue("₹ 50,00,000");
 
-        when(dashboardService.updateKpi(eq(1L), any(DashboardKpiCard.class))).thenReturn(req);
+        when(dashboardService.updateKpi(eq(1L), any(com.company.project.dashboard.dto.UpdateDashboardKpiCardRequest.class))).thenReturn(req);
 
         mockMvc.perform(put("/api/v1/dashboard/ceo/kpis/1")
                         .contentType(MediaType.APPLICATION_JSON)

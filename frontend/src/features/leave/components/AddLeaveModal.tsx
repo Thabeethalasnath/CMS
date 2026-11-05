@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Calendar, User, FileText, CheckCircle2 } from 'lucide-react';
+import { X, Calendar } from 'lucide-react';
 import { CreateLeavePayload } from '../types/leave';
 
 interface AddLeaveModalProps {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, FileCheck, Check, Trash2, Calendar, IndianRupee, Clock, ShieldCheck, AlertCircle } from 'lucide-react';
+import { X, FileCheck, Check, Trash2 } from 'lucide-react';
 import { ContractData } from '@/types/contract';
 
 interface ContractDetailModalProps {

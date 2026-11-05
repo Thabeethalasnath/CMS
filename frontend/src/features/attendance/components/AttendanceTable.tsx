@@ -73,6 +73,7 @@ export const AttendanceTable: React.FC<AttendanceTableProps> = ({
     }
   };
 
+<<<<<<< HEAD
   // Day Type Badge Pill Styling
   const getDayTypeBadgeStyle = (dayType?: string) => {
     switch (dayType) {
@@ -115,6 +116,8 @@ export const AttendanceTable: React.FC<AttendanceTableProps> = ({
   };
 
   // Avatar Initials Circle Styling
+=======
+>>>>>>> origin/main
   const getAvatarStyle = (color?: string) => {
     switch (color) {
       case 'purple':
@@ -337,9 +340,13 @@ export const AttendanceTable: React.FC<AttendanceTableProps> = ({
               </tr>
             ) : (
               records.map((rec) => {
+<<<<<<< HEAD
                 const statusBadge = getStatusBadgeStyle(rec.status);
                 const dayTypeBadge = getDayTypeBadgeStyle(rec.dayType);
                 const lateFlagBadge = getLateFlagBadgeStyle(rec.lateFlag);
+=======
+                const badgeStyle = getStatusBadgeStyle(rec.status);
+>>>>>>> origin/main
                 const avatarStyle = getAvatarStyle(rec.avatarColor);
                 const isMenuOpen = activeMenuId === rec.id;
 

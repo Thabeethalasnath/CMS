@@ -346,17 +346,7 @@ export const AttendancePage: React.FC = () => {
 
   return (
     <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'flex-start',
-        padding: '24px',
-        gap: '20px',
-        width: '100%',
-        boxSizing: 'border-box',
-        backgroundColor: '#F8FAFC',
-        fontFamily: "'Inter', sans-serif",
-      }}
+      className="p-4 sm:p-6 w-full box-border font-sans bg-[#F8FAFC] flex flex-col items-start gap-5"
     >
       {/* Toast Notifications */}
       <ToastNotification toasts={toasts} onDismiss={removeToast} />

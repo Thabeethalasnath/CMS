@@ -11,6 +11,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -56,6 +57,7 @@ public class CollectionsController {
     }
 
     @PostMapping("/invoices")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CEO')")
     @Operation(summary = "Create manual invoice (Log Payment modal)")
     public ResponseEntity<ApiResponse<InvoiceResponse>> createInvoice(@Valid @RequestBody CreateInvoiceRequest request) {
         InvoiceResponse created = collectionsService.createInvoice(request);
@@ -63,6 +65,7 @@ public class CollectionsController {
     }
 
     @PatchMapping("/invoices/{id}/status")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CEO')")
     @Operation(summary = "Update invoice status directly from table dropdown")
     public ResponseEntity<ApiResponse<InvoiceResponse>> updateStatus(
             @PathVariable String id,
@@ -78,6 +81,7 @@ public class CollectionsController {
     }
 
     @PostMapping("/invoices/{id}/payments")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CEO')")
     @Operation(summary = "Record a payment against an invoice")
     public ResponseEntity<ApiResponse<PaymentRecordResponse>> recordPayment(
             @PathVariable String id,
@@ -88,16 +92,18 @@ public class CollectionsController {
     }
 
     @PostMapping("/invoices/{id}/reminders")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CEO')")
     @Operation(summary = "Send and log payment reminder for invoice")
     public ResponseEntity<ApiResponse<CollectionCommunicationEntity>> sendReminder(
             @PathVariable String id,
-            @RequestBody SendReminderRequest request
+            @Valid @RequestBody SendReminderRequest request
     ) {
         CollectionCommunicationEntity comm = collectionsService.sendReminder(id, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success("Reminder logged and dispatched successfully", comm));
     }
 
     @PostMapping("/invoices/{id}/communications")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CEO')")
     @Operation(summary = "Log call/email follow-up communication for invoice")
     public ResponseEntity<ApiResponse<CollectionCommunicationEntity>> logCommunication(
             @PathVariable String id,

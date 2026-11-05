@@ -4,17 +4,20 @@ import { ChevronDown, ChevronUp, Search, X, ChevronsDownUp, ChevronsUpDown, Chev
 import { navigationSections, footerNavigationItems } from '../../config/navigation';
 import { NavSection, NavItem } from '../../types/navigation';
 import { colors } from '../../constants/theme';
-import { dashboardService } from '../../services/dashboardService';
 import { FlyoutPortal, SearchFlyoutPortal } from './FlyoutPortal';
 
 interface SidebarProps {
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
+  isMobileOpen?: boolean;
+  onCloseMobile?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
   isCollapsed: controlledCollapsed,
   onToggleCollapse,
+  isMobileOpen = false,
+  onCloseMobile,
 }) => {
   const location = useLocation();
 
@@ -22,17 +25,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const [internalCollapsed, setInternalCollapsed] = useState(false);
 
   const isCollapsed = controlledCollapsed !== undefined ? controlledCollapsed : internalCollapsed;
-
-  const [sidebarCounts, setSidebarCounts] = useState<{ pendingApprovals: number; overdueFollowUps: number }>({
-    pendingApprovals: 0,
-    overdueFollowUps: 0,
-  });
-
-  useEffect(() => {
-    dashboardService.getSidebarCounts()
-      .then(setSidebarCounts)
-      .catch(() => {});
-  }, [location.pathname]);
 
   const [menuSearch, setMenuSearch] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -270,12 +262,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const hasNoResults = filteredSections.length === 0 && filteredFooterItems.length === 0;
 
-  const sidebarWidth = isCollapsed ? '68px' : '260px';
+  const sidebarWidth = isCollapsed && !isMobileOpen ? '68px' : '260px';
 
   return (
     <>
+      {/* Mobile Backdrop */}
+      {isMobileOpen && (
+        <div
+          onClick={onCloseMobile}
+          className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-40 md:hidden transition-opacity"
+          aria-hidden="true"
+        />
+      )}
+
       <aside
-        className="sidebar-rail-transition"
+        className={`sidebar-rail-transition fixed inset-y-0 left-0 z-50 md:relative md:z-30 transition-transform duration-300 ease-in-out ${
+          isMobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full md:translate-x-0'
+        }`}
         style={{
           width: sidebarWidth,
           minWidth: sidebarWidth,
@@ -288,10 +291,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
           boxSizing: 'border-box',
           userSelect: 'none',
           flexShrink: 0,
-          position: 'relative',
           overflow: 'visible',
           fontFamily: "'Inter', sans-serif",
-          zIndex: 30,
         }}
         aria-label="Aside - Main Sidebar Navigation"
       >
@@ -315,6 +316,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         >
           <NavLink
             to="/management/ceo-dashboard"
+            onClick={() => onCloseMobile?.()}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -383,6 +385,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
               />
             </div>
           </NavLink>
+          {isMobileOpen && (
+            <button
+              type="button"
+              onClick={onCloseMobile}
+              className="md:hidden absolute right-3 p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+              aria-label="Close navigation"
+            >
+              <X size={18} />
+            </button>
+          )}
         </div>
 
         {/* Top Sidebar Search Bar */}
@@ -855,13 +867,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         {section.items.map((item: NavItem) => {
                           const active = isCurrentActive(item.path);
                           const ItemIcon = item.icon;
-                          const isFollowUp = item.path === '/management/follow-up-queue';
-                          const isApproval = item.path === '/management/approval-inbox';
 
                           return (
                             <NavLink
                               key={item.id}
                               to={item.path}
+                              onClick={() => onCloseMobile?.()}
                               tabIndex={isCollapsed ? -1 : 0}
                               className={`sidebar-nav-item ${active ? 'active' : ''}`}
                             >
@@ -873,16 +884,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                 />
                               </span>
                               <span className="sidebar-item-label">{item.label}</span>
-                              {isApproval && sidebarCounts.pendingApprovals > 0 && (
-                                <span className="sidebar-badge sidebar-badge-amber" title="Pending Approvals">
-                                  {sidebarCounts.pendingApprovals}
-                                </span>
-                              )}
-                              {isFollowUp && sidebarCounts.overdueFollowUps > 0 && (
-                                <span className="sidebar-badge sidebar-badge-red" title="Overdue Follow-ups">
-                                  {sidebarCounts.overdueFollowUps}
-                                </span>
-                              )}
                             </NavLink>
                           );
                         })}
@@ -1007,6 +1008,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <NavLink
                   key={item.id}
                   to={item.path}
+                  onClick={() => onCloseMobile?.()}
                   tabIndex={isCollapsed ? -1 : 0}
                   style={{
                     display: 'flex',

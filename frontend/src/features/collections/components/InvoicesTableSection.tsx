@@ -13,8 +13,6 @@ import {
   Phone,
   Mail,
   History,
-  ChevronDown,
-  Check,
   LucideIcon,
 } from 'lucide-react';
 import { Invoice, CollectionStatus, AgeingBucket } from '../types';

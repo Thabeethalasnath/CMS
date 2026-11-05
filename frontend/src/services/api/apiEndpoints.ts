@@ -1,6 +1,3 @@
-const rawEnvUrl = (import.meta as unknown as { env?: Record<string, string> }).env?.VITE_API_BASE_URL;
-const API_BASE_URL = rawEnvUrl && rawEnvUrl.trim() !== '' ? rawEnvUrl.trim() : '/api/v1';
-
 export const API_ENDPOINTS = {
   FOLLOW_UP_QUEUE: {
     BASE: '/follow-up-queue',
@@ -83,6 +80,7 @@ export const API_ENDPOINTS = {
     BASE: '/clients',
     BY_ID: (id: string | number) => `/clients/${encodeURIComponent(String(id))}`,
   },
+<<<<<<< HEAD
   HR: {
     DASHBOARD: '/hr/dashboard',
     REFRESH: '/hr/dashboard/refresh',
@@ -111,5 +109,28 @@ export const API_ENDPOINTS = {
     PAYMENTS_KPIS: '/finance/payments/kpis',
     PAYMENTS_FILTERS: '/finance/payments/filters',
     PAYMENTS_EXPORT: '/finance/payments/export',
+=======
+  FINANCE: {
+    DASHBOARD: '/finance/dashboard',
+    EXPENSES: '/finance/expenses',
+    EXPORT: '/finance/export',
+  },
+  PROJECTS: {
+    BASE: '/projects',
+    KPIS: '/projects/kpis',
+    FILTERS: '/projects/filters',
+    BY_ID: (id: string | number) => `/projects/${encodeURIComponent(String(id))}`,
+    TASKS: '/projects/tasks',
+    TASKS_FILTERS: '/projects/tasks/filters',
+    TASK_BY_ID: (id: string | number) => `/projects/tasks/${encodeURIComponent(String(id))}`,
+    TASKS_BY_PROJECT: (projectId: string | number) => `/projects/${encodeURIComponent(String(projectId))}/tasks`,
+  },
+  AUTH: {
+    LOGIN: '/auth/login',
+    FORGOT_PASSWORD: '/auth/forgot-password',
+    VERIFY_OTP: '/auth/verify-otp',
+    RESET_PASSWORD: '/auth/reset-password',
+    ME: '/auth/me',
+>>>>>>> origin/main
   },
 };

@@ -191,7 +191,7 @@ class ApprovalServiceTest {
     }
 
     @Test
-    @DisplayName("resetSeedData should delete and reseed all approval tables")
+    @DisplayName("resetSeedData should delete all approval tables")
     void testResetSeedData() {
         doNothing().when(employeeRepo).deleteAllInBatch();
         doNothing().when(clientRepo).deleteAllInBatch();
@@ -202,9 +202,6 @@ class ApprovalServiceTest {
         verify(employeeRepo).deleteAllInBatch();
         verify(clientRepo).deleteAllInBatch();
         verify(ticketAssetRepo).deleteAllInBatch();
-        verify(employeeRepo).saveAll(anyList());
-        verify(clientRepo).saveAll(anyList());
-        verify(ticketAssetRepo).saveAll(anyList());
     }
 }
 

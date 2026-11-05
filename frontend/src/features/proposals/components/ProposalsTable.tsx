@@ -23,6 +23,8 @@ interface ProposalsTableProps {
   onPageSizeChange: (size: number) => void;
   onExport: () => void;
   onViewDetails: (proposal: Proposal) => void;
+  onEditProposal?: (proposal: Proposal) => void;
+  onDeleteProposal?: (proposalId: string) => void;
   onUpdateStatus?: (proposalId: string, newStatus: ProposalStatus) => void;
   isLoading?: boolean;
   error?: string | null;
@@ -41,6 +43,8 @@ export const ProposalsTable: React.FC<ProposalsTableProps> = ({
   onPageSizeChange,
   onExport,
   onViewDetails,
+  // onEditProposal and onDeleteProposal omitted as unused in table
+
   onUpdateStatus,
   isLoading = false,
   error = null,

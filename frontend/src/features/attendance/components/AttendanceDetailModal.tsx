@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Calendar, Clock, User, CheckCircle2, AlertCircle, Trash2, Edit3 } from 'lucide-react';
+import { X, AlertCircle, Trash2, Edit3 } from 'lucide-react';
 import { AttendanceRecord } from '../types/attendance';
 
 interface AttendanceDetailModalProps {

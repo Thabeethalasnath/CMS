@@ -34,10 +34,17 @@ const CeoDashboardRoute: React.FC = () => {
 export const AppRouter: React.FC = () => {
   return (
     <Routes>
-      {/* Redirect /login to CEO Dashboard */}
-      <Route path="/login" element={<Navigate to="/management/ceo-dashboard" replace />} />
+      {/* Public Login Route */}
+      <Route path="/login" element={<LoginPage />} />
 
-      <Route element={<AppLayout />}>
+      {/* Authenticated Routes Guarded by ProtectedRoute */}
+      <Route
+        element={
+          <ProtectedRoute>
+            <AppLayout />
+          </ProtectedRoute>
+        }
+      >
         {/* CEO Dashboard: Default First Screen and Dedicated Routes */}
         <Route index element={<CeoDashboardRoute />} />
         <Route path="/management/ceo-dashboard" element={<CeoDashboardRoute />} />
@@ -48,6 +55,16 @@ export const AppRouter: React.FC = () => {
         <Route path="/management/approval-inbox" element={<ApprovalInboxPage />} />
         <Route path="/management/follow-up-queue" element={<FollowUpQueuePage />} />
         <Route path="/management/collections" element={<CollectionsPage />} />
+        <Route
+          path="/finance/dashboard"
+          element={
+            <React.Suspense fallback={<div className="w-full min-h-screen bg-[#F8FAFC]" />}>
+              <FinanceDashboardPage />
+            </React.Suspense>
+          }
+        />
+        <Route path="/finance" element={<Navigate to="/finance/dashboard" replace />} />
+        <Route path="/reports/finance-dashboard" element={<Navigate to="/finance/dashboard" replace />} />
         <Route path="/finance/collections" element={<Navigate to="/management/collections" replace />} />
         <Route path="/sales/leads" element={<LeadsPage />} />
         <Route path="/sales/opportunities" element={<OpportunitiesPage />} />

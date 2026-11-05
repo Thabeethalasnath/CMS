@@ -11,6 +11,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -27,6 +28,7 @@ public class ApprovalController {
     }
 
     @PutMapping("/employee/{id}/status")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CEO')")
     public ResponseEntity<ApiResponse<EmployeeApproval>> updateEmployeeStatus(
             @PathVariable Long id,
             @Valid @RequestBody UpdateStatusRequest request
@@ -36,8 +38,9 @@ public class ApprovalController {
     }
 
     @PostMapping("/employee")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CEO')")
     public ResponseEntity<ApiResponse<EmployeeApproval>> createEmployeeApproval(
-            @RequestBody EmployeeApproval request
+            @Valid @RequestBody com.company.project.dashboard.dto.CreateEmployeeApprovalRequest request
     ) {
         EmployeeApproval created = approvalService.createEmployeeApproval(request);
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -45,6 +48,7 @@ public class ApprovalController {
     }
 
     @PutMapping("/client/{id}/status")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CEO')")
     public ResponseEntity<ApiResponse<ClientApproval>> updateClientStatus(
             @PathVariable Long id,
             @Valid @RequestBody UpdateStatusRequest request
@@ -54,8 +58,9 @@ public class ApprovalController {
     }
 
     @PostMapping("/client")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CEO')")
     public ResponseEntity<ApiResponse<ClientApproval>> createClientApproval(
-            @RequestBody ClientApproval request
+            @Valid @RequestBody com.company.project.dashboard.dto.CreateClientApprovalRequest request
     ) {
         ClientApproval created = approvalService.createClientApproval(request);
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -63,6 +68,7 @@ public class ApprovalController {
     }
 
     @PutMapping("/ticket-asset/{id}/status")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CEO')")
     public ResponseEntity<ApiResponse<TicketAssetApproval>> updateTicketAssetStatus(
             @PathVariable Long id,
             @Valid @RequestBody UpdateStatusRequest request
@@ -72,8 +78,9 @@ public class ApprovalController {
     }
 
     @PostMapping("/ticket-asset")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CEO')")
     public ResponseEntity<ApiResponse<TicketAssetApproval>> createTicketAssetApproval(
-            @RequestBody TicketAssetApproval request
+            @Valid @RequestBody com.company.project.dashboard.dto.CreateTicketAssetApprovalRequest request
     ) {
         TicketAssetApproval created = approvalService.createTicketAssetApproval(request);
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -81,6 +88,7 @@ public class ApprovalController {
     }
 
     @PostMapping("/reset")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<String>> resetSeedData() {
         approvalService.resetSeedData();
         return ResponseEntity.ok(ApiResponse.success("Approvals reset to initial state", "Reset completed"));

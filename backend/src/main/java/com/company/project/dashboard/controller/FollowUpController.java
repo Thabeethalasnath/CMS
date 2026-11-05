@@ -12,6 +12,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -48,6 +49,7 @@ public class FollowUpController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'CEO')")
     @Operation(summary = "Create a new follow-up queue item")
     public ResponseEntity<ApiResponse<FollowUpItemDto>> createItem(
             @Valid @RequestBody CreateFollowUpItemRequest request) {
@@ -57,6 +59,7 @@ public class FollowUpController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CEO')")
     @Operation(summary = "Update an existing follow-up queue item")
     public ResponseEntity<ApiResponse<FollowUpItemDto>> updateItem(
             @PathVariable Long id,
@@ -66,6 +69,7 @@ public class FollowUpController {
     }
 
     @PutMapping("/{id}/toggle-done")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CEO')")
     @Operation(summary = "Toggle the completed/done state of a follow-up item")
     public ResponseEntity<ApiResponse<FollowUpItemDto>> toggleDone(@PathVariable Long id) {
         FollowUpItemDto updated = service.toggleDone(id);
@@ -76,15 +80,17 @@ public class FollowUpController {
     }
 
     @PostMapping("/{id}/action")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CEO')")
     @Operation(summary = "Perform an action (e.g. log note, complete) on a follow-up item")
     public ResponseEntity<ApiResponse<FollowUpItemDto>> performAction(
             @PathVariable Long id,
-            @RequestBody ActionRequest actionRequest) {
+            @Valid @RequestBody ActionRequest actionRequest) {
         FollowUpItemDto updated = service.performAction(id, actionRequest);
         return ResponseEntity.ok(ApiResponse.success("Action recorded successfully", updated));
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Delete a follow-up item by ID")
     public ResponseEntity<ApiResponse<Void>> deleteItem(@PathVariable Long id) {
         service.deleteItem(id);
@@ -92,6 +98,7 @@ public class FollowUpController {
     }
 
     @PostMapping("/reset")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Reset follow-up queue to initial demo/seed data")
     public ResponseEntity<ApiResponse<String>> resetData() {
         service.resetSeedData();

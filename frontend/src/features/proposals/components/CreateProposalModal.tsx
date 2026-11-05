@@ -13,6 +13,7 @@ interface CreateProposalModalProps {
   onClose: () => void;
   onSave: (newProposal: Proposal) => void;
   nextId: string;
+  initialProposal?: Proposal | null;
 }
 
 export const CreateProposalModal: React.FC<CreateProposalModalProps> = ({
@@ -20,6 +21,7 @@ export const CreateProposalModal: React.FC<CreateProposalModalProps> = ({
   onClose,
   onSave,
   nextId,
+  initialProposal = null,
 }) => {
   const [proposalId, setProposalId] = useState(nextId);
   const [version, setVersion] = useState('1');
@@ -48,21 +50,39 @@ export const CreateProposalModal: React.FC<CreateProposalModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      setProposalId(nextId);
-      setVersion('1');
-      setTitle('');
-      setOpportunityId('');
-      setClientId('');
-      setServiceId('');
-      setProposalDate('');
-      setValidUntil('');
-      setExpectedDecisionDate('');
-      setAmountBeforeTax('');
-      setTaxAmount('');
-      setTotalAmount('');
-      setOwnerId('');
-      setStatus('');
-      setNotes('');
+      if (initialProposal) {
+        setProposalId(initialProposal.proposalId);
+        setVersion(initialProposal.version || '1');
+        setTitle(initialProposal.title || '');
+        setOpportunityId(initialProposal.opportunityId || '');
+        setClientId(initialProposal.clientId || '');
+        setServiceId(initialProposal.serviceId || '');
+        setProposalDate(initialProposal.proposalDate || '');
+        setValidUntil(initialProposal.validUntil || '');
+        setExpectedDecisionDate(initialProposal.expectedDecisionDate || '');
+        setAmountBeforeTax(String(initialProposal.serviceBeforeTax || ''));
+        setTaxAmount(String(initialProposal.taxAmount || ''));
+        setTotalAmount(String(initialProposal.totalAmount || ''));
+        setOwnerId(initialProposal.ownerId || '');
+        setStatus(initialProposal.status || '');
+        setNotes(initialProposal.description || '');
+      } else {
+        setProposalId(nextId);
+        setVersion('1');
+        setTitle('');
+        setOpportunityId('');
+        setClientId('');
+        setServiceId('');
+        setProposalDate('');
+        setValidUntil('');
+        setExpectedDecisionDate('');
+        setAmountBeforeTax('');
+        setTaxAmount('');
+        setTotalAmount('');
+        setOwnerId('');
+        setStatus('');
+        setNotes('');
+      }
       setError('');
 
       masterDataService.getClients().then(setClientOptions).catch(() => {});
@@ -70,7 +90,7 @@ export const CreateProposalModal: React.FC<CreateProposalModalProps> = ({
       masterDataService.getServices().then(setServiceOptions).catch(() => {});
       masterDataService.getOpportunities().then(setOpportunityOptions).catch(() => {});
     }
-  }, [isOpen, nextId]);
+  }, [isOpen, nextId, initialProposal]);
 
   if (!isOpen) return null;
 
@@ -235,10 +255,10 @@ export const CreateProposalModal: React.FC<CreateProposalModalProps> = ({
         <div className="flex items-start justify-between px-7 pt-6 pb-2 shrink-0">
           <div>
             <h2 className="text-base font-bold leading-6 text-slate-900">
-              Create Proposal
+              {initialProposal ? 'Edit Proposal' : 'Create Proposal'}
             </h2>
             <p className="text-xs font-normal leading-4 text-slate-500 mt-0.5">
-              Enter the proposal details to create a new record.
+              {initialProposal ? `Update details for ${initialProposal.proposalId}.` : 'Enter the proposal details to create a new record.'}
             </p>
           </div>
           <button
