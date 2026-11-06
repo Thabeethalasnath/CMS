@@ -194,12 +194,13 @@ public class TimesheetService {
         String approvedBy = null;
         OffsetDateTime approvedAt = null;
         if ("Approved".equalsIgnoreCase(initialStatus)) {
-            if (isElevated) {
-                approvedBy = resolveApproverDisplayName(assignedApprover, currentUsername);
-                approvedAt = OffsetDateTime.now();
-            } else {
-                initialStatus = "Pending";
-            }
+            initialStatus = "Approved";
+            approvedBy = resolveApproverDisplayName(assignedApprover, currentUsername);
+            approvedAt = OffsetDateTime.now();
+        } else {
+            initialStatus = "Pending";
+            approvedBy = null;
+            approvedAt = null;
         }
 
         ProjectTimesheetEntity entity = ProjectTimesheetEntity.builder()

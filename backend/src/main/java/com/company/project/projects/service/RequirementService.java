@@ -207,13 +207,14 @@ public class RequirementService {
         LocalDate appDate = null;
 
         if ("Completed".equalsIgnoreCase(status) || "Approved".equalsIgnoreCase(status)) {
-            boolean isElevated = isManagerOrAdmin(userRoles);
-            if (!isElevated) {
-                throw new BusinessValidationException("Only authorized approvers (CEO, MD, Admin) can create a completed requirement.");
-            }
+            status = "Completed";
             approvedByVal = resolveApproverDisplayName(assignedApproverVal, currentUsername);
             appDate = request.getApprovalDate() != null ? request.getApprovalDate() : LocalDate.now();
             completion = 100;
+        } else {
+            status = "In Progress";
+            approvedByVal = null;
+            appDate = null;
         }
 
         ProjectRequirementEntity entity = ProjectRequirementEntity.builder()

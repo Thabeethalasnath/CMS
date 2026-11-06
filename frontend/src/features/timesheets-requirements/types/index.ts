@@ -189,6 +189,7 @@ export interface CreateTimesheetPayload {
   notes?: string;
   assignedApprover?: string;
   approvalStatus?: string;
+  approvedBy?: string;
 }
 
 export interface UpdateTimesheetPayload {
@@ -203,6 +204,7 @@ export interface UpdateTimesheetPayload {
   notes?: string;
   assignedApprover?: string;
   approvalStatus?: string;
+  approvedBy?: string;
 }
 
 export interface CreateRequirementPayload {

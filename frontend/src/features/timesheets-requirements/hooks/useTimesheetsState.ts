@@ -289,6 +289,8 @@ export const useTimesheetsState = (initialList?: TimesheetRecord[]) => {
           hourlyRate: formData.billableRate,
           taskDescription: formData.notes,
           assignedApprover: formData.assignedApprover || 'CEO – Akshit Ujjain',
+          approvalStatus: formData.approvalStatus || 'Pending',
+          approvedBy: formData.approvedBy,
         });
 
         const finalRecord = persisted && persisted.timesheetId ? persisted : fallbackEntry;

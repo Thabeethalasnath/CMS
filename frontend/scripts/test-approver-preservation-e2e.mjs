@@ -1,12 +1,12 @@
-// Comprehensive E2E live verification of approver preservation across repeated status transitions
+// Live verification of exact user test scenarios for Timesheets & Requirements
 const API_URL = 'http://localhost:8080/api/v1';
 
 async function run() {
-  console.log('================================================================');
-  console.log('   APPROVER PRESERVATION E2E VERIFICATION: TIMESHEETS & REQS    ');
-  console.log('================================================================\n');
+  console.log('========================================================================');
+  console.log('   FULL END-TO-END APPROVAL & STATUS PERSISTENCE VERIFICATION           ');
+  console.log('========================================================================\n');
 
-  // 1. Authenticate users
+  // Authenticate
   const ceoRes = await fetch(`${API_URL}/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -25,180 +25,148 @@ async function run() {
   const mdToken = mdData.data.token;
   console.log(`[AUTH] MD Logged in: ${mdData.data.name}`);
 
-  const userRes = await fetch(`${API_URL}/auth/login`, {
+  // ========================================================================
+  // TIMESHEET SCENARIO 1 - 4: Gaurav Tripathy (Approved -> Pending -> Approved)
+  // ========================================================================
+  console.log('\n--- TIMESHEET TEST A: Gaurav Tripathy (Approved -> Pending -> Approved) ---');
+  const tsCreate1 = await fetch(`${API_URL}/timesheets`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username: 'EMP-004', password: '' }),
-  });
-  const userData = await userRes.json();
-  const userToken = userData.data.token;
-  console.log(`[AUTH] Regular User Logged in: ${userData.data.name}\n`);
-
-  // ==========================================
-  // PART 1: TIMESHEETS PRESERVATION - GAURAV TRIPATHY
-  // ==========================================
-  console.log('----------------------------------------------------------------');
-  console.log('TEST 1: Timesheet Created as Approved with MD – Gaurav Tripathy');
-  console.log('----------------------------------------------------------------');
-  const createTs1Res = await fetch(`${API_URL}/timesheets`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${mdToken}`,
-    },
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${mdToken}` },
     body: JSON.stringify({
       projectId: 'PRJ-002',
       taskId: 'TSK-00126',
       employeeId: 'EMP-004',
-      hours: 6.0,
+      hours: 8.0,
       isBillable: true,
-      billableRate: 1500,
-      notes: 'Preservation test: Gaurav Tripathy Initial Approved',
+      hourlyRate: 1500,
+      notes: 'Timesheet creation test: Approved + Gaurav Tripathy',
       approvalStatus: 'Approved',
+      assignedApprover: 'MD – Gaurav Tripathy',
+      approvedBy: 'Gaurav Tripathy',
+      timesheetDate: '2026-11-06',
+    }),
+  });
+  const ts1 = (await tsCreate1.json()).data;
+  console.log(`1. Created Timesheet ${ts1.timesheetId}: Status=${ts1.approvalStatus}, ApprovedBy=${ts1.approvedBy}, Assigned=${ts1.assignedApprover}`);
+  if (ts1.approvalStatus !== 'Approved' || ts1.approvedBy !== 'Gaurav Tripathy') {
+    throw new Error(`TS1 creation mismatch! Status: ${ts1.approvalStatus}, ApprovedBy: ${ts1.approvedBy}`);
+  }
+
+  // Change to Pending
+  const ts1PatchPending = await fetch(`${API_URL}/timesheets/${ts1.timesheetId}/status`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${mdToken}` },
+    body: JSON.stringify({ status: 'Pending' }),
+  });
+  const ts1Pending = (await ts1PatchPending.json()).data;
+  console.log(`2. Changed to Pending: Status=${ts1Pending.approvalStatus}, ApprovedBy=${ts1Pending.approvedBy || '-'}, Assigned=${ts1Pending.assignedApprover}`);
+  if (ts1Pending.approvalStatus !== 'Pending' || ts1Pending.approvedBy) {
+    throw new Error(`TS1 pending mismatch! Status: ${ts1Pending.approvalStatus}, ApprovedBy: ${ts1Pending.approvedBy}`);
+  }
+  if (!ts1Pending.assignedApprover?.includes('Gaurav')) {
+    throw new Error(`TS1 assigned approver lost! Value: ${ts1Pending.assignedApprover}`);
+  }
+
+  // Change back to Approved
+  const ts1PatchApproved = await fetch(`${API_URL}/timesheets/${ts1.timesheetId}/status`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${mdToken}` },
+    body: JSON.stringify({ status: 'Approved' }),
+  });
+  const ts1Approved = (await ts1PatchApproved.json()).data;
+  console.log(`3. Changed back to Approved: Status=${ts1Approved.approvalStatus}, ApprovedBy=${ts1Approved.approvedBy}, Assigned=${ts1Approved.assignedApprover}`);
+  if (ts1Approved.approvalStatus !== 'Approved' || ts1Approved.approvedBy !== 'Gaurav Tripathy') {
+    throw new Error(`TS1 re-approval mismatch! Expected "Gaurav Tripathy", got "${ts1Approved.approvedBy}"`);
+  }
+
+  // ========================================================================
+  // TIMESHEET SCENARIO 5: Akshit Ujjain (Approved -> Pending -> Approved)
+  // ========================================================================
+  console.log('\n--- TIMESHEET TEST B: Akshit Ujjain (Approved -> Pending -> Approved) ---');
+  const tsCreate2 = await fetch(`${API_URL}/timesheets`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${ceoToken}` },
+    body: JSON.stringify({
+      projectId: 'PRJ-002',
+      taskId: 'TSK-00126',
+      employeeId: 'EMP-004',
+      hours: 7.0,
+      isBillable: true,
+      hourlyRate: 1500,
+      notes: 'Timesheet creation test: Approved + Akshit Ujjain',
+      approvalStatus: 'Approved',
+      assignedApprover: 'CEO – Akshit Ujjain',
+      approvedBy: 'Akshit Ujjain',
+      timesheetDate: '2026-11-06',
+    }),
+  });
+  const ts2 = (await tsCreate2.json()).data;
+  console.log(`1. Created Timesheet ${ts2.timesheetId}: Status=${ts2.approvalStatus}, ApprovedBy=${ts2.approvedBy}, Assigned=${ts2.assignedApprover}`);
+  if (ts2.approvalStatus !== 'Approved' || ts2.approvedBy !== 'Akshit Ujjain') {
+    throw new Error(`TS2 creation mismatch! Status: ${ts2.approvalStatus}, ApprovedBy: ${ts2.approvedBy}`);
+  }
+
+  // Change to Pending
+  const ts2PatchPending = await fetch(`${API_URL}/timesheets/${ts2.timesheetId}/status`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${ceoToken}` },
+    body: JSON.stringify({ status: 'Pending' }),
+  });
+  const ts2Pending = (await ts2PatchPending.json()).data;
+  console.log(`2. Changed to Pending: Status=${ts2Pending.approvalStatus}, ApprovedBy=${ts2Pending.approvedBy || '-'}`);
+  if (ts2Pending.approvalStatus !== 'Pending' || ts2Pending.approvedBy) {
+    throw new Error(`TS2 pending mismatch!`);
+  }
+
+  // Change back to Approved
+  const ts2PatchApproved = await fetch(`${API_URL}/timesheets/${ts2.timesheetId}/status`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${ceoToken}` },
+    body: JSON.stringify({ status: 'Approved' }),
+  });
+  const ts2Approved = (await ts2PatchApproved.json()).data;
+  console.log(`3. Changed back to Approved: Status=${ts2Approved.approvalStatus}, ApprovedBy=${ts2Approved.approvedBy}`);
+  if (ts2Approved.approvalStatus !== 'Approved' || ts2Approved.approvedBy !== 'Akshit Ujjain') {
+    throw new Error(`TS2 re-approval mismatch! Expected "Akshit Ujjain", got "${ts2Approved.approvedBy}"`);
+  }
+
+  // ========================================================================
+  // TIMESHEET SCENARIO 6: Create directly with Pending
+  // ========================================================================
+  console.log('\n--- TIMESHEET TEST C: Directly with Pending ---');
+  const tsCreate3 = await fetch(`${API_URL}/timesheets`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${mdToken}` },
+    body: JSON.stringify({
+      projectId: 'PRJ-002',
+      taskId: 'TSK-00126',
+      employeeId: 'EMP-004',
+      hours: 4.5,
+      isBillable: true,
+      hourlyRate: 1500,
+      notes: 'Timesheet creation test: Direct Pending with Gaurav Tripathy designated',
+      approvalStatus: 'Pending',
       assignedApprover: 'MD – Gaurav Tripathy',
       timesheetDate: '2026-11-06',
     }),
   });
-  const ts1Data = (await createTs1Res.json()).data;
-  console.log(`Created TS ID: ${ts1Data.timesheetId}`);
-  console.log(`Initial Status: ${ts1Data.approvalStatus}`);
-  console.log(`Initial Approved By: ${ts1Data.approvedBy}`);
-  console.log(`Initial Assigned Approver: ${ts1Data.assignedApprover}`);
-  if (ts1Data.approvedBy !== 'Gaurav Tripathy') {
-    throw new Error(`Expected approvedBy "Gaurav Tripathy" but got "${ts1Data.approvedBy}"`);
+  const ts3 = (await tsCreate3.json()).data;
+  console.log(`1. Created Timesheet ${ts3.timesheetId}: Status=${ts3.approvalStatus}, ApprovedBy=${ts3.approvedBy || '-'}, Assigned=${ts3.assignedApprover}`);
+  if (ts3.approvalStatus !== 'Pending' || ts3.approvedBy) {
+    throw new Error(`TS3 direct pending mismatch! Status: ${ts3.approvalStatus}, ApprovedBy: ${ts3.approvedBy}`);
   }
 
-  // Transition to Pending
-  console.log('\nTransitioning Timesheet to Pending...');
-  const patchTs1Pending = await fetch(`${API_URL}/timesheets/${ts1Data.timesheetId}/status`, {
-    method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${mdToken}`,
-    },
-    body: JSON.stringify({
-      status: 'Pending',
-    }),
-  });
-  const ts1PendingData = (await patchTs1Pending.json()).data;
-  console.log(`Status: ${ts1PendingData.approvalStatus}`);
-  console.log(`Approved By: ${ts1PendingData.approvedBy}`);
-  console.log(`Assigned Approver: ${ts1PendingData.assignedApprover}`);
-  if (ts1PendingData.approvedBy) {
-    throw new Error(`Expected approvedBy null/undefined when Pending but got "${ts1PendingData.approvedBy}"`);
-  }
-  if (!ts1PendingData.assignedApprover?.includes('Gaurav Tripathy')) {
-    throw new Error(`Expected assignedApprover to retain Gaurav Tripathy but got "${ts1PendingData.assignedApprover}"`);
-  }
-
-  // Transition back to Approved
-  console.log('\nTransitioning Timesheet back to Approved...');
-  const patchTs1Approved = await fetch(`${API_URL}/timesheets/${ts1Data.timesheetId}/status`, {
-    method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${mdToken}`,
-    },
-    body: JSON.stringify({
-      status: 'Approved',
-    }),
-  });
-  const ts1ApprovedData = (await patchTs1Approved.json()).data;
-  console.log(`Status: ${ts1ApprovedData.approvalStatus}`);
-  console.log(`Approved By: ${ts1ApprovedData.approvedBy}`);
-  console.log(`Assigned Approver: ${ts1ApprovedData.assignedApprover}`);
-  if (ts1ApprovedData.approvedBy !== 'Gaurav Tripathy') {
-    throw new Error(`Expected restored approvedBy "Gaurav Tripathy" but got "${ts1ApprovedData.approvedBy}"`);
-  }
-
-  // ==========================================
-  // PART 2: TIMESHEETS PRESERVATION - AKSHIT UJJAIN
-  // ==========================================
-  console.log('\n----------------------------------------------------------------');
-  console.log('TEST 2: Timesheet Created as Approved with CEO – Akshit Ujjain');
-  console.log('----------------------------------------------------------------');
-  const createTs2Res = await fetch(`${API_URL}/timesheets`, {
+  // ========================================================================
+  // REQUIREMENT SCENARIO 1 - 4: Gaurav Tripathy (Completed -> In Progress -> Completed)
+  // ========================================================================
+  console.log('\n--- REQUIREMENT TEST A: Gaurav Tripathy (Completed -> In Progress -> Completed) ---');
+  const reqCreate1 = await fetch(`${API_URL}/requirements`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${ceoToken}`,
-    },
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${mdToken}` },
     body: JSON.stringify({
       projectId: 'PRJ-002',
-      taskId: 'TSK-00126',
-      employeeId: 'EMP-004',
-      hours: 4.0,
-      isBillable: true,
-      billableRate: 1500,
-      notes: 'Preservation test: Akshit Ujjain Initial Approved',
-      approvalStatus: 'Approved',
-      assignedApprover: 'CEO – Akshit Ujjain',
-      timesheetDate: '2026-11-06',
-    }),
-  });
-  const ts2Data = (await createTs2Res.json()).data;
-  console.log(`Created TS ID: ${ts2Data.timesheetId}`);
-  console.log(`Initial Status: ${ts2Data.approvalStatus}`);
-  console.log(`Initial Approved By: ${ts2Data.approvedBy}`);
-  console.log(`Initial Assigned Approver: ${ts2Data.assignedApprover}`);
-  if (ts2Data.approvedBy !== 'Akshit Ujjain') {
-    throw new Error(`Expected approvedBy "Akshit Ujjain" but got "${ts2Data.approvedBy}"`);
-  }
-
-  // Transition to Pending
-  console.log('\nTransitioning Timesheet to Pending...');
-  const patchTs2Pending = await fetch(`${API_URL}/timesheets/${ts2Data.timesheetId}/status`, {
-    method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${ceoToken}`,
-    },
-    body: JSON.stringify({
-      status: 'Pending',
-    }),
-  });
-  const ts2PendingData = (await patchTs2Pending.json()).data;
-  console.log(`Status: ${ts2PendingData.approvalStatus}`);
-  console.log(`Approved By: ${ts2PendingData.approvedBy}`);
-  if (ts2PendingData.approvedBy) {
-    throw new Error(`Expected approvedBy null/undefined when Pending but got "${ts2PendingData.approvedBy}"`);
-  }
-
-  // Transition back to Approved
-  console.log('\nTransitioning Timesheet back to Approved...');
-  const patchTs2Approved = await fetch(`${API_URL}/timesheets/${ts2Data.timesheetId}/status`, {
-    method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${ceoToken}`,
-    },
-    body: JSON.stringify({
-      status: 'Approved',
-    }),
-  });
-  const ts2ApprovedData = (await patchTs2Approved.json()).data;
-  console.log(`Status: ${ts2ApprovedData.approvalStatus}`);
-  console.log(`Approved By: ${ts2ApprovedData.approvedBy}`);
-  if (ts2ApprovedData.approvedBy !== 'Akshit Ujjain') {
-    throw new Error(`Expected restored approvedBy "Akshit Ujjain" but got "${ts2ApprovedData.approvedBy}"`);
-  }
-
-  // ==========================================
-  // PART 3: REQUIREMENTS PRESERVATION - GAURAV TRIPATHY
-  // ==========================================
-  console.log('\n----------------------------------------------------------------');
-  console.log('TEST 3: Requirement Created as Completed with MD – Gaurav Tripathy');
-  console.log('----------------------------------------------------------------');
-  const createReq1Res = await fetch(`${API_URL}/requirements`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${mdToken}`,
-    },
-    body: JSON.stringify({
-      projectId: 'PRJ-002',
-      title: 'Req Preservation Test: Gaurav Tripathy',
-      description: 'Test requirement approver preservation',
+      title: 'Req Test: Completed + Gaurav Tripathy',
+      description: 'Requirement created with Completed status',
       type: 'Feature',
       status: 'Completed',
       assignedApprover: 'MD – Gaurav Tripathy',
@@ -206,74 +174,50 @@ async function run() {
       targetRelease: 'v2.4',
     }),
   });
-  const req1Data = (await createReq1Res.json()).data;
-  console.log(`Created Req ID: ${req1Data.requirementId}`);
-  console.log(`Initial Status: ${req1Data.status}`);
-  console.log(`Initial Approved By: ${req1Data.approvedBy}`);
-  console.log(`Initial Assigned Approver: ${req1Data.assignedApprover}`);
-  if (req1Data.approvedBy !== 'Gaurav Tripathy') {
-    throw new Error(`Expected approvedBy "Gaurav Tripathy" but got "${req1Data.approvedBy}"`);
+  const req1 = (await reqCreate1.json()).data;
+  console.log(`1. Created Requirement ${req1.requirementId}: Status=${req1.status}, ApprovedBy=${req1.approvedBy}, Assigned=${req1.assignedApprover}`);
+  if (req1.status !== 'Completed' || req1.approvedBy !== 'Gaurav Tripathy') {
+    throw new Error(`Req1 creation mismatch! Status: ${req1.status}, ApprovedBy: ${req1.approvedBy}`);
   }
 
-  // Transition to In Progress
-  console.log('\nTransitioning Requirement to In Progress...');
-  const patchReq1InProgress = await fetch(`${API_URL}/requirements/${req1Data.requirementId}/status`, {
+  // Change to In Progress
+  const req1PatchInProgress = await fetch(`${API_URL}/requirements/${req1.requirementId}/status`, {
     method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${mdToken}`,
-    },
-    body: JSON.stringify({
-      status: 'In Progress',
-    }),
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${mdToken}` },
+    body: JSON.stringify({ status: 'In Progress' }),
   });
-  const req1InProgressData = (await patchReq1InProgress.json()).data;
-  console.log(`Status: ${req1InProgressData.status}`);
-  console.log(`Approved By: ${req1InProgressData.approvedBy}`);
-  console.log(`Assigned Approver: ${req1InProgressData.assignedApprover}`);
-  if (req1InProgressData.approvedBy) {
-    throw new Error(`Expected approvedBy null/undefined when In Progress but got "${req1InProgressData.approvedBy}"`);
+  const req1InProgress = (await req1PatchInProgress.json()).data;
+  console.log(`2. Changed to In Progress: Status=${req1InProgress.status}, ApprovedBy=${req1InProgress.approvedBy || '-'}, Assigned=${req1InProgress.assignedApprover}`);
+  if (req1InProgress.status !== 'In Progress' || req1InProgress.approvedBy) {
+    throw new Error(`Req1 in progress mismatch! Status: ${req1InProgress.status}, ApprovedBy: ${req1InProgress.approvedBy}`);
   }
-  if (!req1InProgressData.assignedApprover?.includes('Gaurav Tripathy')) {
-    throw new Error(`Expected assignedApprover to retain Gaurav Tripathy but got "${req1InProgressData.assignedApprover}"`);
+  if (!req1InProgress.assignedApprover?.includes('Gaurav')) {
+    throw new Error(`Req1 assigned approver lost! Value: ${req1InProgress.assignedApprover}`);
   }
 
-  // Transition back to Completed
-  console.log('\nTransitioning Requirement back to Completed...');
-  const patchReq1Completed = await fetch(`${API_URL}/requirements/${req1Data.requirementId}/status`, {
+  // Change back to Completed
+  const req1PatchCompleted = await fetch(`${API_URL}/requirements/${req1.requirementId}/status`, {
     method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${mdToken}`,
-    },
-    body: JSON.stringify({
-      status: 'Completed',
-    }),
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${mdToken}` },
+    body: JSON.stringify({ status: 'Completed' }),
   });
-  const req1CompletedData = (await patchReq1Completed.json()).data;
-  console.log(`Status: ${req1CompletedData.status}`);
-  console.log(`Approved By: ${req1CompletedData.approvedBy}`);
-  console.log(`Assigned Approver: ${req1CompletedData.assignedApprover}`);
-  if (req1CompletedData.approvedBy !== 'Gaurav Tripathy') {
-    throw new Error(`Expected restored approvedBy "Gaurav Tripathy" but got "${req1CompletedData.approvedBy}"`);
+  const req1Completed = (await req1PatchCompleted.json()).data;
+  console.log(`3. Changed back to Completed: Status=${req1Completed.status}, ApprovedBy=${req1Completed.approvedBy}, Assigned=${req1Completed.assignedApprover}`);
+  if (req1Completed.status !== 'Completed' || req1Completed.approvedBy !== 'Gaurav Tripathy') {
+    throw new Error(`Req1 re-completion mismatch! Expected "Gaurav Tripathy", got "${req1Completed.approvedBy}"`);
   }
 
-  // ==========================================
-  // PART 4: REQUIREMENTS PRESERVATION - AKSHIT UJJAIN
-  // ==========================================
-  console.log('\n----------------------------------------------------------------');
-  console.log('TEST 4: Requirement Created as Completed with CEO – Akshit Ujjain');
-  console.log('----------------------------------------------------------------');
-  const createReq2Res = await fetch(`${API_URL}/requirements`, {
+  // ========================================================================
+  // REQUIREMENT SCENARIO 5: Akshit Ujjain (Completed -> In Progress -> Completed)
+  // ========================================================================
+  console.log('\n--- REQUIREMENT TEST B: Akshit Ujjain (Completed -> In Progress -> Completed) ---');
+  const reqCreate2 = await fetch(`${API_URL}/requirements`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${ceoToken}`,
-    },
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${ceoToken}` },
     body: JSON.stringify({
       projectId: 'PRJ-002',
-      title: 'Req Preservation Test: Akshit Ujjain',
-      description: 'Test requirement approver preservation',
+      title: 'Req Test: Completed + Akshit Ujjain',
+      description: 'Requirement created with Completed status',
       type: 'Feature',
       status: 'Completed',
       assignedApprover: 'CEO – Akshit Ujjain',
@@ -281,86 +225,95 @@ async function run() {
       targetRelease: 'v2.4',
     }),
   });
-  const req2Data = (await createReq2Res.json()).data;
-  console.log(`Created Req ID: ${req2Data.requirementId}`);
-  console.log(`Initial Status: ${req2Data.status}`);
-  console.log(`Initial Approved By: ${req2Data.approvedBy}`);
-  console.log(`Initial Assigned Approver: ${req2Data.assignedApprover}`);
-  if (req2Data.approvedBy !== 'Akshit Ujjain') {
-    throw new Error(`Expected approvedBy "Akshit Ujjain" but got "${req2Data.approvedBy}"`);
+  const req2 = (await reqCreate2.json()).data;
+  console.log(`1. Created Requirement ${req2.requirementId}: Status=${req2.status}, ApprovedBy=${req2.approvedBy}, Assigned=${req2.assignedApprover}`);
+  if (req2.status !== 'Completed' || req2.approvedBy !== 'Akshit Ujjain') {
+    throw new Error(`Req2 creation mismatch! Status: ${req2.status}, ApprovedBy: ${req2.approvedBy}`);
   }
 
-  // Transition to In Progress
-  console.log('\nTransitioning Requirement to In Progress...');
-  const patchReq2InProgress = await fetch(`${API_URL}/requirements/${req2Data.requirementId}/status`, {
+  // Change to In Progress
+  const req2PatchInProgress = await fetch(`${API_URL}/requirements/${req2.requirementId}/status`, {
     method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${ceoToken}`,
-    },
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${ceoToken}` },
+    body: JSON.stringify({ status: 'In Progress' }),
+  });
+  const req2InProgress = (await req2PatchInProgress.json()).data;
+  console.log(`2. Changed to In Progress: Status=${req2InProgress.status}, ApprovedBy=${req2InProgress.approvedBy || '-'}`);
+  if (req2InProgress.status !== 'In Progress' || req2InProgress.approvedBy) {
+    throw new Error(`Req2 in progress mismatch!`);
+  }
+
+  // Change back to Completed
+  const req2PatchCompleted = await fetch(`${API_URL}/requirements/${req2.requirementId}/status`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${ceoToken}` },
+    body: JSON.stringify({ status: 'Completed' }),
+  });
+  const req2Completed = (await req2PatchCompleted.json()).data;
+  console.log(`3. Changed back to Completed: Status=${req2Completed.status}, ApprovedBy=${req2Completed.approvedBy}`);
+  if (req2Completed.status !== 'Completed' || req2Completed.approvedBy !== 'Akshit Ujjain') {
+    throw new Error(`Req2 re-completion mismatch! Expected "Akshit Ujjain", got "${req2Completed.approvedBy}"`);
+  }
+
+  // ========================================================================
+  // REQUIREMENT SCENARIO 6: Create directly with In Progress
+  // ========================================================================
+  console.log('\n--- REQUIREMENT TEST C: Directly with In Progress ---');
+  const reqCreate3 = await fetch(`${API_URL}/requirements`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${mdToken}` },
     body: JSON.stringify({
+      projectId: 'PRJ-002',
+      title: 'Req Test: Direct In Progress with Gaurav Tripathy designated',
+      description: 'Requirement created with In Progress status',
+      type: 'Feature',
       status: 'In Progress',
+      assignedApprover: 'MD – Gaurav Tripathy',
+      ownerId: 'EMP-004',
+      targetRelease: 'v2.4',
     }),
   });
-  const req2InProgressData = (await patchReq2InProgress.json()).data;
-  console.log(`Status: ${req2InProgressData.status}`);
-  console.log(`Approved By: ${req2InProgressData.approvedBy}`);
-  if (req2InProgressData.approvedBy) {
-    throw new Error(`Expected approvedBy null/undefined when In Progress but got "${req2InProgressData.approvedBy}"`);
+  const req3 = (await reqCreate3.json()).data;
+  console.log(`1. Created Requirement ${req3.requirementId}: Status=${req3.status}, ApprovedBy=${req3.approvedBy || '-'}, Assigned=${req3.assignedApprover}`);
+  if (req3.status !== 'In Progress' || req3.approvedBy) {
+    throw new Error(`Req3 direct in progress mismatch! Status: ${req3.status}, ApprovedBy: ${req3.approvedBy}`);
   }
 
-  // Transition back to Completed
-  console.log('\nTransitioning Requirement back to Completed...');
-  const patchReq2Completed = await fetch(`${API_URL}/requirements/${req2Data.requirementId}/status`, {
-    method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${ceoToken}`,
-    },
-    body: JSON.stringify({
-      status: 'Completed',
-    }),
-  });
-  const req2CompletedData = (await patchReq2Completed.json()).data;
-  console.log(`Status: ${req2CompletedData.status}`);
-  console.log(`Approved By: ${req2CompletedData.approvedBy}`);
-  if (req2CompletedData.approvedBy !== 'Akshit Ujjain') {
-    throw new Error(`Expected restored approvedBy "Akshit Ujjain" but got "${req2CompletedData.approvedBy}"`);
-  }
+  // ========================================================================
+  // REFRESH VERIFICATION (DIRECT GET CALLS TO DATABASE)
+  // ========================================================================
+  console.log('\n--- REFRESH SIMULATION: Database & GET API Verification ---');
+  const getTs = await fetch(`${API_URL}/timesheets`, { headers: { Authorization: `Bearer ${ceoToken}` } });
+  const tsList = (await getTs.json()).data.content;
+  const fTs1 = tsList.find(t => t.timesheetId === ts1.timesheetId);
+  const fTs2 = tsList.find(t => t.timesheetId === ts2.timesheetId);
+  const fTs3 = tsList.find(t => t.timesheetId === ts3.timesheetId);
 
-  // ==========================================
-  // PART 5: REFRESH SIMULATION (GET APIs)
-  // ==========================================
-  console.log('\n----------------------------------------------------------------');
-  console.log('TEST 5: Refresh Simulation (Direct GET on persisted items)');
-  console.log('----------------------------------------------------------------');
-  const getTsRes = await fetch(`${API_URL}/timesheets`, {
-    headers: { Authorization: `Bearer ${ceoToken}` },
-  });
-  const tsList = (await getTsRes.json()).data.content;
-  const fetchedTs1 = tsList.find(t => t.timesheetId === ts1Data.timesheetId);
-  const fetchedTs2 = tsList.find(t => t.timesheetId === ts2Data.timesheetId);
-  console.log(`Persisted TS1 (${ts1Data.timesheetId}): Status=${fetchedTs1.approvalStatus}, ApprovedBy=${fetchedTs1.approvedBy}, AssignedApprover=${fetchedTs1.assignedApprover}`);
-  console.log(`Persisted TS2 (${ts2Data.timesheetId}): Status=${fetchedTs2.approvalStatus}, ApprovedBy=${fetchedTs2.approvedBy}, AssignedApprover=${fetchedTs2.assignedApprover}`);
-  if (fetchedTs1.approvedBy !== 'Gaurav Tripathy' || fetchedTs2.approvedBy !== 'Akshit Ujjain') {
-    throw new Error('Persisted timesheet values mismatch on GET API fetch!');
-  }
+  console.log(`[DB/GET] TS1 (${ts1.timesheetId}): Status=${fTs1.approvalStatus}, ApprovedBy=${fTs1.approvedBy}, AssignedApprover=${fTs1.assignedApprover}`);
+  console.log(`[DB/GET] TS2 (${ts2.timesheetId}): Status=${fTs2.approvalStatus}, ApprovedBy=${fTs2.approvedBy}, AssignedApprover=${fTs2.assignedApprover}`);
+  console.log(`[DB/GET] TS3 (${ts3.timesheetId}): Status=${fTs3.approvalStatus}, ApprovedBy=${fTs3.approvedBy || '-'}, AssignedApprover=${fTs3.assignedApprover}`);
 
-  const getReqRes = await fetch(`${API_URL}/requirements`, {
-    headers: { Authorization: `Bearer ${ceoToken}` },
-  });
-  const reqList = (await getReqRes.json()).data.content;
-  const fetchedReq1 = reqList.find(r => r.requirementId === req1Data.requirementId);
-  const fetchedReq2 = reqList.find(r => r.requirementId === req2Data.requirementId);
-  console.log(`Persisted Req1 (${req1Data.requirementId}): Status=${fetchedReq1.status}, ApprovedBy=${fetchedReq1.approvedBy}, AssignedApprover=${fetchedReq1.assignedApprover}`);
-  console.log(`Persisted Req2 (${req2Data.requirementId}): Status=${fetchedReq2.status}, ApprovedBy=${fetchedReq2.approvedBy}, AssignedApprover=${fetchedReq2.assignedApprover}`);
-  if (fetchedReq1.approvedBy !== 'Gaurav Tripathy' || fetchedReq2.approvedBy !== 'Akshit Ujjain') {
-    throw new Error('Persisted requirement values mismatch on GET API fetch!');
-  }
+  if (fTs1.approvedBy !== 'Gaurav Tripathy' || fTs1.approvalStatus !== 'Approved') throw new Error('TS1 GET verification failed!');
+  if (fTs2.approvedBy !== 'Akshit Ujjain' || fTs2.approvalStatus !== 'Approved') throw new Error('TS2 GET verification failed!');
+  if (fTs3.approvedBy || fTs3.approvalStatus !== 'Pending') throw new Error('TS3 GET verification failed!');
 
-  console.log('\n================================================================');
-  console.log('✅ ALL APPROVER PRESERVATION TESTS PASSED SUCCESSFULLY!          ');
-  console.log('================================================================');
+  const getReq = await fetch(`${API_URL}/requirements`, { headers: { Authorization: `Bearer ${ceoToken}` } });
+  const reqList = (await getReq.json()).data.content;
+  const fReq1 = reqList.find(r => r.requirementId === req1.requirementId);
+  const fReq2 = reqList.find(r => r.requirementId === req2.requirementId);
+  const fReq3 = reqList.find(r => r.requirementId === req3.requirementId);
+
+  console.log(`[DB/GET] Req1 (${req1.requirementId}): Status=${fReq1.status}, ApprovedBy=${fReq1.approvedBy}, AssignedApprover=${fReq1.assignedApprover}`);
+  console.log(`[DB/GET] Req2 (${req2.requirementId}): Status=${fReq2.status}, ApprovedBy=${fReq2.approvedBy}, AssignedApprover=${fReq2.assignedApprover}`);
+  console.log(`[DB/GET] Req3 (${req3.requirementId}): Status=${fReq3.status}, ApprovedBy=${fReq3.approvedBy || '-'}, AssignedApprover=${fReq3.assignedApprover}`);
+
+  if (fReq1.approvedBy !== 'Gaurav Tripathy' || fReq1.status !== 'Completed') throw new Error('Req1 GET verification failed!');
+  if (fReq2.approvedBy !== 'Akshit Ujjain' || fReq2.status !== 'Completed') throw new Error('Req2 GET verification failed!');
+  if (fReq3.approvedBy || fReq3.status !== 'In Progress') throw new Error('Req3 GET verification failed!');
+
+  console.log('\n========================================================================');
+  console.log('✅ ALL 12 USER TEST SCENARIOS PASSED WITH PERFECT PERSISTENCE!          ');
+  console.log('========================================================================\n');
 }
 
 run().catch(err => {

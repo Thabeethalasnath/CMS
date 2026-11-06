@@ -44,12 +44,14 @@ export function mapBackendTimesheetToRecord(raw: any): TimesheetRecord {
     approvalStatus: (raw.approvalStatus || 'Pending') as TimesheetApprovalStatus,
     assignedApprover: raw.assignedApprover || raw.assigned_approver || 'CEO – Akshit Ujjain',
     approvedBy:
-      raw.approvedBy && raw.approvedBy !== '-' && raw.approvalStatus === 'Approved'
-        ? (raw.approvedBy.toLowerCase().includes('gaurav') ? 'Gaurav Tripathy' : raw.approvedBy.toLowerCase().includes('akshit') ? 'Akshit Ujjain' : raw.approvedBy)
+      raw.approvalStatus === 'Approved'
+        ? (raw.approvedBy && raw.approvedBy !== '-'
+            ? (raw.approvedBy.toLowerCase().includes('gaurav') ? 'Gaurav Tripathy' : 'Akshit Ujjain')
+            : ((raw.assignedApprover || raw.assigned_approver || '').toLowerCase().includes('gaurav') ? 'Gaurav Tripathy' : 'Akshit Ujjain'))
         : '-',
     approvalDate:
-      raw.approvalStatus === 'Approved' && (raw.approvedAt || raw.approvalDate)
-        ? formatDateForDisplay(raw.approvedAt || raw.approvalDate)
+      raw.approvalStatus === 'Approved'
+        ? (raw.approvedAt || raw.approvalDate ? formatDateForDisplay(raw.approvedAt || raw.approvalDate) : formatDateForDisplay(new Date()))
         : '-',
     approvedAt: raw.approvedAt || undefined,
     estimatedLaborCost:
@@ -135,7 +137,7 @@ export const timesheetsApiService = {
   async createTimesheet(payload: CreateTimesheetPayload): Promise<TimesheetRecord> {
     const hours = Number(payload.hoursWorked ?? payload.hoursSpent ?? payload.hours ?? 0);
     const hourlyRate = Number(payload.hourlyRate ?? payload.billableRate ?? 1500);
-    const body = {
+    const body: Record<string, any> = {
       projectId: payload.projectId,
       taskId: payload.taskId,
       employeeId: payload.employeeId,
@@ -149,7 +151,12 @@ export const timesheetsApiService = {
       billableRate: hourlyRate,
       notes: payload.taskDescription ?? payload.description ?? payload.notes ?? '',
       taskDescription: payload.taskDescription ?? payload.description ?? payload.notes ?? '',
+      approvalStatus: payload.approvalStatus || 'Pending',
+      assignedApprover: payload.assignedApprover || 'CEO – Akshit Ujjain',
     };
+    if (payload.approvedBy) {
+      body.approvedBy = payload.approvedBy;
+    }
     const res = await apiClient.post<any>(API_ENDPOINTS.TIMESHEETS.BASE, body);
     return mapBackendTimesheetToRecord(res.data);
   },

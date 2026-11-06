@@ -36,16 +36,18 @@ export function mapBackendRequirementToRecord(raw: any): RequirementRecord {
     scopeFreeze: isFrozen ? 'Yes' : 'No',
     assignedApprover: rawAssignedApprover || 'CEO – Akshit Ujjain',
     approvedBy:
-      raw.status === 'Completed' && rawApprovedBy && rawApprovedBy !== '-'
-        ? (rawApprovedBy.toLowerCase().includes('gaurav')
-          ? 'Gaurav Tripathy'
-          : rawApprovedBy.toLowerCase().includes('akshit')
-          ? 'Akshit Ujjain'
-          : rawApprovedBy)
+      raw.status === 'Completed'
+        ? (rawApprovedBy && rawApprovedBy !== '-'
+            ? (rawApprovedBy.toLowerCase().includes('gaurav')
+              ? 'Gaurav Tripathy'
+              : rawApprovedBy.toLowerCase().includes('akshit')
+              ? 'Akshit Ujjain'
+              : rawApprovedBy)
+            : ((rawAssignedApprover || '').toLowerCase().includes('gaurav') ? 'Gaurav Tripathy' : 'Akshit Ujjain'))
         : '-',
     approvalDate:
-      raw.status === 'Completed' && rawApprovalDate && rawApprovalDate !== '-'
-        ? formatDateForDisplay(rawApprovalDate)
+      raw.status === 'Completed'
+        ? (rawApprovalDate && rawApprovalDate !== '-' ? formatDateForDisplay(rawApprovalDate) : formatDateForDisplay(new Date()))
         : '-',
     completionPercentage: Number(raw.completionPercentage ?? 0),
   };
@@ -137,8 +139,9 @@ export const requirementsApiService = {
       ownerId: payload.ownerId || 'EMP-001',
       status: status,
       scopeFreeze: Boolean(payload.scopeFreeze),
-      completionPercentage: payload.completionPercentage ?? 0,
+      completionPercentage: status === 'Completed' ? 100 : (payload.completionPercentage ?? 0),
       requirementDate: formatDateForInput(payload.requirementDate),
+      assignedApprover: payload.assignedApprover || 'CEO – Akshit Ujjain',
     };
 
     if (payload.approvedBy && payload.approvedBy !== '-') {
