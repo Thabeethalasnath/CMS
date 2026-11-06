@@ -17,17 +17,39 @@ export interface AppLayoutContextType {
 export const AppLayout: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [dateRange, setDateRange] = useState('—');
-  const [userName, setUserName] = useState('—');
-  const [userRole, setUserRole] = useState('—');
+  const [userName, setUserName] = useState<string>(() => {
+    return (typeof window !== 'undefined' ? localStorage.getItem('auth_user_name') : null) || '—';
+  });
+  const [userRole, setUserRole] = useState<string>(() => {
+    return (typeof window !== 'undefined' ? localStorage.getItem('auth_user_role') : null) || '—';
+  });
 
   useEffect(() => {
+    const syncAuthUser = () => {
+      const storedName = localStorage.getItem('auth_user_name');
+      const storedRole = localStorage.getItem('auth_user_role');
+      if (storedName) setUserName(storedName);
+      if (storedRole) setUserRole(storedRole);
+    };
+
+    syncAuthUser();
+    window.addEventListener('auth_user_changed', syncAuthUser);
+    window.addEventListener('storage', syncAuthUser);
+
     dashboardService.getDashboardData()
       .then((data) => {
         if (data.settings?.active_date_range) setDateRange(data.settings.active_date_range);
-        if (data.settings?.user_name) setUserName(data.settings.user_name);
-        if (data.settings?.user_role) setUserRole(data.settings.user_role);
+        const storedName = localStorage.getItem('auth_user_name');
+        const storedRole = localStorage.getItem('auth_user_role');
+        if (!storedName && data.settings?.user_name) setUserName(data.settings.user_name);
+        if (!storedRole && data.settings?.user_role) setUserRole(data.settings.user_role);
       })
       .catch(() => {});
+
+    return () => {
+      window.removeEventListener('auth_user_changed', syncAuthUser);
+      window.removeEventListener('storage', syncAuthUser);
+    };
   }, []);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   // Side rail defaults to expanded; toggles and persists preference in localStorage

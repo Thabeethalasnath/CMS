@@ -47,10 +47,13 @@ function isTokenExpired(token: string): boolean {
 
 async function acquireDevToken(): Promise<string | null> {
   try {
+    const preferredUsername =
+      (typeof window !== 'undefined' ? localStorage.getItem('auth_user_username') : null) ||
+      'akshit.ujjain';
     const authRes = await fetch(`${BASE_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify({ username: 'akshit.ujjain', password: 'password123' }),
+      body: JSON.stringify({ username: preferredUsername, password: 'password123' }),
     });
     if (authRes.ok) {
       const resData = await authRes.json();
@@ -59,6 +62,7 @@ async function acquireDevToken(): Promise<string | null> {
         localStorage.setItem('auth_token', jwt);
         if (resData?.data?.username) {
           localStorage.setItem('auth_user_name', resData.data.name || resData.data.username);
+          localStorage.setItem('auth_user_username', resData.data.username);
         }
         if (resData?.data?.role) {
           localStorage.setItem('auth_user_role', resData.data.role);

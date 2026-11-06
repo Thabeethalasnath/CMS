@@ -50,6 +50,15 @@ export const API_ENDPOINTS = {
     REMINDER: (id: string) => `/collections/invoices/${encodeURIComponent(id)}/reminders`,
     COMMUNICATIONS: (id: string) => `/collections/invoices/${encodeURIComponent(id)}/communications`,
   },
+  INVOICES: {
+    BASE: '/invoices',
+    BY_ID: (id: string) => `/invoices/${encodeURIComponent(id)}`,
+    KPIS: '/invoices/kpis',
+    NEXT_ID: (year?: number) => (year ? `/invoices/next-id?year=${year}` : '/invoices/next-id'),
+    PAYMENTS: (id: string) => `/invoices/${encodeURIComponent(id)}/payments`,
+    REVERSAL: (invoiceId: string, paymentId: string) =>
+      `/invoices/${encodeURIComponent(invoiceId)}/payments/${encodeURIComponent(paymentId)}/reversals`,
+  },
   PROPOSALS: {
     BASE: '/proposals',
     BY_ID: (id: string) => `/proposals/${encodeURIComponent(id)}`,
@@ -98,5 +107,31 @@ export const API_ENDPOINTS = {
     EMPLOYEE_EXIT_NEXT_ID: '/hr/employee-exits/next-id',
     EMPLOYEE_EXIT_FILTERS: '/hr/employee-exits/filters',
     EMPLOYEE_EXIT_EXPORT: '/hr/employee-exits/export',
+  },
+  PROJECTS: {
+    BASE: '/projects',
+    BY_ID: (id: string) => `/projects/${encodeURIComponent(id)}`,
+    TASKS: (id: string) => `/projects/${encodeURIComponent(id)}/tasks`,
+    TASK_BY_ID: (taskId: string) => `/projects/tasks/${encodeURIComponent(taskId)}`,
+  },
+  TIMESHEETS: {
+    BASE: '/timesheets',
+    BY_ID: (id: string) => `/timesheets/${encodeURIComponent(id)}`,
+    KPIS: '/timesheets/kpis',
+    SUBMIT: (id: string) => `/timesheets/${encodeURIComponent(id)}/submit`,
+    APPROVE: (id: string) => `/timesheets/${encodeURIComponent(id)}/approve`,
+    REJECT: (id: string) => `/timesheets/${encodeURIComponent(id)}/reject`,
+    STATUS: (id: string) => `/timesheets/${encodeURIComponent(id)}/status`,
+    OVERRIDE_LABOR_COST: (id: string) => `/timesheets/${encodeURIComponent(id)}/override-labor-cost`,
+  },
+  REQUIREMENTS: {
+    BASE: '/requirements',
+    BY_ID: (id: string) => `/requirements/${encodeURIComponent(id)}`,
+    KPIS: '/requirements/kpis',
+    STATUS: (id: string) => `/requirements/${encodeURIComponent(id)}/status`,
+    COMPLETION: (id: string) => `/requirements/${encodeURIComponent(id)}/completion`,
+    SCOPE_FREEZE: (id: string) => `/requirements/${encodeURIComponent(id)}/scope-freeze`,
+    APPROVE: (id: string) => `/requirements/${encodeURIComponent(id)}/approve`,
+    REVOKE: (id: string) => `/requirements/${encodeURIComponent(id)}/revoke`,
   },
 };

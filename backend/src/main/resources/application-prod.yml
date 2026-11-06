@@ -1,0 +1,6 @@
+# Spring Boot Production Profile Configuration
+# Strictly locked to structural production migrations. Dev migrations are prohibited.
+spring:
+  flyway:
+    locations: classpath:db/migration
+

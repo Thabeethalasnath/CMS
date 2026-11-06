@@ -10,6 +10,7 @@ import { OpportunitiesPage } from '../features/sales/pages/OpportunitiesPage';
 import { ContractsPage } from '../features/sales/pages/ContractsPage';
 import { ProposalsPage } from '../features/proposals/pages/ProposalsPage';
 import { CollectionsPage } from '../features/collections/pages/CollectionsPage';
+import { FinanceCollectionsPage } from '../features/collections/pages/FinanceCollectionsPage';
 import { EmployeeMasterPage } from '../features/hr/pages/EmployeeMasterPage';
 import { LeadsPage } from '../features/sales/pages/LeadsPage';
 import { ClientsPage } from '../features/clients/pages/ClientsPage';
@@ -17,6 +18,8 @@ import { AttendancePage } from '../features/attendance/pages/AttendancePage';
 import { LeaveManagementPage } from '../features/leave/pages/LeaveManagementPage';
 import { HrDashboardPage } from '../features/hr/pages/HrDashboardPage';
 import { EmployeeExitPage } from '../features/hr/pages/EmployeeExitPage';
+import { InvoicesPage } from '../features/invoices/pages/InvoicesPage';
+import { TimesheetsRequirementsPage } from '../features/projects/pages/TimesheetsRequirementsPage';
 
 const CeoDashboardRoute: React.FC = () => {
   const context = useOutletContext<AppLayoutContextType>();
@@ -46,7 +49,9 @@ export const AppRouter: React.FC = () => {
         <Route path="/management/approval-inbox" element={<ApprovalInboxPage />} />
         <Route path="/management/follow-up-queue" element={<FollowUpQueuePage />} />
         <Route path="/management/collections" element={<CollectionsPage />} />
-        <Route path="/finance/collections" element={<Navigate to="/management/collections" replace />} />
+        <Route path="/finance/collections" element={<FinanceCollectionsPage />} />
+        <Route path="/finance/invoices" element={<InvoicesPage />} />
+        <Route path="/invoices" element={<Navigate to="/finance/invoices" replace />} />
         <Route path="/sales/leads" element={<LeadsPage />} />
         <Route path="/sales/opportunities" element={<OpportunitiesPage />} />
         <Route path="/sales/proposals" element={<ProposalsPage />} />
@@ -61,6 +66,8 @@ export const AppRouter: React.FC = () => {
         <Route path="/hr/leave" element={<LeaveManagementPage />} />
         <Route path="/leave" element={<Navigate to="/hr/leave" replace />} />
         <Route path="/hr/employee-exit" element={<EmployeeExitPage />} />
+        <Route path="/projects/timesheets" element={<TimesheetsRequirementsPage />} />
+        <Route path="/projects/timesheets-requirements" element={<Navigate to="/projects/timesheets" replace />} />
 
         {/* Generate dynamic module engine routes for all other navigation items */}
         {navigationSections.map((section) =>
@@ -71,6 +78,7 @@ export const AppRouter: React.FC = () => {
                 item.path !== '/management/approval-inbox' &&
                 item.path !== '/management/follow-up-queue' &&
                 item.path !== '/management/collections' &&
+                item.path !== '/finance/collections' &&
                 item.path !== '/sales/leads' &&
                 item.path !== '/sales/opportunities' &&
                 item.path !== '/sales/proposals' &&
@@ -84,7 +92,10 @@ export const AppRouter: React.FC = () => {
                 item.path !== '/attendance' &&
                 item.path !== '/hr/leave' &&
                 item.path !== '/leave' &&
-                item.path !== '/hr/employee-exit'
+                item.path !== '/hr/employee-exit' &&
+                item.path !== '/finance/invoices' &&
+                item.path !== '/invoices' &&
+                item.path !== '/projects/timesheets'
             )
             .map((item) => (
               <Route

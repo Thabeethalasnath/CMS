@@ -31,8 +31,7 @@ spring:
     baseline-on-migrate: true
     baseline-version: 0
     validate-on-migrate: false
-    locations: ${FLYWAY_LOCATIONS:classpath:db/migration,classpath:db/dev-migration}
-    ignore-migration-patterns: "*:missing"
+    locations: classpath:db/migration
 
   jpa:
     hibernate:

@@ -78,8 +78,21 @@ public class AuthController {
             }
         }
 
-        String role = ("admin".equalsIgnoreCase(username)) ? "ADMIN" : "CEO";
-        String displayName = ("akshit.ujjain".equalsIgnoreCase(username)) ? "Akshit Ujjain" : "Administrator";
+        String role = "USER";
+        String displayName = username;
+        if ("admin".equalsIgnoreCase(username)) {
+            role = "ADMIN";
+            displayName = "Administrator";
+        } else if ("akshit.ujjain".equalsIgnoreCase(username) || "akshit".equalsIgnoreCase(username)) {
+            role = "CEO";
+            displayName = "Akshit Ujjain";
+        } else if ("gaurav.tripathy".equalsIgnoreCase(username) || "gaurav".equalsIgnoreCase(username)) {
+            role = "MD";
+            displayName = "Gaurav Tripathy";
+        } else if (username != null && !username.isBlank()) {
+            role = "USER";
+            displayName = username;
+        }
         String token = tokenProvider.generateToken(username, role);
 
         LoginResponse response = LoginResponse.builder()
@@ -107,7 +120,8 @@ public class AuthController {
                 .findFirst()
                 .orElse("CEO");
 
-        String displayName = "akshit.ujjain".equalsIgnoreCase(username) ? "Akshit Ujjain" : username;
+        String displayName = "akshit.ujjain".equalsIgnoreCase(username) ? "Akshit Ujjain" :
+                ("gaurav.tripathy".equalsIgnoreCase(username) ? "Gaurav Tripathy" : username);
 
         return ResponseEntity.ok(ApiResponse.success("Current user profile", Map.of(
                 "username", username,
