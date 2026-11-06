@@ -171,6 +171,10 @@ export const LogTimeModal: React.FC<LogTimeModalProps> = ({
       return;
     }
 
+    const resolvedApprovedBy = approvalStatus === 'Approved'
+      ? (assignedApprover.includes('Gaurav') ? 'Gaurav Tripathy' : 'Akshit Ujjain')
+      : undefined;
+
     const isTest = typeof process !== 'undefined' && process.env?.NODE_ENV === 'test';
     if (isTest) {
       onSave({
@@ -182,7 +186,9 @@ export const LogTimeModal: React.FC<LogTimeModalProps> = ({
         hours: hoursNum,
         billable,
         billableRate: rateNum,
+        approvalStatus,
         assignedApprover,
+        approvedBy: resolvedApprovedBy,
         notes,
       });
       onClose();
@@ -201,7 +207,9 @@ export const LogTimeModal: React.FC<LogTimeModalProps> = ({
         hours: hoursNum,
         billable,
         billableRate: rateNum,
+        approvalStatus,
         assignedApprover,
+        approvedBy: resolvedApprovedBy,
         notes,
       });
       onClose();
@@ -559,10 +567,10 @@ export const LogTimeModal: React.FC<LogTimeModalProps> = ({
                 </div>
               </div>
 
-              {/* Approver */}
+              {/* Approved By (Designated Approver) */}
               <div>
                 <label className="block text-[10.5px] font-medium text-[#475569] mb-0.5">
-                  Approver <span className="text-red-500">*</span>
+                  Approved By <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <select

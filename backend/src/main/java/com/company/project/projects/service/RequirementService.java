@@ -198,9 +198,10 @@ public class RequirementService {
 
         String requirementId = idGeneratorService.generateRequirementId(reqDate);
 
-        String assignedApproverVal = (request.getAssignedApprover() != null && !request.getAssignedApprover().isBlank())
+        String rawAssigned = (request.getAssignedApprover() != null && !request.getAssignedApprover().isBlank())
                 ? request.getAssignedApprover().trim()
-                : "CEO – Akshit Ujjain";
+                : (request.getApprovedBy() != null && !request.getApprovedBy().isBlank() ? request.getApprovedBy().trim() : "Akshit Ujjain");
+        String assignedApproverVal = normalizeAssignedApprover(rawAssigned);
 
         String approvedByVal = null;
         LocalDate appDate = null;
@@ -210,8 +211,8 @@ public class RequirementService {
             if (!isElevated) {
                 throw new BusinessValidationException("Only authorized approvers (CEO, MD, Admin) can create a completed requirement.");
             }
-            approvedByVal = resolveApproverDisplayName(currentUsername, assignedApproverVal);
-            appDate = LocalDate.now();
+            approvedByVal = resolveApproverDisplayName(assignedApproverVal, currentUsername);
+            appDate = request.getApprovalDate() != null ? request.getApprovalDate() : LocalDate.now();
             completion = 100;
         }
 
@@ -326,7 +327,9 @@ public class RequirementService {
         }
 
         if (request.getAssignedApprover() != null && !request.getAssignedApprover().isBlank()) {
-            entity.setAssignedApprover(request.getAssignedApprover().trim());
+            entity.setAssignedApprover(normalizeAssignedApprover(request.getAssignedApprover()));
+        } else if (request.getApprovedBy() != null && !request.getApprovedBy().isBlank() && !" - ".equals(request.getApprovedBy().trim()) && !"-".equals(request.getApprovedBy().trim())) {
+            entity.setAssignedApprover(normalizeAssignedApprover(request.getApprovedBy()));
         }
 
         if (request.getCompletionPercentage() != null) {
@@ -338,7 +341,7 @@ public class RequirementService {
             if (comp == 100 && !"Completed".equalsIgnoreCase(entity.getStatus())) {
                 if (isElevated) {
                     entity.setStatus("Completed");
-                    entity.setApprovedBy(resolveApproverDisplayName(currentUsername, entity.getAssignedApprover()));
+                    entity.setApprovedBy(resolveApproverDisplayName(entity.getAssignedApprover(), currentUsername));
                     entity.setApprovalDate(LocalDate.now());
                 } else {
                     entity.setStatus("Pending Approval");
@@ -359,7 +362,7 @@ public class RequirementService {
                 }
                 entity.setStatus("Completed");
                 entity.setCompletionPercentage(100);
-                entity.setApprovedBy(resolveApproverDisplayName(currentUsername, entity.getAssignedApprover()));
+                entity.setApprovedBy(resolveApproverDisplayName(entity.getAssignedApprover(), currentUsername));
                 entity.setApprovalDate(LocalDate.now());
             } else {
                 entity.setStatus(newStatus);
@@ -411,7 +414,7 @@ public class RequirementService {
             }
             entity.setStatus("Completed");
             entity.setCompletionPercentage(100);
-            entity.setApprovedBy(resolveApproverDisplayName(currentUsername, entity.getAssignedApprover()));
+            entity.setApprovedBy(resolveApproverDisplayName(entity.getAssignedApprover(), currentUsername));
             entity.setApprovalDate(LocalDate.now());
         } else {
             entity.setStatus(targetStatus != null && !targetStatus.isBlank() ? targetStatus : "In Progress");
@@ -435,7 +438,7 @@ public class RequirementService {
 
         entity.setStatus("Completed");
         entity.setCompletionPercentage(100);
-        entity.setApprovedBy(resolveApproverDisplayName(currentUsername, entity.getAssignedApprover()));
+        entity.setApprovedBy(resolveApproverDisplayName(entity.getAssignedApprover(), currentUsername));
         entity.setApprovalDate(LocalDate.now());
 
         ProjectRequirementEntity saved = requirementRepository.save(entity);
@@ -614,15 +617,41 @@ public class RequirementService {
         );
     }
 
-    public String resolveApproverDisplayName(String username, String assignedApprover) {
+    public String normalizeAssignedApprover(String input) {
+        if (input == null || input.isBlank()) {
+            return "CEO – Akshit Ujjain";
+        }
+        String trimmed = input.trim();
+        String lower = trimmed.toLowerCase();
+        if (lower.contains("gaurav")) {
+            return trimmed.contains("–") || trimmed.contains("-") ? trimmed : "MD – Gaurav Tripathy";
+        }
+        if (lower.contains("akshit")) {
+            return trimmed.contains("–") || trimmed.contains("-") ? trimmed : "CEO – Akshit Ujjain";
+        }
+        return trimmed;
+    }
+
+    public String resolveApproverDisplayName(String assignedApprover, String username) {
+        if (assignedApprover != null && !assignedApprover.isBlank()) {
+            String lower = assignedApprover.toLowerCase();
+            if (lower.contains("gaurav")) {
+                return "Gaurav Tripathy";
+            }
+            if (lower.contains("akshit")) {
+                return "Akshit Ujjain";
+            }
+            return assignedApprover.trim();
+        }
         if (username != null && !username.isBlank() && !"system".equalsIgnoreCase(username) && !"anonymousUser".equalsIgnoreCase(username)) {
+            String lower = username.toLowerCase();
+            if (lower.contains("gaurav")) {
+                return "Gaurav Tripathy";
+            }
+            if (lower.contains("akshit")) {
+                return "Akshit Ujjain";
+            }
             return resolveApproverDisplayName(username);
-        }
-        if (assignedApprover != null && assignedApprover.toLowerCase().contains("gaurav")) {
-            return "Gaurav Tripathy";
-        }
-        if (assignedApprover != null && assignedApprover.toLowerCase().contains("akshit")) {
-            return "Akshit Ujjain";
         }
         return "Akshit Ujjain";
     }

@@ -156,7 +156,10 @@ public class TimesheetController {
         }
         TimesheetResponse response;
         if ("Approved".equalsIgnoreCase(status.trim())) {
+            String rawAssigned = body.getOrDefault("assignedApprover", body.get("approvedBy"));
             ApproveTimesheetRequest req = ApproveTimesheetRequest.builder()
+                    .assignedApprover(rawAssigned)
+                    .approvedBy(body.get("approvedBy"))
                     .comments(body.get("comments"))
                     .notes(body.get("notes"))
                     .build();

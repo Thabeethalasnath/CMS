@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ApproveTimesheetRequest {
+    private String assignedApprover;
     private String approvedBy;
     private String notes;
     private String comments;

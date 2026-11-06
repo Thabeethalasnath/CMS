@@ -257,9 +257,13 @@ export const useTimesheetsState = (initialList?: TimesheetRecord[]) => {
         billable: formData.billable,
         billableRate: isBillable ? formatRupee(formData.billableRate, true) : '-',
         billableAmount: formatRupee(billableAmountNum, true),
-        approvalStatus: 'Pending',
-        assignedApprover: formData.assignedApprover || 'CEO – Akshit Ujjain',
-        approvedBy: '-',
+        approvalStatus: formData.approvalStatus || 'Pending',
+        assignedApprover: formData.assignedApprover || 'Akshit Ujjain',
+        approvedBy:
+          formData.approvalStatus === 'Approved'
+            ? (formData.assignedApprover?.includes('Gaurav') ? 'Gaurav Tripathy' : 'Akshit Ujjain')
+            : '-',
+        approvalDate: formData.approvalStatus === 'Approved' ? formatDateForDisplay(new Date()) : '-',
         estimatedLaborCost: formatRupee(formData.hours * 800, true),
         notes: formData.notes.trim() || 'Effort logged',
       };
@@ -372,12 +376,13 @@ export const useTimesheetsState = (initialList?: TimesheetRecord[]) => {
         setRecords((prev) =>
           prev.map((r) => {
             if (r.timesheetId === id) {
-              const assigned = r.assignedApprover || 'CEO – Akshit Ujjain';
-              const effectiveApprover = assigned.includes('Gaurav') ? 'Gaurav Tripathy' : defaultApproverName;
+              const assigned = r.assignedApprover || 'Akshit Ujjain';
+              const designatedName = assigned.toLowerCase().includes('gaurav') ? 'Gaurav Tripathy' : 'Akshit Ujjain';
               updatedRecord = {
                 ...r,
                 approvalStatus: newStatus,
-                approvedBy: newStatus === 'Approved' ? effectiveApprover : newStatus === 'Rejected' ? effectiveApprover : '-',
+                approvedBy: newStatus === 'Approved' ? designatedName : '-',
+                approvalDate: newStatus === 'Approved' ? formatDateForDisplay(new Date()) : '-',
               };
               return updatedRecord;
             }
@@ -404,21 +409,18 @@ export const useTimesheetsState = (initialList?: TimesheetRecord[]) => {
       setRecords((prev) =>
         prev.map((r) => {
           if (r.timesheetId === id) {
-            const assigned = r.assignedApprover || persisted.assignedApprover || 'CEO – Akshit Ujjain';
-            const effectiveApprover =
-              persisted.approvedBy && persisted.approvedBy !== '-'
-                ? persisted.approvedBy
-                : storedName ||
-                  (storedUsername
-                    ? storedUsername.toLowerCase().includes('gaurav') ? 'Gaurav Tripathy' : 'Akshit Ujjain'
-                    : assigned.includes('Gaurav') ? 'Gaurav Tripathy' : defaultApproverName);
-            const finalApprovedBy = newStatus === 'Approved' ? effectiveApprover : '-';
+            const assigned = r.assignedApprover || persisted.assignedApprover || 'Akshit Ujjain';
+            const designatedName = assigned.toLowerCase().includes('gaurav') ? 'Gaurav Tripathy' : 'Akshit Ujjain';
+            const finalApprovedBy = newStatus === 'Approved'
+              ? (persisted.approvedBy && persisted.approvedBy !== '-' ? persisted.approvedBy : designatedName)
+              : '-';
             return {
               ...r,
               ...persisted,
+              assignedApprover: assigned,
               approvalStatus: newStatus,
               approvedBy: finalApprovedBy,
-              approvalDate: persisted.approvalDate || (newStatus === 'Approved' ? formatDateForDisplay(new Date()) : '-'),
+              approvalDate: newStatus === 'Approved' ? (persisted.approvalDate || formatDateForDisplay(new Date())) : '-',
             };
           }
           return r;

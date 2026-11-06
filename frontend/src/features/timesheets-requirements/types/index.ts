@@ -86,7 +86,9 @@ export interface LogTimeFormData {
   hours: number;
   billable: BillableOption;
   billableRate: number;
+  approvalStatus?: TimesheetApprovalStatus;
   assignedApprover?: string;
+  approvedBy?: string;
   notes: string;
 }
 

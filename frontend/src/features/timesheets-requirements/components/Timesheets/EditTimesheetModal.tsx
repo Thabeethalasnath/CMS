@@ -203,7 +203,7 @@ export const EditTimesheetModal: React.FC<EditTimesheetModalProps> = ({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">Approver</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">Approved By</label>
             <select
               value={assignedApprover}
               onChange={(e) => setAssignedApprover(e.target.value)}

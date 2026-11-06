@@ -186,13 +186,16 @@ public class TimesheetService {
 
         boolean isElevated = isManagerOrAdmin(userRoles);
         String initialStatus = request.getApprovalStatus() != null && !request.getApprovalStatus().isBlank() ? request.getApprovalStatus() : "Pending";
-        String assignedApprover = request.getAssignedApprover() != null && !request.getAssignedApprover().isBlank() ? request.getAssignedApprover().trim() : "CEO – Akshit Ujjain";
+        String rawAssigned = request.getAssignedApprover() != null && !request.getAssignedApprover().isBlank()
+                ? request.getAssignedApprover().trim()
+                : (request.getApprovedBy() != null && !request.getApprovedBy().isBlank() ? request.getApprovedBy().trim() : "Akshit Ujjain");
+        String assignedApprover = normalizeAssignedApprover(rawAssigned);
 
         String approvedBy = null;
         OffsetDateTime approvedAt = null;
         if ("Approved".equalsIgnoreCase(initialStatus)) {
             if (isElevated) {
-                approvedBy = resolveApproverDisplayName(currentUsername);
+                approvedBy = resolveApproverDisplayName(assignedApprover, currentUsername);
                 approvedAt = OffsetDateTime.now();
             } else {
                 initialStatus = "Pending";
@@ -284,7 +287,9 @@ public class TimesheetService {
         }
 
         if (request.getAssignedApprover() != null && !request.getAssignedApprover().isBlank()) {
-            entity.setAssignedApprover(request.getAssignedApprover().trim());
+            entity.setAssignedApprover(normalizeAssignedApprover(request.getAssignedApprover()));
+        } else if (request.getApprovedBy() != null && !request.getApprovedBy().isBlank() && !" - ".equals(request.getApprovedBy().trim()) && !"-".equals(request.getApprovedBy().trim())) {
+            entity.setAssignedApprover(normalizeAssignedApprover(request.getApprovedBy()));
         }
 
         if (request.getApprovalStatus() != null && !request.getApprovalStatus().isBlank()) {
@@ -295,15 +300,19 @@ public class TimesheetService {
                     throw new BusinessValidationException("Only managers, CEOs, and administrators can approve timesheets.");
                 }
                 entity.setApprovalStatus("Approved");
-                entity.setApprovedBy(resolveApproverDisplayName(currentUsername, entity));
-                entity.setApprovedAt(OffsetDateTime.now());
+                entity.setApprovedBy(resolveApproverDisplayName(entity.getAssignedApprover(), currentUsername));
+                if (entity.getApprovedAt() == null) {
+                    entity.setApprovedAt(OffsetDateTime.now());
+                }
                 entity.setRejectionReason(null);
             } else if ("Pending".equalsIgnoreCase(newStatus)) {
                 entity.setApprovalStatus("Pending");
-                if ("Approved".equalsIgnoreCase(oldStatus)) {
-                    entity.setApprovedBy(null);
-                    entity.setApprovedAt(null);
-                }
+                entity.setApprovedBy(null);
+                entity.setApprovedAt(null);
+            } else if ("Rejected".equalsIgnoreCase(newStatus)) {
+                entity.setApprovalStatus("Rejected");
+                entity.setApprovedBy(null);
+                entity.setApprovedAt(null);
             } else {
                 entity.setApprovalStatus(newStatus);
             }
@@ -369,7 +378,13 @@ public class TimesheetService {
     public TimesheetResponse approveTimesheet(String timesheetId, ApproveTimesheetRequest request, String currentUsername) {
         ProjectTimesheetEntity entity = findOrThrow(timesheetId);
 
-        String approver = resolveApproverDisplayName(currentUsername, entity);
+        if (request != null && request.getAssignedApprover() != null && !request.getAssignedApprover().isBlank()) {
+            entity.setAssignedApprover(normalizeAssignedApprover(request.getAssignedApprover()));
+        } else if (request != null && request.getApprovedBy() != null && !request.getApprovedBy().isBlank() && !"-".equals(request.getApprovedBy().trim())) {
+            entity.setAssignedApprover(normalizeAssignedApprover(request.getApprovedBy()));
+        }
+
+        String approver = resolveApproverDisplayName(entity.getAssignedApprover(), currentUsername);
 
         entity.setApprovalStatus("Approved");
         entity.setApprovedBy(approver);
@@ -558,17 +573,48 @@ public class TimesheetService {
         );
     }
 
-    public String resolveApproverDisplayName(String username, ProjectTimesheetEntity entity) {
+    public String normalizeAssignedApprover(String input) {
+        if (input == null || input.isBlank()) {
+            return "CEO – Akshit Ujjain";
+        }
+        String trimmed = input.trim();
+        String lower = trimmed.toLowerCase();
+        if (lower.contains("gaurav")) {
+            return trimmed.contains("–") || trimmed.contains("-") ? trimmed : "MD – Gaurav Tripathy";
+        }
+        if (lower.contains("akshit")) {
+            return trimmed.contains("–") || trimmed.contains("-") ? trimmed : "CEO – Akshit Ujjain";
+        }
+        return trimmed;
+    }
+
+    public String resolveApproverDisplayName(String assignedApprover, String username) {
+        if (assignedApprover != null && !assignedApprover.isBlank()) {
+            String lower = assignedApprover.toLowerCase();
+            if (lower.contains("gaurav")) {
+                return "Gaurav Tripathy";
+            }
+            if (lower.contains("akshit")) {
+                return "Akshit Ujjain";
+            }
+            return assignedApprover.trim();
+        }
         if (username != null && !username.isBlank() && !"system".equalsIgnoreCase(username) && !"anonymousUser".equalsIgnoreCase(username)) {
+            String lower = username.toLowerCase();
+            if (lower.contains("gaurav")) {
+                return "Gaurav Tripathy";
+            }
+            if (lower.contains("akshit")) {
+                return "Akshit Ujjain";
+            }
             return resolveApproverDisplayName(username);
         }
-        if (entity != null && entity.getAssignedApprover() != null && entity.getAssignedApprover().toLowerCase().contains("gaurav")) {
-            return "Gaurav Tripathy";
-        }
-        if (entity != null && entity.getAssignedApprover() != null && entity.getAssignedApprover().toLowerCase().contains("akshit")) {
-            return "Akshit Ujjain";
-        }
         return "Akshit Ujjain";
+    }
+
+    public String resolveApproverDisplayName(String username, ProjectTimesheetEntity entity) {
+        String assigned = entity != null ? entity.getAssignedApprover() : null;
+        return resolveApproverDisplayName(assigned, username);
     }
 
     public String resolveApproverDisplayName(String username) {

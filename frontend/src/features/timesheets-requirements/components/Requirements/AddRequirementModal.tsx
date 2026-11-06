@@ -187,7 +187,7 @@ export const AddRequirementModal: React.FC<AddRequirementModalProps> = ({
       scopeFreeze,
       assignedApprover,
       completionPercentage: status === 'Completed' ? 100 : completionNum,
-      approvedBy: status === 'Completed' ? (assignedApprover.includes('Gaurav') ? 'Gaurav Tripathy' : (typeof localStorage !== 'undefined' ? localStorage.getItem('auth_user_name') || 'Akshit Ujjain' : 'Akshit Ujjain')) : undefined,
+      approvedBy: status === 'Completed' ? (assignedApprover.includes('Gaurav') ? 'Gaurav Tripathy' : 'Akshit Ujjain') : undefined,
       approvalDate: status === 'Completed' ? formatDateForInput(new Date()) : undefined,
     };
 
@@ -525,10 +525,10 @@ export const AddRequirementModal: React.FC<AddRequirementModalProps> = ({
                 </div>
               </div>
 
-              {/* Approver */}
+              {/* Approved By (Designated Approver) */}
               <div>
                 <label className="block text-[10.5px] font-medium text-[#475569] mb-0.5">
-                  Approver <span className="text-red-500">*</span>
+                  Approved By <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <select

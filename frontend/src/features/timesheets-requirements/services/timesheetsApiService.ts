@@ -44,10 +44,13 @@ export function mapBackendTimesheetToRecord(raw: any): TimesheetRecord {
     approvalStatus: (raw.approvalStatus || 'Pending') as TimesheetApprovalStatus,
     assignedApprover: raw.assignedApprover || raw.assigned_approver || 'CEO – Akshit Ujjain',
     approvedBy:
-      raw.approvedBy && raw.approvedBy !== '-' && (raw.approvalStatus === 'Approved' || raw.approvalStatus === 'Rejected')
-        ? (raw.approvedBy === 'akshit.ujjain' ? 'Akshit Ujjain' : raw.approvedBy === 'gaurav.tripathy' ? 'Gaurav Tripathy' : raw.approvedBy)
+      raw.approvedBy && raw.approvedBy !== '-' && raw.approvalStatus === 'Approved'
+        ? (raw.approvedBy.toLowerCase().includes('gaurav') ? 'Gaurav Tripathy' : raw.approvedBy.toLowerCase().includes('akshit') ? 'Akshit Ujjain' : raw.approvedBy)
         : '-',
-    approvalDate: raw.approvedAt ? formatDateForDisplay(raw.approvedAt) : (raw.approvalDate || '-'),
+    approvalDate:
+      raw.approvalStatus === 'Approved' && (raw.approvedAt || raw.approvalDate)
+        ? formatDateForDisplay(raw.approvedAt || raw.approvalDate)
+        : '-',
     approvedAt: raw.approvedAt || undefined,
     estimatedLaborCost:
       typeof raw.estimatedLaborCost === 'string' && raw.estimatedLaborCost.includes('₹')

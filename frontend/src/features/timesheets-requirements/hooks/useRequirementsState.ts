@@ -213,9 +213,15 @@ export const useRequirementsState = (initialList?: RequirementRecord[]) => {
         ownerId: formData.ownerId,
         status: formData.status,
         scopeFreeze: formData.scopeFreeze,
-        assignedApprover: formData.assignedApprover || 'CEO – Akshit Ujjain',
-        approvedBy: formData.approvedBy?.trim() || '-',
-        approvalDate: formData.approvalDate ? formatDateForDisplay(formData.approvalDate) : '-',
+        assignedApprover: formData.assignedApprover || 'Akshit Ujjain',
+        approvedBy:
+          formData.status === 'Completed'
+            ? (formData.assignedApprover?.includes('Gaurav') ? 'Gaurav Tripathy' : 'Akshit Ujjain')
+            : '-',
+        approvalDate:
+          formData.status === 'Completed'
+            ? (formData.approvalDate ? formatDateForDisplay(formData.approvalDate) : formatDateForDisplay(new Date()))
+            : '-',
         completionPercentage:
           formData.status === 'Completed'
             ? 100
@@ -268,22 +274,17 @@ export const useRequirementsState = (initialList?: RequirementRecord[]) => {
   // Update existing record
   const updateRequirement = useCallback((id: string, updates: Partial<RequirementRecord>) => {
     const isCompleted = updates.status === 'Completed';
-    const storedName = typeof localStorage !== 'undefined' ? localStorage.getItem('auth_user_name') : null;
-    const storedUsername = typeof localStorage !== 'undefined' ? localStorage.getItem('auth_user_username') : null;
-    const approverName =
-      storedName ||
-      (storedUsername && storedUsername.toLowerCase().includes('gaurav')
-        ? 'Gaurav Tripathy'
-        : 'Akshit Ujjain');
     const todayDisplay = formatDateForDisplay(new Date());
 
     setRecords((prev) =>
       prev.map((r) => {
         if (r.requirementId === id) {
           const updated = { ...r, ...updates };
+          const assigned = updated.assignedApprover || r.assignedApprover || 'Akshit Ujjain';
+          const designatedName = assigned.toLowerCase().includes('gaurav') ? 'Gaurav Tripathy' : 'Akshit Ujjain';
           if (isCompleted) {
             updated.completionPercentage = 100;
-            updated.approvedBy = approverName;
+            updated.approvedBy = designatedName;
             updated.approvalDate = todayDisplay;
           } else if (updates.status && updates.status !== 'Completed') {
             updated.approvedBy = '-';
@@ -333,24 +334,18 @@ export const useRequirementsState = (initialList?: RequirementRecord[]) => {
   // Inline Status update
   const updateStatus = useCallback((id: string, newStatus: RequirementStatus) => {
     const isCompleted = newStatus === 'Completed';
-    const storedName = typeof localStorage !== 'undefined' ? localStorage.getItem('auth_user_name') : null;
-    const storedUsername = typeof localStorage !== 'undefined' ? localStorage.getItem('auth_user_username') : null;
     const todayDisplay = formatDateForDisplay(new Date());
 
     setRecords((prev) =>
       prev.map((r) => {
         if (r.requirementId === id) {
-          const assigned = r.assignedApprover || 'CEO – Akshit Ujjain';
-          const effectiveApprover =
-            storedName ||
-            (storedUsername
-              ? storedUsername.toLowerCase().includes('gaurav') ? 'Gaurav Tripathy' : 'Akshit Ujjain'
-              : assigned.includes('Gaurav') ? 'Gaurav Tripathy' : 'Akshit Ujjain');
+          const assigned = r.assignedApprover || 'Akshit Ujjain';
+          const designatedName = assigned.toLowerCase().includes('gaurav') ? 'Gaurav Tripathy' : 'Akshit Ujjain';
           return {
             ...r,
             status: newStatus,
             completionPercentage: isCompleted ? 100 : r.completionPercentage,
-            approvedBy: isCompleted ? effectiveApprover : '-',
+            approvedBy: isCompleted ? designatedName : '-',
             approvalDate: isCompleted ? todayDisplay : '-',
           };
         }
