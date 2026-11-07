@@ -36,7 +36,7 @@ export function mapBackendRequirementToRecord(raw: any): RequirementRecord {
     scopeFreeze: isFrozen ? 'Yes' : 'No',
     assignedApprover: rawAssignedApprover || 'CEO – Akshit Ujjain',
     approvedBy:
-      raw.status === 'Completed'
+      raw.status === 'Completed' || (!raw.status && rawApprovedBy)
         ? (rawApprovedBy && rawApprovedBy !== '-'
             ? (rawApprovedBy.toLowerCase().includes('gaurav')
               ? 'Gaurav Tripathy'
@@ -46,7 +46,7 @@ export function mapBackendRequirementToRecord(raw: any): RequirementRecord {
             : ((rawAssignedApprover || '').toLowerCase().includes('gaurav') ? 'Gaurav Tripathy' : 'Akshit Ujjain'))
         : '-',
     approvalDate:
-      raw.status === 'Completed'
+      raw.status === 'Completed' || (!raw.status && rawApprovalDate)
         ? (rawApprovalDate && rawApprovalDate !== '-' ? formatDateForDisplay(rawApprovalDate) : formatDateForDisplay(new Date()))
         : '-',
     completionPercentage: Number(raw.completionPercentage ?? 0),

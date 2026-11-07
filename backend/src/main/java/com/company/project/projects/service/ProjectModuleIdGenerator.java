@@ -22,5 +22,13 @@ public interface ProjectModuleIdGenerator {
     String generateProjectId();
 
     String generateTaskId();
+
+    String generateDevelopmentId(LocalDate date);
+
+    String generateDevelopmentId();
+
+    String previewNextDevelopmentId(LocalDate date);
+
+    String previewNextDevelopmentId();
 }
 

@@ -134,4 +134,13 @@ export const API_ENDPOINTS = {
     APPROVE: (id: string) => `/requirements/${encodeURIComponent(id)}/approve`,
     REVOKE: (id: string) => `/requirements/${encodeURIComponent(id)}/revoke`,
   },
+  DEVELOPMENTS: {
+    BASE: '/developments',
+    BY_ID: (id: string) => `/developments/${encodeURIComponent(id)}`,
+    KPIS: '/developments/kpis',
+    NEXT_ID: '/developments/next-id',
+    STATUS: (id: string) => `/developments/${encodeURIComponent(id)}/status`,
+    CODE_REVIEW_STATUS: (id: string) => `/developments/${encodeURIComponent(id)}/code-review-status`,
+    EXPORT: '/developments/export',
+  },
 };

@@ -20,6 +20,7 @@ import { HrDashboardPage } from '../features/hr/pages/HrDashboardPage';
 import { EmployeeExitPage } from '../features/hr/pages/EmployeeExitPage';
 import { InvoicesPage } from '../features/invoices/pages/InvoicesPage';
 import { TimesheetsRequirementsPage } from '../features/projects/pages/TimesheetsRequirementsPage';
+import { DevelopmentPage } from '../features/development/pages/DevelopmentPage';
 
 const CeoDashboardRoute: React.FC = () => {
   const context = useOutletContext<AppLayoutContextType>();
@@ -68,6 +69,7 @@ export const AppRouter: React.FC = () => {
         <Route path="/hr/employee-exit" element={<EmployeeExitPage />} />
         <Route path="/projects/timesheets" element={<TimesheetsRequirementsPage />} />
         <Route path="/projects/timesheets-requirements" element={<Navigate to="/projects/timesheets" replace />} />
+        <Route path="/projects/development" element={<DevelopmentPage />} />
 
         {/* Generate dynamic module engine routes for all other navigation items */}
         {navigationSections.map((section) =>
@@ -95,7 +97,8 @@ export const AppRouter: React.FC = () => {
                 item.path !== '/hr/employee-exit' &&
                 item.path !== '/finance/invoices' &&
                 item.path !== '/invoices' &&
-                item.path !== '/projects/timesheets'
+                item.path !== '/projects/timesheets' &&
+                item.path !== '/projects/development'
             )
             .map((item) => (
               <Route

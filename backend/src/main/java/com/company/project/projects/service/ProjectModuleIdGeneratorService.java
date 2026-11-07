@@ -28,6 +28,7 @@ public class ProjectModuleIdGeneratorService implements ProjectModuleIdGenerator
 
     public static final String ENTITY_TIMESHEET = "TIMESHEET";
     public static final String ENTITY_REQUIREMENT = "REQUIREMENT";
+    public static final String ENTITY_DEVELOPMENT = "DEVELOPMENT";
     public static final String ENTITY_PROJECT = "PROJECT";
     public static final String ENTITY_TASK = "TASK";
     public static final String GLOBAL_PERIOD = "GLOBAL";
@@ -151,6 +152,49 @@ public class ProjectModuleIdGeneratorService implements ProjectModuleIdGenerator
         String id = String.format("TSK-%05d", seq);
         log.info("Allocated atomic task ID: {}", id);
         return id;
+    }
+
+    /**
+     * Generates atomic Development ID: DEV-YYYY-NNNN (e.g., DEV-2026-0001)
+     *
+     * @param date Date of the development activity; defaults to LocalDate.now() if null
+     * @return Formatted development ID
+     */
+    @Transactional
+    public String generateDevelopmentId(LocalDate date) {
+        LocalDate effectiveDate = (date != null) ? date : LocalDate.now();
+        String periodKey = String.valueOf(effectiveDate.getYear());
+        Long seq = allocateNextSequence(ENTITY_DEVELOPMENT, periodKey);
+        String id = String.format("DEV-%s-%04d", periodKey, seq);
+        log.info("Allocated atomic development ID: {}", id);
+        return id;
+    }
+
+    /**
+     * Generates atomic Development ID for current year.
+     */
+    @Transactional
+    public String generateDevelopmentId() {
+        return generateDevelopmentId(LocalDate.now());
+    }
+
+    /**
+     * Previews the next Development ID without consuming the atomic sequence.
+     */
+    @Transactional(readOnly = true)
+    public String previewNextDevelopmentId(LocalDate date) {
+        LocalDate effectiveDate = (date != null) ? date : LocalDate.now();
+        String periodKey = String.valueOf(effectiveDate.getYear());
+        Long current = getCurrentSequence(ENTITY_DEVELOPMENT, periodKey);
+        return String.format("DEV-%s-%04d", periodKey, current + 1);
+    }
+
+    /**
+     * Previews the next Development ID for current year without consuming sequence.
+     */
+    @Transactional(readOnly = true)
+    public String previewNextDevelopmentId() {
+        return previewNextDevelopmentId(LocalDate.now());
     }
 }
 
