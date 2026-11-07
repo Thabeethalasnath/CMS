@@ -25,13 +25,19 @@ export const AppLayout: React.FC = () => {
   const [userRole, setUserRole] = useState<string>(() => {
     return (typeof window !== 'undefined' ? localStorage.getItem('auth_user_role') : null) || '—';
   });
+  const [userEmail, setUserEmail] = useState<string>(() => {
+    return (typeof window !== 'undefined' ? localStorage.getItem('auth_user_email') : null) || '—';
+  });
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const syncAuthUser = () => {
       const storedName = localStorage.getItem('auth_user_name');
       const storedRole = localStorage.getItem('auth_user_role');
+      const storedEmail = localStorage.getItem('auth_user_email');
       if (storedName) setUserName(storedName);
       if (storedRole) setUserRole(storedRole);
+      if (storedEmail) setUserEmail(storedEmail);
     };
 
     syncAuthUser();

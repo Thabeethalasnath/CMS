@@ -89,7 +89,6 @@ export const API_ENDPOINTS = {
     BASE: '/clients',
     BY_ID: (id: string | number) => `/clients/${encodeURIComponent(String(id))}`,
   },
-<<<<<<< HEAD
   HR: {
     DASHBOARD: '/hr/dashboard',
     REFRESH: '/hr/dashboard/refresh',
@@ -118,11 +117,16 @@ export const API_ENDPOINTS = {
     PAYMENTS_KPIS: '/finance/payments/kpis',
     PAYMENTS_FILTERS: '/finance/payments/filters',
     PAYMENTS_EXPORT: '/finance/payments/export',
-=======
-  FINANCE: {
     DASHBOARD: '/finance/dashboard',
     EXPENSES: '/finance/expenses',
     EXPORT: '/finance/export',
+  },
+  AUTH: {
+    LOGIN: '/auth/login',
+    FORGOT_PASSWORD: '/auth/forgot-password',
+    VERIFY_OTP: '/auth/verify-otp',
+    RESET_PASSWORD: '/auth/reset-password',
+    ME: '/auth/me',
   },
   PROJECTS: {
     BASE: '/projects',
@@ -133,20 +137,6 @@ export const API_ENDPOINTS = {
     TASKS_FILTERS: '/projects/tasks/filters',
     TASK_BY_ID: (id: string | number) => `/projects/tasks/${encodeURIComponent(String(id))}`,
     TASKS_BY_PROJECT: (projectId: string | number) => `/projects/${encodeURIComponent(String(projectId))}/tasks`,
-  },
-  AUTH: {
-    LOGIN: '/auth/login',
-    FORGOT_PASSWORD: '/auth/forgot-password',
-    VERIFY_OTP: '/auth/verify-otp',
-    RESET_PASSWORD: '/auth/reset-password',
-    ME: '/auth/me',
->>>>>>> origin/main
-  },
-  PROJECTS: {
-    BASE: '/projects',
-    BY_ID: (id: string) => `/projects/${encodeURIComponent(id)}`,
-    TASKS: (id: string) => `/projects/${encodeURIComponent(id)}/tasks`,
-    TASK_BY_ID: (taskId: string) => `/projects/tasks/${encodeURIComponent(taskId)}`,
   },
   TIMESHEETS: {
     BASE: '/timesheets',

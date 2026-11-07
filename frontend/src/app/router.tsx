@@ -21,6 +21,8 @@ import { EmployeeExitPage } from '../features/hr/pages/EmployeeExitPage';
 import { InvoicesPage } from '../features/invoices/pages/InvoicesPage';
 import { TimesheetsRequirementsPage } from '../features/projects/pages/TimesheetsRequirementsPage';
 import { DevelopmentPage } from '../features/development/pages/DevelopmentPage';
+import { LoginPage } from '../features/auth/pages/LoginPage';
+import { ProtectedRoute } from '../features/auth/components/ProtectedRoute';
 
 const CeoDashboardRoute: React.FC = () => {
   const context = useOutletContext<AppLayoutContextType>();

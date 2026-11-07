@@ -34,7 +34,10 @@ export const projectLookupService = {
    */
   async getTasksForProject(projectId: string): Promise<TaskOption[]> {
     try {
-      const res = await apiClient.get<any>(API_ENDPOINTS.PROJECTS.TASKS(projectId));
+      const endpoint = typeof (API_ENDPOINTS.PROJECTS as any).TASKS_BY_PROJECT === 'function'
+        ? (API_ENDPOINTS.PROJECTS as any).TASKS_BY_PROJECT(projectId)
+        : `/projects/${encodeURIComponent(projectId)}/tasks`;
+      const res = await apiClient.get<any>(endpoint);
       const rawList = Array.isArray(res.data)
         ? res.data
         : (Array.isArray(res) ? res : (Array.isArray((res as any)?.data?.data) ? (res as any).data.data : null));

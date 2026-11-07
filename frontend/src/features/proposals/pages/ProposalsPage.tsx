@@ -120,7 +120,7 @@ export const ProposalsPage: React.FC = () => {
 
   // Primary data query function through dedicated service layer
   const loadProposals = useCallback(async (signal?: AbortSignal) => {
-    setIsLoading(true);
+    setIsTableLoading(true);
     setError(null);
     try {
       const [pageRes, kpis] = await Promise.all([
@@ -153,7 +153,7 @@ export const ProposalsPage: React.FC = () => {
       setError(msg);
     } finally {
       if (!signal?.aborted) {
-        setIsLoading(false);
+        setIsTableLoading(false);
       }
     }
   }, [
