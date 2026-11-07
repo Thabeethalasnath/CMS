@@ -28,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.*;
 
 @Service
@@ -35,12 +36,15 @@ import java.util.*;
 @Slf4j
 public class CollectionsService {
 
+    private static final ZoneId KOLKATA_ZONE = ZoneId.of("Asia/Kolkata");
+
     private final CollectionInvoiceRepository invoiceRepository;
     private final CollectionPaymentRepository paymentRepository;
     private final CollectionPaymentReversalRepository paymentReversalRepository;
     private final CollectionsCalculationService calculationService;
     private final InvoiceIdGeneratorService invoiceIdGeneratorService;
     private final CollectionCommunicationRepository communicationRepository;
+    private final ReceivablesCalculationService receivablesCalculationService;
 
     @Autowired(required = false)
     private NotificationService notificationService;
@@ -615,22 +619,25 @@ public class CollectionsService {
 
         BigDecimal totalOutstanding = BigDecimal.ZERO;
         long totalCount = 0;
-
         BigDecimal overdueAmount = BigDecimal.ZERO;
         long overdueCount = 0;
 
+        for (ReceivablesAgeingBucketDto bucket : receivables.getAgeingBuckets()) {
+            if (bucket.getCount() > 0) {
+                totalCount += bucket.getCount();
+                if (!"current".equals(bucket.getBucketKey())) {
+                    overdueAmount = overdueAmount.add(bucket.getAmount() != null ? bucket.getAmount() : BigDecimal.ZERO);
+                    overdueCount += bucket.getCount();
+                }
+            }
+        }
+
+        // Invoices with status 'Due Soon'
         BigDecimal dueSoonAmount = BigDecimal.ZERO;
         long dueSoonCount = 0;
-
+        List<CollectionInvoiceEntity> allInvoices = invoiceRepository.findInvoicesIssuedOnOrBefore(today);
         for (CollectionInvoiceEntity inv : allInvoices) {
-            if (inv.getOutstanding() != null && inv.getOutstanding().compareTo(BigDecimal.ZERO) > 0) {
-                totalOutstanding = totalOutstanding.add(inv.getOutstanding());
-                totalCount++;
-            }
-            if ("Overdue".equalsIgnoreCase(inv.getStatus())) {
-                overdueAmount = overdueAmount.add(inv.getOutstanding());
-                overdueCount++;
-            } else if ("Due Soon".equalsIgnoreCase(inv.getStatus())) {
+            if ("Due Soon".equalsIgnoreCase(inv.getStatus()) && inv.getOutstanding() != null && inv.getOutstanding().compareTo(BigDecimal.ZERO) > 0) {
                 dueSoonAmount = dueSoonAmount.add(inv.getOutstanding());
                 dueSoonCount++;
             }
@@ -651,48 +658,57 @@ public class CollectionsService {
                 .totalOutstanding(KpiSummaryResponse.MetricItem.builder()
                         .amount(totalOutstanding)
                         .count(totalCount)
-                        .trendPct(12.0)
+                        .trendPct(0.0)
                         .build())
                 .overdueAmount(KpiSummaryResponse.MetricItem.builder()
                         .amount(overdueAmount)
                         .count(overdueCount)
-                        .trendPct(8.0)
+                        .trendPct(0.0)
                         .build())
                 .dueSoon(KpiSummaryResponse.MetricItem.builder()
                         .amount(dueSoonAmount)
                         .count(dueSoonCount)
-                        .trendPct(-20.0)
+                        .trendPct(0.0)
                         .build())
                 .collectedThisMonth(KpiSummaryResponse.CollectedMetricItem.builder()
-                        .amount(collectedTotal)
+                        .amount(collectedTotal != null ? collectedTotal : BigDecimal.ZERO)
                         .paymentCount(paymentCount)
-                        .trendPct(18.0)
+                        .trendPct(0.0)
                         .build())
                 .build();
     }
 
     @Transactional(readOnly = true)
     public List<AgeingChartItemResponse> getAgeingChart() {
-        List<CollectionInvoiceEntity> invoices = invoiceRepository.findAll();
+        LocalDate today = LocalDate.now(KOLKATA_ZONE);
+        ReceivablesCalculationService.ReceivablesComputationResult result =
+                receivablesCalculationService.computeReceivablesAsOf(today);
 
-        Map<String, AgeingChartItemResponse> bucketMap = new LinkedHashMap<>();
-        bucketMap.put("Current", new AgeingChartItemResponse("Current", BigDecimal.ZERO, 0, "#38BDF8"));
-        bucketMap.put("1–30 days", new AgeingChartItemResponse("1–30 days", BigDecimal.ZERO, 0, "#10B981"));
-        bucketMap.put("31–60 days", new AgeingChartItemResponse("31–60 days", BigDecimal.ZERO, 0, "#FBBF24"));
-        bucketMap.put("61–90 days", new AgeingChartItemResponse("61–90 days", BigDecimal.ZERO, 0, "#F97316"));
-        bucketMap.put("90+ days", new AgeingChartItemResponse("90+ days", BigDecimal.ZERO, 0, "#EF4444"));
+        Map<String, String> labelMap = Map.of(
+                "current", "Current",
+                "1_30", "1–30 days",
+                "31_60", "31–60 days",
+                "61_90", "61–90 days",
+                "90_plus", "90+ days"
+        );
+        Map<String, String> colors = Map.of(
+                "current", "#38BDF8",
+                "1_30", "#10B981",
+                "31_60", "#FBBF24",
+                "61_90", "#F97316",
+                "90_plus", "#EF4444"
+        );
 
-        for (CollectionInvoiceEntity inv : invoices) {
-            if (inv.getOutstanding() != null && inv.getOutstanding().compareTo(BigDecimal.ZERO) > 0) {
-                AgeingChartItemResponse item = bucketMap.get(inv.getAgeingBucket());
-                if (item != null) {
-                    item.setAmount(item.getAmount().add(inv.getOutstanding()));
-                    item.setCount(item.getCount() + 1);
-                }
-            }
+        List<AgeingChartItemResponse> list = new ArrayList<>();
+        for (ReceivablesAgeingBucketDto b : result.getAgeingBuckets()) {
+            list.add(new AgeingChartItemResponse(
+                    labelMap.getOrDefault(b.getBucketKey(), b.getLabel()),
+                    b.getAmount() != null ? b.getAmount() : BigDecimal.ZERO,
+                    (int) b.getCount(),
+                    colors.getOrDefault(b.getBucketKey(), "#38BDF8")
+            ));
         }
-
-        return new ArrayList<>(bucketMap.values());
+        return list;
     }
 
     @Transactional(readOnly = true)

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Plus, Calendar, User, Tag, FileText } from 'lucide-react';
+import { X, Plus, User, Tag } from 'lucide-react';
 import { EmployeeApproval } from '../../types/approvals';
 
 interface AddEmployeeApprovalModalProps {
@@ -131,7 +131,7 @@ export const AddEmployeeApprovalModal: React.FC<AddEmployeeApprovalModalProps> =
                 type="text"
                 value={fromDate}
                 onChange={(e) => setFromDate(e.target.value)}
-                placeholder="e.g. 18 Mar 2025"
+                placeholder="DD MMM YYYY"
                 className="w-full border border-slate-200 rounded-lg px-3 py-2 bg-slate-50/50 outline-none text-slate-800 placeholder-slate-400 focus:border-indigo-500"
               />
             </div>
@@ -141,7 +141,7 @@ export const AddEmployeeApprovalModal: React.FC<AddEmployeeApprovalModalProps> =
                 type="text"
                 value={toDate}
                 onChange={(e) => setToDate(e.target.value)}
-                placeholder="e.g. 20 Mar 2025"
+                placeholder="DD MMM YYYY"
                 className="w-full border border-slate-200 rounded-lg px-3 py-2 bg-slate-50/50 outline-none text-slate-800 placeholder-slate-400 focus:border-indigo-500"
               />
             </div>

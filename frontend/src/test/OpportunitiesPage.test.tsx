@@ -1,4 +1,3 @@
-import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
@@ -92,7 +91,7 @@ describe('OpportunitiesPage Component', () => {
       );
     });
 
-    expect(screen.getByText(/no opportunities found/i)).toBeInTheDocument();
+    expect(screen.getByText(/no opportunities yet/i)).toBeInTheDocument();
   });
 
   it('renders success state with KPI cards and table rows', async () => {

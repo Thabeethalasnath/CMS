@@ -71,16 +71,29 @@ public class EmployeeMasterServiceImpl implements EmployeeMasterService {
         long onNoticeEmployees = employeeRepository.countByStatusIgnoreCase("On Notice");
         BigDecimal totalMonthlyCtc = employeeRepository.sumTotalMonthlyCtc();
 
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        java.time.LocalDateTime startOfThisMonth = now.withDayOfMonth(1).toLocalDate().atStartOfDay();
+
+        long totalBefore = employeeRepository.countBefore(startOfThisMonth);
+        long activeBefore = employeeRepository.countByStatusBefore("Active", startOfThisMonth);
+        long onNoticeBefore = employeeRepository.countByStatusBefore("On Notice", startOfThisMonth);
+        BigDecimal totalCtcBefore = employeeRepository.sumTotalMonthlyCtcBefore(startOfThisMonth);
+
+        Double totalPct = com.company.project.common.util.TrendCalculationUtil.calculateMoMPercentage(totalEmployees, totalBefore);
+        Double activePct = com.company.project.common.util.TrendCalculationUtil.calculateMoMPercentage(activeEmployees, activeBefore);
+        Double onNoticePct = com.company.project.common.util.TrendCalculationUtil.calculateMoMPercentage(onNoticeEmployees, onNoticeBefore);
+        Double ctcPct = com.company.project.common.util.TrendCalculationUtil.calculateMoMPercentage(totalMonthlyCtc, totalCtcBefore);
+
         return EmployeeMasterSummaryDto.builder()
                 .totalEmployees(totalEmployees)
-                .totalEmployeesTrend("↑ 12% vs last month")
+                .totalEmployeesTrend(com.company.project.common.util.TrendCalculationUtil.formatTrendString(totalPct))
                 .activeEmployees(activeEmployees)
-                .activeEmployeesTrend("↑ 8% vs last month")
+                .activeEmployeesTrend(com.company.project.common.util.TrendCalculationUtil.formatTrendString(activePct))
                 .onNoticeEmployees(onNoticeEmployees)
-                .onNoticeEmployeesTrend("↓ 25% vs last month")
+                .onNoticeEmployeesTrend(com.company.project.common.util.TrendCalculationUtil.formatTrendString(onNoticePct))
                 .totalMonthlyCtc(totalMonthlyCtc)
                 .totalMonthlyCtcFormatted(formatIndianCurrency(totalMonthlyCtc))
-                .totalMonthlyCtcTrend("↑ 8% vs last month")
+                .totalMonthlyCtcTrend(com.company.project.common.util.TrendCalculationUtil.formatTrendString(ctcPct))
                 .build();
     }
 

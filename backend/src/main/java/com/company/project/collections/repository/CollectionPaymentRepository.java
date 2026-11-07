@@ -32,4 +32,10 @@ public interface CollectionPaymentRepository extends JpaRepository<CollectionPay
 
     @Query("SELECT COALESCE(SUM(p.amount), 0) FROM CollectionPaymentEntity p")
     BigDecimal sumTotalPayments();
+
+    @Query("SELECT COALESCE(SUM(p.amount), 0) FROM CollectionPaymentEntity p WHERE p.paymentDate BETWEEN :startDate AND :endDate")
+    BigDecimal sumPaymentsInPeriod(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
+
+    @Query("SELECT p.invoice.id, COALESCE(SUM(p.amount), 0) FROM CollectionPaymentEntity p WHERE p.paymentDate <= :asOfDate GROUP BY p.invoice.id")
+    List<Object[]> sumPaymentsByInvoiceOnOrBefore(@Param("asOfDate") LocalDate asOfDate);
 }

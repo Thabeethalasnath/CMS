@@ -36,10 +36,17 @@ const CeoDashboardRoute: React.FC = () => {
 export const AppRouter: React.FC = () => {
   return (
     <Routes>
-      {/* Redirect /login to CEO Dashboard */}
-      <Route path="/login" element={<Navigate to="/management/ceo-dashboard" replace />} />
+      {/* Public Login Route */}
+      <Route path="/login" element={<LoginPage />} />
 
-      <Route element={<AppLayout />}>
+      {/* Authenticated Routes Guarded by ProtectedRoute */}
+      <Route
+        element={
+          <ProtectedRoute>
+            <AppLayout />
+          </ProtectedRoute>
+        }
+      >
         {/* CEO Dashboard: Default First Screen and Dedicated Routes */}
         <Route index element={<CeoDashboardRoute />} />
         <Route path="/management/ceo-dashboard" element={<CeoDashboardRoute />} />

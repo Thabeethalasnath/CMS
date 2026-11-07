@@ -1,7 +1,7 @@
 export interface AttendanceRecord {
   id: string; // e.g. ATT-001248
   attendanceDate: string; // e.g. 31 Oct 2026
-  employeeId: string; // e.g. EMP-001
+  employeeId: string; // e.g. EMP-101
   employeeName: string; // e.g. Amit Sharma
   avatarInitials: string; // e.g. AS
   avatarColor: string; // e.g. blue, purple, amber, pink, rose, orange, teal, emerald
@@ -12,10 +12,14 @@ export interface AttendanceRecord {
   overtimeHours: string; // e.g. 1h 00m or 0h 0m
   workMinutes?: number;
   overtimeMinutes?: number;
-  dayType?: 'Regular' | 'Weekend' | 'Holiday' | string;
+  dayType?: 'Regular' | 'Working Day' | 'Leave' | 'Holiday' | string;
   isLate?: boolean;
   hasOvertime?: boolean;
   notes?: string;
+  paidDayEquivalent?: string;
+  lateFlag?: 'Yes' | 'No' | string;
+  overtimeValue?: string;
+  remarks?: string;
   createdAt?: string;
   updatedAt?: string;
 }

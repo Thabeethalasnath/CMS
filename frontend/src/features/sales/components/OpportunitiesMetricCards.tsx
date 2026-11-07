@@ -140,7 +140,7 @@ export const OpportunitiesMetricCards: React.FC<OpportunitiesMetricCardsProps> =
                           color: card.trend.includes('↓') || card.trend.includes('-') ? '#EF4444' : '#10B981',
                         }}
                       >
-                        {card.trend}
+                        {card.trend.replace(/\s*vs\s+last\s+month/gi, '').trim()}
                       </span>
                       <span
                         style={{

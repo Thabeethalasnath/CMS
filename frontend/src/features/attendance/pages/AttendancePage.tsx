@@ -283,7 +283,10 @@ export const AttendancePage: React.FC = () => {
       'Work Hours',
       'Overtime Hours',
       'Day Type',
-      'Late',
+      'Paid Day Equivalent',
+      'Late Flag',
+      'Overtime Value',
+      'Remarks',
     ];
 
     const rows = filteredRecords.map((r) => [
@@ -296,8 +299,11 @@ export const AttendancePage: React.FC = () => {
       `"${r.checkOut}"`,
       `"${r.workHours}"`,
       `"${r.overtimeHours}"`,
-      `"${r.dayType || 'Regular'}"`,
-      `"${r.isLate ? 'Yes' : 'No'}"`,
+      `"${r.dayType || 'Working Day'}"`,
+      `"${r.paidDayEquivalent || '1.0'}"`,
+      `"${r.lateFlag || (r.isLate ? 'Yes' : 'No')}"`,
+      `"${r.overtimeValue || '₹ 0'}"`,
+      `"${(r.remarks || '-').replace(/"/g, '""')}"`,
     ]);
 
     const csvContent = [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
@@ -340,17 +346,7 @@ export const AttendancePage: React.FC = () => {
 
   return (
     <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'flex-start',
-        padding: '24px',
-        gap: '20px',
-        width: '100%',
-        boxSizing: 'border-box',
-        backgroundColor: '#F8FAFC',
-        fontFamily: "'Inter', sans-serif",
-      }}
+      className="p-4 sm:p-6 w-full box-border font-sans bg-[#F8FAFC] flex flex-col items-start gap-5"
     >
       {/* Toast Notifications */}
       <ToastNotification toasts={toasts} onDismiss={removeToast} />

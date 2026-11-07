@@ -1,7 +1,7 @@
 import React from 'react';
 import {
   TrendingUp,
-  TrendingDown,
+
   DollarSign,
   Briefcase,
   Users,

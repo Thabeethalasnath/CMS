@@ -1,20 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  X,
-  Target,
-  User,
-  Building,
-  Calendar,
-  DollarSign,
-  TrendingUp,
-  Percent,
-  CheckCircle2,
-  XCircle,
-  Trash2,
-  Clock,
-  Briefcase,
-  AlertCircle,
-} from 'lucide-react';
+import { X, Target, CheckCircle2, XCircle, Trash2 } from 'lucide-react';
 import { OpportunityData } from '@/types/opportunity';
 
 interface OpportunityDetailModalProps {

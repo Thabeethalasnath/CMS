@@ -22,12 +22,7 @@ const COMPUTED_KPI_KEYS = new Set([
   'employer_payroll_cost',
 ]);
 
-const COMPUTED_ALERT_KEYS = new Set([
-  'pending_approvals',
-  'overdue_invoices',
-  'overdue_followups',
-  'candidate_followups',
-]);
+
 
 export const EditDataModal: React.FC<EditDataModalProps> = ({
   isOpen,

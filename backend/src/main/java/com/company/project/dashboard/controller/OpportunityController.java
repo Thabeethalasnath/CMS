@@ -11,6 +11,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -52,6 +53,7 @@ public class OpportunityController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'CEO')")
     @Operation(summary = "Create a new opportunity")
     public ResponseEntity<ApiResponse<OpportunityDto>> createOpportunity(
             @Valid @RequestBody CreateOpportunityRequest request
@@ -62,6 +64,7 @@ public class OpportunityController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CEO')")
     @Operation(summary = "Update an opportunity")
     public ResponseEntity<ApiResponse<OpportunityDto>> updateOpportunity(
             @PathVariable Long id,
@@ -72,6 +75,7 @@ public class OpportunityController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Delete an opportunity")
     public ResponseEntity<ApiResponse<Void>> deleteOpportunity(@PathVariable Long id) {
         service.deleteOpportunity(id);
@@ -79,6 +83,7 @@ public class OpportunityController {
     }
 
     @PostMapping("/reset")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Reset opportunities to original seed dataset")
     public ResponseEntity<ApiResponse<Void>> resetSeedData() {
         service.resetSeedData();

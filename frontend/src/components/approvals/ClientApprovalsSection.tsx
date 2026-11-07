@@ -13,6 +13,20 @@ import {
 import { ClientApproval, ApprovalStatus } from '../../types/approvals';
 import { DetailItemType } from './ApprovalDetailModal';
 
+function getDynamicPastMonths(count = 3): string[] {
+  const months: string[] = [];
+  const now = new Date();
+  for (let i = 0; i < count; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    months.push(d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }));
+  }
+  return months;
+}
+
+function getDynamicCurrentMonth(): string {
+  return new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+}
+
 interface ClientApprovalsSectionProps {
   approvals: ClientApproval[];
   onOpenAddModal: () => void;
@@ -303,7 +317,7 @@ export const ClientApprovalsSection: React.FC<ClientApprovalsSectionProps> = ({
               {showRequestDatePicker && (
                 <div className="absolute left-0 top-full mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl z-30 p-2 w-52 flex flex-col gap-1 text-xs">
                   <span className="text-[10px] font-bold text-slate-400 uppercase px-2 py-1">Quick Select</span>
-                  {['Mar 2025', 'Feb 2025', 'Jan 2025', 'Last 30 Days', 'All Dates'].map((opt) => (
+                  {[...getDynamicPastMonths(3), 'Last 30 Days', 'All Dates'].map((opt) => (
                     <button
                       key={opt}
                       type="button"
@@ -340,7 +354,7 @@ export const ClientApprovalsSection: React.FC<ClientApprovalsSectionProps> = ({
               {showDueDatePicker && (
                 <div className="absolute left-0 top-full mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl z-30 p-2 w-52 flex flex-col gap-1 text-xs">
                   <span className="text-[10px] font-bold text-slate-400 uppercase px-2 py-1">Quick Select</span>
-                  {['Mar 2025', 'Next 7 Days', 'Next 14 Days', 'All Dates'].map((opt) => (
+                  {[getDynamicCurrentMonth(), 'Next 7 Days', 'Next 14 Days', 'All Dates'].map((opt) => (
                     <button
                       key={opt}
                       type="button"

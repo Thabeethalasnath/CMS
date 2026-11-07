@@ -191,7 +191,7 @@ export const ContractsTable: React.FC<ContractsTableProps> = ({
           <div className="p-8 w-full flex justify-center">
             <EmptyState
               icon={FileCheck}
-              title="No contracts found"
+              title="No contracts yet"
               description="No client contracts match your active filters or none have been recorded yet."
             />
           </div>

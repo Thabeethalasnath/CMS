@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Calendar, Clock, User, CheckCircle2, AlertCircle, Trash2, Edit3 } from 'lucide-react';
+import { X, AlertCircle, Trash2, Edit3 } from 'lucide-react';
 import { AttendanceRecord } from '../types/attendance';
 
 interface AttendanceDetailModalProps {
@@ -295,6 +295,34 @@ export const AttendanceDetailModal: React.FC<AttendanceDetailModalProps> = ({
                   <span style={{ fontSize: '11px', color: '#64748B' }}>Overtime Hours</span>
                   <div style={{ fontSize: '13px', fontWeight: 600, color: '#0F172A', marginTop: '2px' }}>
                     {record.overtimeHours}
+                  </div>
+                </div>
+
+                <div>
+                  <span style={{ fontSize: '11px', color: '#64748B' }}>Paid Day Equivalent</span>
+                  <div style={{ fontSize: '13px', fontWeight: 600, color: '#0F172A', marginTop: '2px' }}>
+                    {record.paidDayEquivalent || '1.0'}
+                  </div>
+                </div>
+
+                <div>
+                  <span style={{ fontSize: '11px', color: '#64748B' }}>Late Flag</span>
+                  <div style={{ fontSize: '13px', fontWeight: 600, color: record.lateFlag === 'Yes' ? '#DC2626' : '#16A34A', marginTop: '2px' }}>
+                    {record.lateFlag || (record.isLate ? 'Yes' : 'No')}
+                  </div>
+                </div>
+
+                <div>
+                  <span style={{ fontSize: '11px', color: '#64748B' }}>Overtime Value</span>
+                  <div style={{ fontSize: '13px', fontWeight: 600, color: '#0F172A', marginTop: '2px' }}>
+                    {record.overtimeValue || '₹ 0'}
+                  </div>
+                </div>
+
+                <div>
+                  <span style={{ fontSize: '11px', color: '#64748B' }}>Remarks</span>
+                  <div style={{ fontSize: '13px', fontWeight: 600, color: '#0F172A', marginTop: '2px' }}>
+                    {record.remarks || '-'}
                   </div>
                 </div>
               </div>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { apiClient } from '../../services/api/apiClient';
 import { dashboardService } from '../../services/dashboardService';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { TopNav } from './TopNav';
 
@@ -12,6 +13,7 @@ export interface AppLayoutContextType {
   setDateRange: (range: string) => void;
   isEditModalOpen: boolean;
   setIsEditModalOpen: (open: boolean) => void;
+  isSidebarCollapsed: boolean;
 }
 
 export const AppLayout: React.FC = () => {
@@ -44,7 +46,7 @@ export const AppLayout: React.FC = () => {
         if (!storedName && data.settings?.user_name) setUserName(data.settings.user_name);
         if (!storedRole && data.settings?.user_role) setUserRole(data.settings.user_role);
       })
-      .catch(() => {});
+      .catch(() => { });
 
     return () => {
       window.removeEventListener('auth_user_changed', syncAuthUser);
@@ -76,10 +78,12 @@ export const AppLayout: React.FC = () => {
         backgroundColor: '#F8FAFC',
       }}
     >
-      {/* CMS Main Sidebar with Collapsible Rail */}
+      {/* CMS Main Sidebar with Collapsible Rail & Responsive Mobile Drawer */}
       <Sidebar
         isCollapsed={isSidebarCollapsed}
         onToggleCollapse={toggleSidebar}
+        isMobileOpen={isMobileMenuOpen}
+        onCloseMobile={() => setIsMobileMenuOpen(false)}
       />
 
       {/* Main Content Area: Header pinned at top, Main scrolling */}
@@ -102,6 +106,9 @@ export const AppLayout: React.FC = () => {
           onDateRangeChange={setDateRange}
           userName={userName}
           userRole={userRole}
+          userEmail={userEmail}
+          onToggleMobileMenu={() => setIsMobileMenuOpen((prev) => !prev)}
+          onToggleSidebar={toggleSidebar}
         />
         <main
           style={{
@@ -121,6 +128,7 @@ export const AppLayout: React.FC = () => {
               setDateRange,
               isEditModalOpen,
               setIsEditModalOpen,
+              isSidebarCollapsed,
             }}
           />
         </main>

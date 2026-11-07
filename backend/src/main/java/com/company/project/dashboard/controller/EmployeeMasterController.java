@@ -11,6 +11,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -53,6 +54,7 @@ public class EmployeeMasterController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'CEO')")
     @Operation(summary = "Create a new employee")
     public ResponseEntity<ApiResponse<EmployeeMasterDto>> createEmployee(
             @Valid @RequestBody CreateEmployeeRequest request
@@ -63,6 +65,7 @@ public class EmployeeMasterController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CEO')")
     @Operation(summary = "Update an employee")
     public ResponseEntity<ApiResponse<EmployeeMasterDto>> updateEmployee(
             @PathVariable Long id,
@@ -73,10 +76,10 @@ public class EmployeeMasterController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Delete an employee")
     public ResponseEntity<ApiResponse<Void>> deleteEmployee(@PathVariable Long id) {
         service.deleteEmployee(id);
         return ResponseEntity.ok(ApiResponse.success("Employee deleted successfully", null));
     }
 }
-

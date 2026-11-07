@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Plus, Sparkles, Building2, User, Mail, Phone, MapPin, Calendar, DollarSign } from 'lucide-react';
+import { X, Plus, Building2, User, Mail, Phone, MapPin, Calendar, DollarSign } from 'lucide-react';
 import { Lead, LeadSource, ServiceInterest, LeadStage, LeadStatus } from '../types/leads';
 
 interface AddLeadModalProps {
