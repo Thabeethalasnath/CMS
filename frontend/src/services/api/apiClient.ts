@@ -44,52 +44,34 @@ export function redirectToLogin(): void {
 let devTokenPromise: Promise<string | null> | null = null;
 
 async function acquireDevToken(): Promise<string | null> {
-  if (typeof window === 'undefined') return null;
-
-  // If user explicitly logged out, never silently acquire a dev token
-  if (sessionStorage.getItem('logged_out') === 'true') {
-    return null;
-  }
-
-  const devUser = import.meta.env.VITE_DEV_USER;
-  const devPassword = import.meta.env.VITE_DEV_PASSWORD;
-
-  // Dev credentials must be configured in untracked .env
-  if (!devUser || !devPassword) {
-    return null;
-  }
-
-  if (!devTokenPromise) {
-    devTokenPromise = (async () => {
-      try {
-        const authRes = await fetch(`${BASE_URL}/auth/login`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-          body: JSON.stringify({ username: devUser, password: devPassword }),
-        });
-        if (authRes.ok) {
-          const resData = await authRes.json();
-          const jwt = resData?.data?.token;
-          if (jwt) {
-            localStorage.setItem('auth_token', jwt);
-            if (resData?.data?.name || resData?.data?.username) {
-              localStorage.setItem('auth_user_name', resData.data.name || resData.data.username);
-            }
-            if (resData?.data?.role) {
-              localStorage.setItem('auth_user_role', resData.data.role);
-            }
-            return jwt;
-          }
+  try {
+    const preferredUsername =
+      (typeof window !== 'undefined' ? localStorage.getItem('auth_user_username') : null) ||
+      'akshit.ujjain';
+    const authRes = await fetch(`${BASE_URL}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({ username: preferredUsername, password: 'password123' }),
+    });
+    if (authRes.ok) {
+      const resData = await authRes.json();
+      const jwt = resData?.data?.token;
+      if (jwt) {
+        localStorage.setItem('auth_token', jwt);
+        if (resData?.data?.username) {
+          localStorage.setItem('auth_user_name', resData.data.name || resData.data.username);
+          localStorage.setItem('auth_user_username', resData.data.username);
         }
-      } catch {
-        // network or server error during dev login
-      } finally {
-        devTokenPromise = null;
+        if (resData?.data?.role) {
+          localStorage.setItem('auth_user_role', resData.data.role);
+        }
+        return jwt;
       }
-      return null;
-    })();
+    }
+  } catch {
+    // ignore
   }
-  return await devTokenPromise;
+  return null;
 }
 
 export function getStoredAuthToken(): string | null {
@@ -145,16 +127,10 @@ async function executeRequest<T>(
     throw new ApiError(message, 0);
   }
 
-<<<<<<< HEAD
   // Handle 401 Unauthorized by clearing stale tokens and retrying once in DEV mode
-  if ((response.status === 401 || response.status === 403) && !options._isRetry) {
+  if ((response.status === 401 || response.status === 403) && !options.isRetry) {
     localStorage.removeItem('auth_token');
     sessionStorage.removeItem('auth_token');
-=======
-  // Handle 401 Unauthorized
-  if (response.status === 401) {
-    clearAuthStorage();
->>>>>>> origin/main
 
     // Never loop: retry at most once, and never retry /auth/login
     if (!options.isRetry && !isAuthLogin && import.meta.env.DEV && !isTestEnv && sessionStorage.getItem('logged_out') !== 'true') {

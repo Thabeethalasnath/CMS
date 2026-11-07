@@ -47,6 +47,15 @@ export const API_ENDPOINTS = {
     REMINDER: (id: string) => `/collections/invoices/${encodeURIComponent(id)}/reminders`,
     COMMUNICATIONS: (id: string) => `/collections/invoices/${encodeURIComponent(id)}/communications`,
   },
+  INVOICES: {
+    BASE: '/invoices',
+    BY_ID: (id: string) => `/invoices/${encodeURIComponent(id)}`,
+    KPIS: '/invoices/kpis',
+    NEXT_ID: (year?: number) => (year ? `/invoices/next-id?year=${year}` : '/invoices/next-id'),
+    PAYMENTS: (id: string) => `/invoices/${encodeURIComponent(id)}/payments`,
+    REVERSAL: (invoiceId: string, paymentId: string) =>
+      `/invoices/${encodeURIComponent(invoiceId)}/payments/${encodeURIComponent(paymentId)}/reversals`,
+  },
   PROPOSALS: {
     BASE: '/proposals',
     BY_ID: (id: string) => `/proposals/${encodeURIComponent(id)}`,
@@ -80,7 +89,6 @@ export const API_ENDPOINTS = {
     BASE: '/clients',
     BY_ID: (id: string | number) => `/clients/${encodeURIComponent(String(id))}`,
   },
-<<<<<<< HEAD
   HR: {
     DASHBOARD: '/hr/dashboard',
     REFRESH: '/hr/dashboard/refresh',
@@ -109,11 +117,16 @@ export const API_ENDPOINTS = {
     PAYMENTS_KPIS: '/finance/payments/kpis',
     PAYMENTS_FILTERS: '/finance/payments/filters',
     PAYMENTS_EXPORT: '/finance/payments/export',
-=======
-  FINANCE: {
     DASHBOARD: '/finance/dashboard',
     EXPENSES: '/finance/expenses',
     EXPORT: '/finance/export',
+  },
+  AUTH: {
+    LOGIN: '/auth/login',
+    FORGOT_PASSWORD: '/auth/forgot-password',
+    VERIFY_OTP: '/auth/verify-otp',
+    RESET_PASSWORD: '/auth/reset-password',
+    ME: '/auth/me',
   },
   PROJECTS: {
     BASE: '/projects',
@@ -125,12 +138,33 @@ export const API_ENDPOINTS = {
     TASK_BY_ID: (id: string | number) => `/projects/tasks/${encodeURIComponent(String(id))}`,
     TASKS_BY_PROJECT: (projectId: string | number) => `/projects/${encodeURIComponent(String(projectId))}/tasks`,
   },
-  AUTH: {
-    LOGIN: '/auth/login',
-    FORGOT_PASSWORD: '/auth/forgot-password',
-    VERIFY_OTP: '/auth/verify-otp',
-    RESET_PASSWORD: '/auth/reset-password',
-    ME: '/auth/me',
->>>>>>> origin/main
+  TIMESHEETS: {
+    BASE: '/timesheets',
+    BY_ID: (id: string) => `/timesheets/${encodeURIComponent(id)}`,
+    KPIS: '/timesheets/kpis',
+    SUBMIT: (id: string) => `/timesheets/${encodeURIComponent(id)}/submit`,
+    APPROVE: (id: string) => `/timesheets/${encodeURIComponent(id)}/approve`,
+    REJECT: (id: string) => `/timesheets/${encodeURIComponent(id)}/reject`,
+    STATUS: (id: string) => `/timesheets/${encodeURIComponent(id)}/status`,
+    OVERRIDE_LABOR_COST: (id: string) => `/timesheets/${encodeURIComponent(id)}/override-labor-cost`,
+  },
+  REQUIREMENTS: {
+    BASE: '/requirements',
+    BY_ID: (id: string) => `/requirements/${encodeURIComponent(id)}`,
+    KPIS: '/requirements/kpis',
+    STATUS: (id: string) => `/requirements/${encodeURIComponent(id)}/status`,
+    COMPLETION: (id: string) => `/requirements/${encodeURIComponent(id)}/completion`,
+    SCOPE_FREEZE: (id: string) => `/requirements/${encodeURIComponent(id)}/scope-freeze`,
+    APPROVE: (id: string) => `/requirements/${encodeURIComponent(id)}/approve`,
+    REVOKE: (id: string) => `/requirements/${encodeURIComponent(id)}/revoke`,
+  },
+  DEVELOPMENTS: {
+    BASE: '/developments',
+    BY_ID: (id: string) => `/developments/${encodeURIComponent(id)}`,
+    KPIS: '/developments/kpis',
+    NEXT_ID: '/developments/next-id',
+    STATUS: (id: string) => `/developments/${encodeURIComponent(id)}/status`,
+    CODE_REVIEW_STATUS: (id: string) => `/developments/${encodeURIComponent(id)}/code-review-status`,
+    EXPORT: '/developments/export',
   },
 };
